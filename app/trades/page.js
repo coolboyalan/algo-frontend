@@ -1,7 +1,8 @@
-import TableContentManager from "@/components/CrudTable/TableContentManager";
+// app/trades/page.js (or app/dashboard/trades/page.js etc.)
+"use client";
+import TableContentManager from "@/components/CrudTable/TableContentManager"; // Adjust path
 
 const TradeDashboardPage = () => {
-  // Example columns configuration - you'd pass this from your page
   const tradeColumns = [
     { key: "timestamp", label: "Timestamp", type: "date", sortable: true },
     { key: "symbol", label: "Symbol", sortable: true },
@@ -130,14 +131,13 @@ const TradeDashboardPage = () => {
 
   return (
     <TableContentManager
-      apiEndpoint="/api/trades" // Make sure this matches your backend
+      apiEndpoint="/api/user"
       columns={tradeColumns}
       filters={tradeFilters}
-      itemKeyField="id" // Assuming your trade items have an 'id' field
+      itemKeyField="id"
       formFields={tradeFormFields}
       pageTitle="Trade Management"
     />
   );
 };
-
 export default TradeDashboardPage;
