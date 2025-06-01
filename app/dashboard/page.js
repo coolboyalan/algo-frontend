@@ -1,143 +1,633 @@
-import TableContentManager from "@/components/CrudTable/TableContentManager";
+"use client"; // Required for Next.js App Router if using hooks
 
-const TradeDashboardPage = () => {
-  // Example columns configuration - you'd pass this from your page
-  const tradeColumns = [
-    { key: "timestamp", label: "Timestamp", type: "date", sortable: true },
-    { key: "symbol", label: "Symbol", sortable: true },
-    {
-      key: "type",
-      label: "Type",
-      type: "enum",
-      enumConfig: [
-        {
-          value: "buy",
-          display: "Buy",
-          bgColor: "bg-green-100",
-          textColor: "text-green-700",
-        },
-        {
-          value: "sell",
-          display: "Sell",
-          bgColor: "bg-red-100",
-          textColor: "text-red-700",
-        },
-      ],
-      sortable: true,
-    },
-    { key: "quantity", label: "Quantity", type: "number", sortable: true },
-    {
-      key: "price",
-      label: "Price",
-      type: "currency",
-      currency: "USD",
-      sortable: true,
-    },
-    {
-      key: "status",
-      label: "Status",
-      type: "enum",
-      enumConfig: [
-        {
-          value: "filled",
-          display: "Filled",
-          bgColor: "bg-blue-100",
-          textColor: "text-blue-700",
-        },
-        {
-          value: "pending",
-          display: "Pending",
-          bgColor: "bg-yellow-100",
-          textColor: "text-yellow-700",
-        },
-      ],
-      sortable: true,
-    },
-  ];
+import React, { useState, useEffect, useCallback } from "react";
+import {
+  TrendingUp,
+  TrendingDown,
+  DollarSign, // Keeping for generic currency icon, can be replaced with Rupee icon if available
+  Users,
+  CheckCircle,
+  XCircle,
+  AlertTriangle,
+  Settings,
+  BarChart2,
+  PieChart as PieIcon,
+  LineChart as LineIcon,
+  RefreshCw,
+  ArrowUpRight,
+  ArrowDownRight,
+  Briefcase,
+  Clock,
+} from "lucide-react";
+import {
+  LineChart,
+  Line,
+  BarChart,
+  Bar,
+  PieChart,
+  Pie,
+  Cell,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+  Sector,
+} from "recharts";
 
-  // Example filters configuration
-  const tradeFilters = [
-    {
-      key: "type",
-      label: "Trade Type",
-      options: [
-        { value: "buy", label: "Buy" },
-        { value: "sell", label: "Sell" },
-      ],
-    },
-    {
-      key: "status",
-      label: "Status",
-      options: [
-        { value: "filled", label: "Filled" },
-        { value: "pending", label: "Pending" },
-      ],
-    },
-  ];
+// API endpoint (replace with your actual API or Next.js API routes)
+const API_BASE_URL = "/api"; // Assumes Next.js API routes are under /api, or use process.env.NEXT_PUBLIC_API_URL
 
-  // Example form fields for editing/creating a trade
-  const tradeFormFields = [
-    {
-      key: "symbol",
-      label: "Symbol",
-      type: "text",
-      required: true,
-      placeholder: "e.g., AAPL",
-    },
-    {
-      key: "type",
-      label: "Type",
-      type: "select",
-      required: true,
-      options: [
-        { value: "", label: "Select type" },
-        { value: "buy", label: "Buy" },
-        { value: "sell", label: "Sell" },
-      ],
-    },
-    {
-      key: "quantity",
-      label: "Quantity",
-      type: "number",
-      required: true,
-      placeholder: "e.g., 100",
-    },
-    {
-      key: "price",
-      label: "Price",
-      type: "number",
-      required: true,
-      placeholder: "e.g., 150.25",
-    },
-    {
-      key: "status",
-      label: "Status",
-      type: "select",
-      required: true,
-      options: [
-        { value: "", label: "Select status" },
-        { value: "pending", label: "Pending" },
-        { value: "filled", label: "Filled" },
-      ],
-    },
-    {
-      key: "notes",
-      label: "Notes",
-      type: "textarea",
-      placeholder: "Optional notes about the trade",
-    },
-  ];
+// Helper to format currency - now defaults to INR
+const formatCurrency = (value, currency = "INR") => {
+  if (value === undefined || value === null) return "₹0.00";
+  return value.toLocaleString("en-IN", {
+    style: "currency",
+    currency: currency,
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+};
+
+// Helper to format date for charts
+const formatDateForChart = (dateString) => {
+  try {
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) {
+      // Check if date is valid
+      return "Invalid Date";
+    }
+    return date.toLocaleDateString("en-IN", { month: "short", day: "numeric" }); // Using en-IN for date format too
+  } catch (e) {
+    return "Invalid Date";
+  }
+};
+
+// Custom Active Shape for Pie Chart (Recharts example) - Light Theme
+const renderActiveShape = (props) => {
+  const RADIAN = Math.PI / 180;
+  const {
+    cx,
+    cy,
+    midAngle,
+    innerRadius,
+    outerRadius,
+    startAngle,
+    endAngle,
+    fill,
+    payload,
+    percent,
+    value,
+  } = props;
+  const sin = Math.sin(-RADIAN * midAngle);
+  const cos = Math.cos(-RADIAN * midAngle);
+  const sx = cx + (outerRadius + 10) * cos;
+  const sy = cy + (outerRadius + 10) * sin;
+  const mx = cx + (outerRadius + 30) * cos;
+  const my = cy + (outerRadius + 30) * sin;
+  const ex = mx + (cos >= 0 ? 1 : -1) * 22;
+  const ey = my;
+  const textAnchor = cos >= 0 ? "start" : "end";
 
   return (
-    <TableContentManager
-      apiEndpoint="/api/trades" // Make sure this matches your backend
-      columns={tradeColumns}
-      filters={tradeFilters}
-      itemKeyField="id" // Assuming your trade items have an 'id' field
-      formFields={tradeFormFields}
-      pageTitle="Trade Management"
-    />
+    <g>
+      <text
+        x={cx}
+        y={cy}
+        dy={8}
+        textAnchor="middle"
+        fill="#1F2937"
+        className="font-semibold text-lg sm:text-base"
+      >
+        {payload.name}
+      </text>
+      <Sector
+        cx={cx}
+        cy={cy}
+        innerRadius={innerRadius}
+        outerRadius={outerRadius}
+        startAngle={startAngle}
+        endAngle={endAngle}
+        fill={fill}
+      />
+      <Sector
+        cx={cx}
+        cy={cy}
+        startAngle={startAngle}
+        endAngle={endAngle}
+        innerRadius={outerRadius + 6}
+        outerRadius={outerRadius + 10}
+        fill={fill}
+      />
+      <path
+        d={`M${sx},${sy}L${mx},${my}L${ex},${ey}`}
+        stroke={fill}
+        fill="none"
+      />
+      <circle cx={ex} cy={ey} r={2} fill={fill} stroke="none" />
+      <text
+        x={ex + (cos >= 0 ? 1 : -1) * 12}
+        y={ey}
+        textAnchor={textAnchor}
+        fill="#374151"
+        className="text-xs sm:text-sm"
+      >{`${value} Trades`}</text>
+      <text
+        x={ex + (cos >= 0 ? 1 : -1) * 12}
+        y={ey}
+        dy={18}
+        textAnchor={textAnchor}
+        fill="#6B7280"
+        className="text-xs"
+      >
+        {`(Rate ${(percent * 100).toFixed(2)}%)`}
+      </text>
+    </g>
   );
 };
 
-export default TradeDashboardPage;
+// Main Dashboard Page Component
+const TradingDashboardPage = () => {
+  // Renamed from Page
+  const [brokers, setBrokers] = useState([]);
+  const [pnlTrendData, setPnlTrendData] = useState([]);
+  const [winLossData, setWinLossData] = useState([]);
+  const [overallPnl, setOverallPnl] = useState(0);
+  const [activeBrokersCount, setActiveBrokersCount] = useState(0);
+  const [lastUpdated, setLastUpdated] = useState(new Date());
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [activePieIndex, setActivePieIndex] = useState(0);
+
+  const onPieEnter = useCallback((_, index) => {
+    setActivePieIndex(index);
+  }, []);
+
+  const fetchData = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      await new Promise((resolve) => setTimeout(resolve, 1200)); // Simulate network delay
+
+      const fetchedBrokers = [
+        {
+          id: "broker1",
+          name: "Zerodha",
+          status: "active",
+          pnl: 75250.75,
+          totalTrades: 150,
+          winningTrades: 105,
+          currency: "INR",
+        },
+        {
+          id: "broker2",
+          name: "Upstox",
+          status: "active",
+          pnl: 48300.5,
+          totalTrades: 110,
+          winningTrades: 70,
+          currency: "INR",
+        },
+        {
+          id: "broker3",
+          name: "Angel One",
+          status: "maintenance",
+          pnl: 15100.0,
+          totalTrades: 80,
+          winningTrades: 45,
+          currency: "INR",
+        },
+        {
+          id: "broker4",
+          name: "Dhan",
+          status: "active",
+          pnl: 22870.25,
+          totalTrades: 95,
+          winningTrades: 65,
+          currency: "INR",
+        },
+        {
+          id: "broker5",
+          name: "Groww",
+          status: "inactive",
+          pnl: -5600.0,
+          totalTrades: 40,
+          winningTrades: 10,
+          currency: "INR",
+        },
+      ];
+      setBrokers(fetchedBrokers);
+      setActiveBrokersCount(
+        fetchedBrokers.filter((b) => b.status === "active").length,
+      );
+      setOverallPnl(fetchedBrokers.reduce((sum, b) => sum + b.pnl, 0));
+
+      const trend = [];
+      let cumulativePnl = Math.random() * 500000; // Adjusted for INR values
+      for (let i = 29; i >= 0; i--) {
+        const date = new Date();
+        date.setDate(date.getDate() - i);
+        cumulativePnl += Math.random() * 100000 - 45000; // Adjusted for INR values
+        trend.push({
+          date: date.toISOString().split("T")[0],
+          pnl: parseFloat(cumulativePnl.toFixed(2)),
+        });
+      }
+      setPnlTrendData(trend);
+
+      const totalWins = fetchedBrokers.reduce(
+        (sum, b) => sum + b.winningTrades,
+        0,
+      );
+      const totalTrades = fetchedBrokers.reduce(
+        (sum, b) => sum + b.totalTrades,
+        0,
+      );
+      const totalLosses = totalTrades > totalWins ? totalTrades - totalWins : 0;
+      setWinLossData([
+        { name: "Winning Trades", value: totalWins, color: "#10B981" },
+        { name: "Losing Trades", value: totalLosses, color: "#EF4444" },
+      ]);
+
+      setLastUpdated(new Date());
+    } catch (err) {
+      console.error("Failed to fetch dashboard data:", err);
+      setError(
+        err.message || "Failed to load dashboard data. Please try refreshing.",
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+  const getBrokerStatusIcon = (status) => {
+    switch (status) {
+      case "active":
+        return <CheckCircle className="text-green-500" size={20} />;
+      case "inactive":
+        return <XCircle className="text-red-500" size={20} />;
+      case "maintenance":
+        return <AlertTriangle className="text-yellow-500" size={20} />;
+      default:
+        return <Settings className="text-gray-500" size={20} />;
+    }
+  };
+
+  const getBrokerStatusColor = (status) => {
+    switch (status) {
+      case "active":
+        return "border-green-500";
+      case "inactive":
+        return "border-red-500";
+      case "maintenance":
+        return "border-yellow-500";
+      default:
+        return "border-gray-400";
+    }
+  };
+
+  const pnlByBrokerData = brokers.map((broker) => ({
+    name: broker.name,
+    pnl: broker.pnl,
+    currency: broker.currency,
+    fill:
+      broker.pnl >= 0 ? "rgba(16, 185, 129, 0.8)" : "rgba(239, 68, 68, 0.8)",
+  }));
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-gray-100 text-gray-700 p-4">
+        <div className="flex flex-col items-center">
+          <RefreshCw className="animate-spin text-blue-600 mb-4" size={48} />
+          <p className="text-xl font-semibold">Loading Dashboard...</p>
+          <p className="text-gray-500">Fetching latest trading data.</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 text-red-700 p-4 text-center">
+        <AlertTriangle size={60} className="mb-6 text-red-500" />
+        <p className="text-2xl font-semibold mb-3">
+          Oops! Something went wrong.
+        </p>
+        <p className="text-gray-600 mb-6 max-w-md">{error}</p>
+        <button
+          onClick={fetchData}
+          className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center text-base font-medium shadow-lg"
+        >
+          <RefreshCw size={18} className="mr-2" />
+          Try Again
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-gray-100 to-blue-50 text-gray-800 p-4 sm:p-6 lg:p-8 font-sans">
+      <header className="mb-8">
+        <div className="flex flex-col sm:flex-row justify-between items-center mb-2 gap-4">
+          <h1 className="text-3xl sm:text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-600 via-teal-500 to-green-500 pb-1 self-start sm:self-center">
+            AlgoMan Dashboard {/* Updated Title */}
+          </h1>
+          <button
+            onClick={fetchData}
+            className="px-4 py-2 bg-white text-sm text-slate-700 rounded-lg hover:bg-gray-50 transition-colors flex items-center shadow-md border border-gray-300"
+            title="Refresh Data"
+          >
+            <RefreshCw size={16} className="mr-2 text-slate-600" />
+            Refresh
+          </button>
+        </div>
+        <p className="text-xs sm:text-sm text-slate-500 flex items-center">
+          <Clock size={14} className="mr-1.5" />
+          Last updated:{" "}
+          {lastUpdated.toLocaleTimeString("en-IN", {
+            hour: "2-digit",
+            minute: "2-digit",
+          })}{" "}
+          on{" "}
+          {lastUpdated.toLocaleDateString("en-IN", {
+            year: "numeric",
+            month: "short",
+            day: "numeric",
+          })}
+        </p>
+      </header>
+
+      <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+        {[
+          {
+            title: "Overall P&L",
+            value: formatCurrency(overallPnl),
+            Icon: DollarSign,
+            color: overallPnl >= 0 ? "text-green-600" : "text-red-600",
+            hoverBorder: "hover:border-blue-400",
+          },
+          {
+            title: "Active Brokers",
+            value: `${activeBrokersCount} / ${brokers.length}`,
+            Icon: Briefcase,
+            color: "text-teal-600",
+            hoverBorder: "hover:border-teal-400",
+          },
+          {
+            title: "Total Trades (Mock)",
+            value: winLossData
+              .reduce((sum, item) => sum + item.value, 0)
+              .toLocaleString("en-IN"),
+            Icon: Users,
+            color: "text-purple-600",
+            hoverBorder: "hover:border-purple-400",
+          },
+        ].map((stat) => (
+          <div
+            key={stat.title}
+            className={`bg-white p-6 rounded-xl shadow-lg border border-gray-200 ${stat.hoverBorder} transition-all duration-300 transform hover:-translate-y-1 hover:shadow-xl`}
+          >
+            <div className="flex items-center text-slate-500 mb-2">
+              <stat.Icon size={18} className="mr-2" />
+              <h3 className="text-sm font-medium uppercase tracking-wider">
+                {stat.title}
+              </h3>
+            </div>
+            <p className={`text-3xl font-bold ${stat.color}`}>{stat.value}</p>
+          </div>
+        ))}
+      </section>
+
+      <section className="mb-10">
+        <h2 className="text-2xl font-semibold mb-5 text-slate-700">
+          Broker Status
+        </h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-5">
+          {brokers.map((broker) => (
+            <div
+              key={broker.id}
+              className={`bg-white p-5 rounded-lg shadow-lg border-l-4 ${getBrokerStatusColor(broker.status)} transition-all duration-300 hover:shadow-md hover:shadow-blue-300/50 hover:scale-105`}
+            >
+              <div className="flex justify-between items-start mb-3">
+                <h3 className="text-lg font-semibold text-slate-800 leading-tight">
+                  {broker.name}
+                </h3>
+                {getBrokerStatusIcon(broker.status)}
+              </div>
+              <p className="text-xs text-slate-500 uppercase tracking-wider mb-1">
+                Status
+              </p>
+              <p
+                className={`text-sm font-medium capitalize ${broker.status === "active" ? "text-green-600" : broker.status === "inactive" ? "text-red-600" : broker.status === "maintenance" ? "text-yellow-600" : "text-gray-600"}`}
+              >
+                {broker.status}
+              </p>
+              <p className="text-xs text-slate-500 uppercase tracking-wider mt-3 mb-1">
+                P&L ({broker.currency})
+              </p>
+              <p
+                className={`text-sm font-medium ${broker.pnl >= 0 ? "text-green-600" : "text-red-600"}`}
+              >
+                {formatCurrency(broker.pnl, broker.currency)}
+              </p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section>
+        <h2 className="text-2xl font-semibold mb-6 text-slate-700">
+          Performance Overview
+        </h2>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2 bg-white p-4 sm:p-6 rounded-xl shadow-lg border border-gray-200">
+            <h3 className="text-lg font-semibold mb-4 text-slate-800 flex items-center">
+              <LineIcon size={20} className="mr-2 text-blue-600" />
+              Overall P&L Trend (Last 30 Days)
+            </h3>
+            <ResponsiveContainer width="100%" height={300}>
+              <LineChart data={pnlTrendData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                <XAxis
+                  dataKey="date"
+                  tickFormatter={formatDateForChart}
+                  stroke="#6B7280"
+                  tick={{ fontSize: 10 }}
+                  dy={5}
+                />
+                <YAxis
+                  stroke="#6B7280"
+                  tickFormatter={(value) => `₹${value / 1000}k`} // INR symbol for Y-axis
+                  tick={{ fontSize: 10 }}
+                  dx={-5}
+                />
+                <Tooltip
+                  formatter={(value) => formatCurrency(value)} // Will use INR by default
+                  contentStyle={{
+                    backgroundColor: "rgba(255, 255, 255, 0.98)",
+                    border: "1px solid #e5e7eb",
+                    borderRadius: "0.5rem",
+                    boxShadow:
+                      "0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.03)",
+                  }}
+                  labelStyle={{
+                    color: "#1F2937",
+                    fontWeight: "bold",
+                    marginBottom: "4px",
+                  }}
+                  itemStyle={{ color: "#374151" }}
+                  cursor={{ fill: "rgba(229, 231, 235, 0.4)" }}
+                />
+                <Legend
+                  wrapperStyle={{
+                    fontSize: "12px",
+                    paddingTop: "10px",
+                    color: "#4B5563",
+                  }}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="pnl"
+                  name="P&L"
+                  stroke="#2563EB"
+                  strokeWidth={2.5}
+                  dot={{ r: 3, fill: "#2563EB", strokeWidth: 0 }}
+                  activeDot={{
+                    r: 7,
+                    stroke: "#1D4ED8",
+                    strokeWidth: 2,
+                    fill: "#2563EB",
+                  }}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+
+          <div className="bg-white p-4 sm:p-6 rounded-xl shadow-lg border border-gray-200">
+            <h3 className="text-lg font-semibold mb-4 text-slate-800 flex items-center">
+              <PieIcon size={20} className="mr-2 text-purple-600" />
+              Trade Success Ratio
+            </h3>
+            <ResponsiveContainer width="100%" height={300}>
+              <PieChart>
+                <Pie
+                  activeIndex={activePieIndex}
+                  activeShape={renderActiveShape}
+                  data={winLossData}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={70}
+                  outerRadius={100}
+                  fill="#8B5CF6"
+                  dataKey="value"
+                  onMouseEnter={onPieEnter}
+                  paddingAngle={3}
+                  cornerRadius={5}
+                >
+                  {winLossData.map((entry, index) => (
+                    <Cell
+                      key={`cell-${index}`}
+                      fill={entry.color}
+                      stroke={entry.color}
+                      strokeWidth={0.5}
+                    />
+                  ))}
+                </Pie>
+                <Legend
+                  iconType="circle"
+                  layout="horizontal"
+                  verticalAlign="bottom"
+                  align="center"
+                  wrapperStyle={{
+                    fontSize: "12px",
+                    marginTop: "15px",
+                    color: "#4B5563",
+                  }}
+                />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        <div className="mt-6 bg-white p-4 sm:p-6 rounded-xl shadow-lg border border-gray-200">
+          <h3 className="text-lg font-semibold mb-4 text-slate-800 flex items-center">
+            <BarChart2 size={20} className="mr-2 text-teal-500" />
+            P&L by Broker
+          </h3>
+          <ResponsiveContainer width="100%" height={350}>
+            <BarChart
+              data={pnlByBrokerData}
+              margin={{ top: 5, right: 5, left: 5, bottom: 80 }}
+            >
+              <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+              <XAxis
+                dataKey="name"
+                angle={-40}
+                textAnchor="end"
+                interval={0}
+                stroke="#6B7280"
+                height={90}
+                tick={{ fontSize: 10 }}
+              />
+              <YAxis
+                stroke="#6B7280"
+                tickFormatter={(value) => `₹${value / 1000}k`} // INR symbol for Y-axis
+                tick={{ fontSize: 10 }}
+                dx={-5}
+              />
+              <Tooltip
+                formatter={(value, name, props) => [
+                  formatCurrency(value, props.payload.currency),
+                  "P&L",
+                ]}
+                contentStyle={{
+                  backgroundColor: "rgba(255, 255, 255, 0.98)",
+                  border: "1px solid #e5e7eb",
+                  borderRadius: "0.5rem",
+                  boxShadow:
+                    "0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.03)",
+                }}
+                labelStyle={{
+                  color: "#1F2937",
+                  fontWeight: "bold",
+                  marginBottom: "4px",
+                }}
+                itemStyle={{ color: "#374151" }}
+                cursor={{ fill: "rgba(229, 231, 235, 0.4)" }}
+              />
+              <Legend
+                wrapperStyle={{
+                  fontSize: "12px",
+                  paddingTop: "10px",
+                  color: "#4B5563",
+                }}
+              />
+              <Bar dataKey="pnl" name="P&L" radius={[4, 4, 0, 0]}>
+                {pnlByBrokerData.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={entry.fill} />
+                ))}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      </section>
+
+      <footer className="mt-12 pt-8 border-t border-gray-300 text-center text-xs sm:text-sm text-slate-600">
+        <p>
+          &copy; {new Date().getFullYear()} AlgoMan Inc. All rights reserved.
+        </p>
+        <p className="mt-1">
+          This dashboard is for demonstration and informational purposes only.
+          Not financial advice.
+        </p>
+      </footer>
+    </div>
+  );
+};
+
+export default TradingDashboardPage; // Renamed from Page

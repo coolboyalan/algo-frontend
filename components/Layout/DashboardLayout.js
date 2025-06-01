@@ -9,6 +9,7 @@ import {
   BarChart2,
   Settings,
   Banknote,
+  Home,
 } from "lucide-react";
 
 const DashboardLayout = ({ pageTitle, children }) => {
@@ -19,6 +20,7 @@ const DashboardLayout = ({ pageTitle, children }) => {
 
   // Define sidebar navigation items with actual paths
   const sidebarNavItems = [
+    { label: "Dashboard", icon: Home, path: "/dashboard" },
     { label: "Trades", icon: ArrowRightLeft, path: "/trades" },
     { label: "Broker Keys", icon: BarChart2, path: "/brokerKeys" },
     { label: "Brokers", icon: Banknote, path: "/brokers" },

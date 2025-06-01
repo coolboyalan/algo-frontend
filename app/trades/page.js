@@ -1,14 +1,45 @@
-// app/trades/page.js (or app/dashboard/trades/page.js etc.)
-"use client";
-import TableContentManager from "@/components/CrudTable/TableContentManager"; // Adjust path
+// app/trades/page.js
+import TableContentManager from "@/components/CrudTable/TableContentManager";
 
-const TradeDashboardPage = () => {
+async function getAllBrokers() {
+  const apiBaseUrl =
+    process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:3000";
+  try {
+    const response = await fetch(`${apiBaseUrl}/api/broker?limit=1000`);
+    const result = await response.json();
+    return result.data || [];
+  } catch (err) {
+    console.error("Error fetching brokers:", err);
+    return [];
+  }
+}
+
+export default async function TradeDashboardPage() {
+  const allBrokers = await getAllBrokers();
+
   const tradeColumns = [
-    { key: "timestamp", label: "Timestamp", type: "date", sortable: true },
-    { key: "symbol", label: "Symbol", sortable: true },
+    { key: "id", label: "ID", type: "number", sortable: true },
+    { key: "Broker.name", label: "Broker", type: "text", sortable: true },
+    { key: "User.name", label: "User", type: "text", sortable: true },
+    { key: "baseAsset", label: "Base Asset", type: "text", sortable: true },
+    { key: "asset", label: "Asset", type: "text", sortable: true },
     {
-      key: "type",
-      label: "Type",
+      key: "price",
+      label: "Price",
+      type: "currency",
+      currency: "INR",
+      sortable: true,
+    },
+    {
+      key: "profitAndLoss",
+      label: "P&L",
+      type: "currency",
+      currency: "INR",
+      sortable: true,
+    },
+    {
+      key: "direction",
+      label: "Direction",
       type: "enum",
       enumConfig: [
         {
@@ -25,119 +56,101 @@ const TradeDashboardPage = () => {
         },
       ],
       sortable: true,
+      searchable: false,
     },
-    { key: "quantity", label: "Quantity", type: "number", sortable: true },
-    {
-      key: "price",
-      label: "Price",
-      type: "currency",
-      currency: "USD",
-      sortable: true,
-    },
-    {
-      key: "status",
-      label: "Status",
-      type: "enum",
-      enumConfig: [
-        {
-          value: "filled",
-          display: "Filled",
-          bgColor: "bg-blue-100",
-          textColor: "text-blue-700",
-        },
-        {
-          value: "pending",
-          display: "Pending",
-          bgColor: "bg-yellow-100",
-          textColor: "text-yellow-700",
-        },
-      ],
-      sortable: true,
-    },
+    { key: "tradeTime", label: "Trade Time", type: "date", sortable: true },
   ];
-
-  // Example filters configuration
   const tradeFilters = [
     {
-      key: "type",
-      label: "Trade Type",
-      options: [
-        { value: "buy", label: "Buy" },
-        { value: "sell", label: "Sell" },
-      ],
-    },
-    {
-      key: "status",
-      label: "Status",
-      options: [
-        { value: "filled", label: "Filled" },
-        { value: "pending", label: "Pending" },
-      ],
+      key: "brokerId",
+      label: "Broker",
+      type: "select",
+      optionsSourceKey: "brokersForFilter",
+      optionValueKey: "id",
+      optionLabelKey: "name",
     },
   ];
 
-  // Example form fields for editing/creating a trade
   const tradeFormFields = [
     {
-      key: "symbol",
-      label: "Symbol",
+      key: "brokerId",
+      label: "Broker",
+      type: "select_dynamic",
+      required: true,
+      optionsSourceKey: "brokersList",
+      optionValueKey: "id",
+      optionLabelKey: "name",
+    },
+    // {
+    //   key: "userId",
+    //   label: "User",
+    //   type: "select_dynamic",
+    //   required: true,
+    //   optionsSourceKey: "usersList",
+    //   optionValueKey: "id",
+    //   optionLabelKey: "name",
+    // },
+    {
+      key: "baseAsset",
+      label: "Base Asset",
       type: "text",
       required: true,
-      placeholder: "e.g., AAPL",
     },
     {
-      key: "type",
-      label: "Type",
-      type: "select",
+      key: "asset",
+      label: "Asset",
+      type: "text",
       required: true,
-      options: [
-        { value: "", label: "Select type" },
-        { value: "buy", label: "Buy" },
-        { value: "sell", label: "Sell" },
-      ],
-    },
-    {
-      key: "quantity",
-      label: "Quantity",
-      type: "number",
-      required: true,
-      placeholder: "e.g., 100",
     },
     {
       key: "price",
       label: "Price",
       type: "number",
       required: true,
-      placeholder: "e.g., 150.25",
     },
     {
-      key: "status",
-      label: "Status",
+      key: "profitAndLoss",
+      label: "Profit/Loss",
+      type: "number",
+    },
+    {
+      key: "tradeTime",
+      label: "Trade Time",
+      type: "datetime",
+      required: true,
+    },
+    {
+      key: "direction",
+      label: "Direction",
       type: "select",
       required: true,
+      defaultValue: "true",
       options: [
-        { value: "", label: "Select status" },
-        { value: "pending", label: "Pending" },
-        { value: "filled", label: "Filled" },
+        { value: "buy", label: "Buy" },
+        { value: "sell", label: "Sell" },
       ],
     },
-    {
-      key: "notes",
-      label: "Notes",
-      type: "textarea",
-      placeholder: "Optional notes about the trade",
-    },
   ];
+
+  const dynamicFilterOptionsData = {
+    brokersForFilter: allBrokers,
+  };
+
+  const dynamicSelectDataSources = {
+    brokersList: allBrokers,
+  };
 
   return (
     <TableContentManager
-      apiEndpoint="/api/user"
+      apiEndpoint="/api/trade"
       columns={tradeColumns}
       filters={tradeFilters}
-      itemKeyField="id"
       formFields={tradeFormFields}
+      itemKeyField="id"
       pageTitle="Trade Management"
+      canAddItem={true}
+      dynamicFilterOptionsData={dynamicFilterOptionsData}
+      dynamicSelectDataSources={dynamicSelectDataSources}
     />
   );
-};
-export default TradeDashboardPage;
+}
