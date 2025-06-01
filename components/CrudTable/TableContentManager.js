@@ -1,4 +1,3 @@
-// components/CrudTable/TableContentManager.js
 "use client";
 import { useState, useEffect, useCallback } from "react";
 import {
@@ -16,19 +15,43 @@ import {
   Trash2,
   AlertTriangle,
   PlusCircle,
+  ArrowUp,
+  ArrowDown,
 } from "lucide-react";
-import DashboardLayout from "@/components/Layout/DashboardLayout"; // Adjust path as needed
-import Modal from "@/components/Common/Modal"; // Adjust path as needed
-import EditItemForm from "./EditItemForm"; // Adjust path as needed
+import DashboardLayout from "@/components/Layout/DashboardLayout"; // Adjust path
+import Modal from "@/components/Common/Modal"; // Adjust path
+import EditItemForm from "./EditItemForm"; // Adjust path
+
+// Helper function to get nested property value
+const getNestedValue = (obj, pathString) => {
+  if (!obj || typeof pathString !== "string" || pathString.trim() === "")
+    return undefined;
+  const path = pathString.split(".");
+  let current = obj;
+  for (let i = 0; i < path.length; i++) {
+    const key = path[i];
+    if (
+      current === null ||
+      typeof current !== "object" ||
+      !Object.prototype.hasOwnProperty.call(current, key)
+    ) {
+      return undefined;
+    }
+    current = current[key];
+  }
+  return current;
+};
 
 const TableContentManager = ({
-  apiEndpoint = "/api/trade",
+  apiEndpoint = "/api/default-endpoint",
   columns: initialColumns = [],
   filters = [],
-  itemKeyField = "id", // Unique key for items, default 'id'
-  formFields = [], // Defines fields for the Edit/Create form
-  pageTitle = "Data Table", // Title for the layout header
-  canAddItem = true, // Prop to control visibility of "Add New" button
+  itemKeyField = "id",
+  formFields = [],
+  pageTitle = "Data Management",
+  canAddItem = true,
+  dynamicSelectDataSources = {}, // For EditItemForm's dynamic selects
+  dynamicFilterOptionsData = {}, // For dynamic filter dropdown options
 }) => {
   const [data, setData] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
@@ -46,53 +69,49 @@ const TableContentManager = ({
 
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false); // State for create modal
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
 
   const baseUrl =
+    (typeof window !== "undefined" && window.NEXT_PUBLIC_API_BASE_URL) ||
     (typeof process !== "undefined" &&
       process.env &&
       process.env.NEXT_PUBLIC_API_BASE_URL) ||
-    (typeof window !== "undefined" && window.NEXT_PUBLIC_API_BASE_URL) ||
     "";
 
-  const makeApiCall = async (endpoint, method = "GET", body = null) => {
-    setIsLoading(true);
-    setError(null);
-    setNotification({ type: "", message: "" });
-    const token = localStorage.getItem("token");
+  const makeApiCall = async (endpointSuffix, method = "GET", body = null) => {
+    const fullEndpoint = `${baseUrl}${endpointSuffix}`;
+    const token =
+      typeof window !== "undefined" ? localStorage.getItem("token") : null;
     const headers = { "Content-Type": "application/json" };
     if (token) headers["Authorization"] = `Bearer ${token}`;
-
     try {
-      const response = await fetch(endpoint, {
+      const response = await fetch(fullEndpoint, {
         method,
         headers,
         ...(body && { body: JSON.stringify(body) }),
       });
+      const responseBody = await response.json().catch(() => response.text());
       if (!response.ok) {
-        const errorData = await response.json().catch(() => response.text());
-        throw new Error(
-          `HTTP error! status: ${response.status}, message: ${errorData?.message || errorData || "Operation failed"}`,
-        );
+        const errorMessage =
+          typeof responseBody === "object" &&
+          responseBody !== null &&
+          responseBody.message
+            ? responseBody.message
+            : typeof responseBody === "string"
+              ? responseBody
+              : `Operation failed with status ${response.status}`;
+        throw new Error(errorMessage);
       }
-      return response.json();
+      return responseBody;
     } catch (e) {
-      console.error(`API call failed for ${method} ${endpoint}:`, e);
-      setError(e.message || "An unknown error occurred");
-      setNotification({
-        type: "error",
-        message: e.message || "An unknown error occurred",
-      });
+      console.error(`API call failed for ${method} ${fullEndpoint}:`, e);
       throw e;
-    } finally {
-      setIsLoading(false);
     }
   };
 
   const fetchData = useCallback(async () => {
-    // ... (fetchData logic remains the same)
     setIsLoading(true);
     setError(null);
     const params = new URLSearchParams();
@@ -109,18 +128,36 @@ const TableContentManager = ({
     if (dateRange.start) params.append("startDate", dateRange.start);
     if (dateRange.end) params.append("endDate", dateRange.end);
     Object.entries(activeFilters).forEach(([key, value]) => {
-      if (value != null && String(value).trim() !== "")
+      if (value !== null && value !== undefined && String(value).trim() !== "")
         params.append(key, String(value));
     });
-
     const fullApiUrl = `${baseUrl}${apiEndpoint}?${params.toString()}`;
     try {
-      const result = await makeApiCall(fullApiUrl, "GET");
-      setData(result?.data?.result || []);
-      setTotalServerItems(result?.data?.total || 0);
+      const token =
+        typeof window !== "undefined" ? localStorage.getItem("token") : null;
+      const headers = {};
+      if (token) headers["Authorization"] = `Bearer ${token}`;
+      const response = await fetch(fullApiUrl, { headers });
+      const result = await response.json().catch(async () => {
+        throw new Error(await response.text());
+      });
+      if (!response.ok)
+        throw new Error(
+          result.message || `Failed to fetch data (status: ${response.status})`,
+        );
+      setData(result?.data || []);
+      setTotalServerItems(result?.totalCount || 0);
     } catch (e) {
+      console.error("Fetch data error:", e);
+      setError(e.message || "Failed to load data.");
       setData([]);
       setTotalServerItems(0);
+      setNotification({
+        type: "error",
+        message: e.message || "Failed to load data.",
+      });
+    } finally {
+      setIsLoading(false);
     }
   }, [
     apiEndpoint,
@@ -150,41 +187,46 @@ const TableContentManager = ({
     setSelectedItem(item);
     setIsDeleteModalOpen(true);
   };
-
   const handleOpenCreateModal = () => {
-    setSelectedItem(null); // Clear selected item for create mode
+    setSelectedItem(null);
     setIsCreateModalOpen(true);
   };
 
   const handleCreateSubmit = async (newItemData) => {
-    const createUrl = `${baseUrl}${apiEndpoint}`;
+    setIsLoading(true);
     try {
-      const result = await makeApiCall(createUrl, "POST", newItemData);
+      const result = await makeApiCall(apiEndpoint, "POST", newItemData);
       setNotification({
         type: "success",
         message: result.message || "Item created successfully!",
       });
       setIsCreateModalOpen(false);
-      fetchData(); // Refresh data
+      fetchData();
     } catch (e) {
-      // Notification already set by makeApiCall
-    }
-  };
-
-  const handleSaveEdit = async (editedItem) => {
-    // Check if we are editing an existing item or creating a new one (though create has its own modal now)
-    if (!selectedItem || !selectedItem[itemKeyField]) {
-      // This case should ideally be handled by directing to create flow if selectedItem is null
       setNotification({
         type: "error",
-        message: "No item selected for update or item has no ID.",
+        message: e.message || "Failed to create item.",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  const handleSaveEdit = async (editedItem) => {
+    if (!selectedItem || selectedItem[itemKeyField] === undefined) {
+      setNotification({
+        type: "error",
+        message: "No item selected or item has no ID.",
       });
       return;
     }
     const itemId = selectedItem[itemKeyField];
-    const updateUrl = `${baseUrl}${apiEndpoint}/${itemId}`;
+    setIsLoading(true);
     try {
-      const result = await makeApiCall(updateUrl, "PUT", editedItem);
+      const result = await makeApiCall(
+        `${apiEndpoint}/${itemId}`,
+        "PUT",
+        editedItem,
+      );
       setNotification({
         type: "success",
         message: result.message || "Item updated successfully!",
@@ -193,23 +235,26 @@ const TableContentManager = ({
       setSelectedItem(null);
       fetchData();
     } catch (e) {
-      // Notification already set
-    }
-  };
-
-  const handleConfirmDelete = async () => {
-    // ... (handleConfirmDelete logic remains the same)
-    if (!selectedItem || !selectedItem[itemKeyField]) {
       setNotification({
         type: "error",
-        message: "No item selected for deletion or item has no ID.",
+        message: e.message || "Failed to update item.",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  const handleConfirmDelete = async () => {
+    if (!selectedItem || selectedItem[itemKeyField] === undefined) {
+      setNotification({
+        type: "error",
+        message: "No item selected or item has no ID.",
       });
       return;
     }
     const itemId = selectedItem[itemKeyField];
-    const deleteUrl = `${baseUrl}${apiEndpoint}/${itemId}`;
+    setIsLoading(true);
     try {
-      const result = await makeApiCall(deleteUrl, "DELETE");
+      const result = await makeApiCall(`${apiEndpoint}/${itemId}`, "DELETE");
       setNotification({
         type: "success",
         message: result.message || "Item deleted successfully!",
@@ -218,25 +263,23 @@ const TableContentManager = ({
       setSelectedItem(null);
       fetchData();
     } catch (e) {
-      // Notification already set
+      setNotification({
+        type: "error",
+        message: e.message || "Failed to delete item.",
+      });
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const tableColumns = [
-    /* ... (tableColumns logic remains the same) ... */ ...initialColumns,
-    {
-      key: "actions",
-      label: "Actions",
-      type: "actions",
-      sortable: false,
-    },
+    ...initialColumns,
+    { key: "actions", label: "Actions", type: "actions", sortable: false },
   ];
 
   const requestSort = (key) => {
-    /* ... (requestSort logic remains the same) ... */
     const columnConfig = tableColumns.find((col) => col.key === key);
-    if (columnConfig && columnConfig.sortable === false) return;
-
+    if (!columnConfig || columnConfig.sortable === false) return;
     let direction = "asc";
     if (sortConfig.key === key && sortConfig.direction === "asc")
       direction = "desc";
@@ -244,35 +287,29 @@ const TableContentManager = ({
     setCurrentPage(1);
   };
   const handleFilterChange = (key, value) => {
-    /* ... */
     setActiveFilters((prev) => ({
       ...prev,
-      [key]: value === "all" ? null : value,
+      [key]: value === "all" || value === "" ? null : value,
     }));
     setCurrentPage(1);
   };
   const clearDateRange = () => {
-    /* ... */
     setDateRange({ start: null, end: null });
     setCurrentPage(1);
   };
   const handleSearchTermChange = (newSearchTerm) => {
-    /* ... */
     setSearchTerm(newSearchTerm);
     setCurrentPage(1);
   };
   const handleSearchColumnChange = (newSearchColumn) => {
-    /* ... */
     setSearchColumn(newSearchColumn);
     setCurrentPage(1);
   };
   const handleDateChange = (newDateRange) => {
-    /* ... */
     setDateRange(newDateRange);
     setCurrentPage(1);
   };
   const handleClearAllFilters = () => {
-    /* ... */
     setSearchTerm("");
     setSearchColumn("all");
     setActiveFilters({});
@@ -281,50 +318,55 @@ const TableContentManager = ({
     setCurrentPage(1);
   };
 
-  const totalPages = Math.ceil(totalServerItems / itemsPerPage);
-  const itemsOnCurrentPage = data.length;
+  const totalPages =
+    totalServerItems > 0 ? Math.ceil(totalServerItems / itemsPerPage) : 0;
   const firstItemIndexOnPage =
-    itemsOnCurrentPage > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0;
-  const lastItemIndexOnPage =
-    (currentPage - 1) * itemsPerPage + itemsOnCurrentPage;
+    data.length > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0;
+  const lastItemIndexOnPage = (currentPage - 1) * itemsPerPage + data.length;
 
   const renderCell = (item, column) => {
-    /* ... (renderCell logic remains the same) ... */
-    const value = item[column.key];
+    if (column.render && typeof column.render === "function") {
+      return column.render(item, column);
+    }
     if (column.type === "actions") {
       return (
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center space-x-1.5">
+          {" "}
           <button
             onClick={() => handleViewItem(item)}
-            className="text-blue-500 hover:text-blue-700 p-1"
+            className="text-blue-600 hover:text-blue-800 p-1.5 rounded hover:bg-blue-100 transition-colors"
             title="View"
           >
-            <Eye size={18} />
-          </button>
+            <Eye size={16} />
+          </button>{" "}
           <button
             onClick={() => handleEditItem(item)}
-            className="text-green-500 hover:text-green-700 p-1"
+            className="text-green-600 hover:text-green-800 p-1.5 rounded hover:bg-green-100 transition-colors"
             title="Edit"
           >
-            <Edit3 size={18} />
-          </button>
+            <Edit3 size={16} />
+          </button>{" "}
           <button
             onClick={() => handleDeleteItem(item)}
-            className="text-red-500 hover:text-red-700 p-1"
+            className="text-red-600 hover:text-red-800 p-1.5 rounded hover:bg-red-100 transition-colors"
             title="Delete"
           >
-            <Trash2 size={18} />
-          </button>
+            <Trash2 size={16} />
+          </button>{" "}
         </div>
       );
     }
+    const value = getNestedValue(item, column.key);
     if (column.type === "enum") {
-      const enumConfig = column.enumConfig?.find((e) => e.value === value);
+      const enumConfig = column.enumConfig?.find(
+        (e) => String(e.value) === String(value),
+      );
       return (
         <span
           className={`px-2.5 py-1 rounded-full text-xs font-medium whitespace-nowrap ${enumConfig?.bgColor || "bg-gray-100"} ${enumConfig?.textColor || "text-gray-800"}`}
         >
-          {enumConfig?.display || value}
+          {enumConfig?.display ||
+            (value !== null && value !== undefined ? String(value) : "")}
         </span>
       );
     }
@@ -338,28 +380,38 @@ const TableContentManager = ({
           ) : (
             <ArrowDown size={14} className="mr-1" />
           )}
-          {value}
+          {String(value)}
         </span>
       );
     }
-    if (column.type === "date") {
-      return (
-        <div className="text-sm text-gray-700 whitespace-nowrap">
-          {new Date(value).toLocaleDateString("en-US", {
-            month: "short",
-            day: "numeric",
-            year: "numeric",
-          })}
-        </div>
-      );
+    if (column.type === "date" && value) {
+      try {
+        return (
+          <div className="text-sm text-gray-700 whitespace-nowrap">
+            {new Date(value).toLocaleDateString("en-US", {
+              month: "short",
+              day: "numeric",
+              year: "numeric",
+            })}
+          </div>
+        );
+      } catch (e) {
+        return <div className="text-sm text-red-500">Invalid Date</div>;
+      }
     }
-    if (column.type === "currency") {
+    if (
+      column.type === "currency" &&
+      (typeof value === "number" ||
+        (value !== null &&
+          value !== undefined &&
+          !isNaN(parseFloat(String(value)))))
+    ) {
       return (
         <div className="text-sm font-medium text-gray-900 whitespace-nowrap">
           {new Intl.NumberFormat("en-US", {
             style: "currency",
             currency: column.currency || "USD",
-          }).format(value)}
+          }).format(Number(value))}
         </div>
       );
     }
@@ -370,16 +422,19 @@ const TableContentManager = ({
           ? JSON.stringify(value)
           : String(value);
     return (
-      <div className="text-sm text-gray-700 whitespace-nowrap">
+      <div
+        className="text-sm text-gray-700 whitespace-nowrap truncate"
+        title={displayValue}
+        style={{ maxWidth: column.maxWidth || "200px" }}
+      >
         {displayValue}
       </div>
     );
   };
-
   const getPageNumbers = () => {
-    /* ... (getPageNumbers logic remains the same) ... */
     const pages = [];
     const maxVisiblePages = 5;
+    if (!totalPages || totalPages <= 0) return [];
     if (totalPages <= maxVisiblePages) {
       for (let i = 1; i <= totalPages; i++) pages.push(i);
     } else {
@@ -410,11 +465,9 @@ const TableContentManager = ({
   return (
     <DashboardLayout pageTitle={pageTitle}>
       <div className="bg-white shadow-md rounded-lg">
-        {/* Toolbar */}
         <div className="px-6 py-4 border-b border-gray-200">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div className="relative flex-grow max-w-xl">
-              {/* Search input and column select */}
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                 <Search size={18} className="text-gray-400" />
               </div>
@@ -426,7 +479,9 @@ const TableContentManager = ({
                 >
                   <option value="all">All Columns</option>
                   {initialColumns
-                    .filter((c) => c.searchable !== false)
+                    .filter(
+                      (c) => c.searchable !== false && c.type !== "actions",
+                    )
                     .map((column) => (
                       <option key={column.key} value={column.key}>
                         {column.label}
@@ -443,23 +498,23 @@ const TableContentManager = ({
               />
             </div>
             <div className="flex items-center space-x-3">
-              {/* Add New Button */}
               {canAddItem && (
                 <button
                   onClick={handleOpenCreateModal}
-                  className="flex items-center px-4 py-2.5 rounded-lg border text-sm font-medium transition-all bg-blue-500 text-white hover:bg-blue-600 focus:ring-2 focus:ring-blue-300 border-blue-500"
+                  className="flex items-center px-4 py-2.5 rounded-lg border text-sm font-medium transition-all bg-blue-600 text-white hover:bg-blue-700 focus:ring-2 focus:ring-blue-300 border-blue-500"
                 >
                   <PlusCircle size={16} className="mr-2" /> Add New
                 </button>
               )}
-              <button
-                onClick={() => setShowFilters(!showFilters)}
-                className={`flex items-center px-4 py-2.5 rounded-lg border text-sm font-medium transition-all ${showFilters ? "bg-blue-50 text-blue-600 border-blue-300" : "bg-white text-gray-700 border-gray-300 hover:border-gray-400"}`}
-              >
-                <Filter size={16} className="mr-2" /> Filters
-              </button>
+              {filters && filters.length > 0 && (
+                <button
+                  onClick={() => setShowFilters(!showFilters)}
+                  className={`flex items-center px-4 py-2.5 rounded-lg border text-sm font-medium transition-all ${showFilters ? "bg-blue-50 text-blue-600 border-blue-300" : "bg-white text-gray-700 border-gray-300 hover:border-gray-400"}`}
+                >
+                  <Filter size={16} className="mr-2" /> Filters
+                </button>
+              )}
               <div className="flex items-center space-x-1 bg-white rounded-lg border border-gray-300 px-3 py-1.5 text-sm hover:border-gray-400 transition-colors">
-                {/* Date range inputs */}
                 <CalendarDays size={16} className="text-gray-500" />
                 <input
                   type="date"
@@ -489,8 +544,8 @@ const TableContentManager = ({
               </div>
             </div>
           </div>
-          {/* Filter Panel */}
-          {showFilters /* ... */ && (
+
+          {showFilters && filters && filters.length > 0 && (
             <div className="mt-4 p-4 bg-gray-50 rounded-lg border border-gray-200 animate-fadeIn">
               <div className="flex items-center justify-between mb-3">
                 <h3 className="font-medium text-gray-700 text-xs uppercase tracking-wider">
@@ -506,23 +561,91 @@ const TableContentManager = ({
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                 {filters.map((filter) => (
                   <div key={filter.key}>
-                    <label className="block text-xs font-medium text-gray-600 mb-1">
+                    <label
+                      htmlFor={`filter-${filter.key}`}
+                      className="block text-xs font-medium text-gray-600 mb-1.5"
+                    >
                       {filter.label}
                     </label>
-                    <select
-                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-1 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                      value={activeFilters[filter.key] || "all"}
-                      onChange={(e) =>
-                        handleFilterChange(filter.key, e.target.value)
-                      }
-                    >
-                      <option value="all">All {filter.label}</option>
-                      {filter.options.map((option) => (
-                        <option key={option.value} value={option.value}>
-                          {option.label}
+                    {filter.type === "boolean" ? (
+                      <select
+                        id={`filter-${filter.key}`}
+                        className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-1 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                        value={
+                          activeFilters[filter.key] === undefined ||
+                          activeFilters[filter.key] === null
+                            ? "all"
+                            : String(activeFilters[filter.key])
+                        }
+                        onChange={(e) => {
+                          let val;
+                          if (e.target.value === "true") val = true;
+                          else if (e.target.value === "false") val = false;
+                          else val = null;
+                          handleFilterChange(filter.key, val);
+                        }}
+                      >
+                        <option value="all">All</option>
+                        <option value="true">
+                          {filter.trueLabel || "True"}
                         </option>
-                      ))}
-                    </select>
+                        <option value="false">
+                          {filter.falseLabel || "False"}
+                        </option>
+                      </select>
+                    ) : filter.type === "select" ? (
+                      <select
+                        id={`filter-${filter.key}`}
+                        className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-1 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                        value={activeFilters[filter.key] || "all"}
+                        onChange={(e) =>
+                          handleFilterChange(
+                            filter.key,
+                            e.target.value === "all" ? null : e.target.value,
+                          )
+                        }
+                      >
+                        <option value="all">All {filter.label}</option>
+                        {filter.optionsSourceKey &&
+                        dynamicFilterOptionsData &&
+                        dynamicFilterOptionsData[filter.optionsSourceKey]
+                          ? (
+                              dynamicFilterOptionsData[
+                                filter.optionsSourceKey
+                              ] || []
+                            ).map((option) => (
+                              <option
+                                key={option[filter.optionValueKey || "id"]}
+                                value={option[filter.optionValueKey || "id"]}
+                              >
+                                {" "}
+                                {option[filter.optionLabelKey || "name"]}{" "}
+                              </option>
+                            ))
+                          : (filter.options || []).map((option) => (
+                              <option key={option.value} value={option.value}>
+                                {option.label}
+                              </option>
+                            ))}
+                      </select>
+                    ) : (
+                      <input
+                        id={`filter-${filter.key}`}
+                        type={
+                          filter.type === "number"
+                            ? "number"
+                            : filter.type === "date"
+                              ? "date"
+                              : "text"
+                        }
+                        placeholder={`${filter.label}...`}
+                        className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-1 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                        value={activeFilters[filter.key] || ""}
+                        onChange={(e) =>
+                          handleFilterChange(filter.key, e.target.value)
+                        }
+                      />
+                    )}
                   </div>
                 ))}
               </div>
@@ -530,25 +653,26 @@ const TableContentManager = ({
           )}
         </div>
 
-        {/* Notification Area */}
-        {notification.message /* ... */ && (
+        {notification.message && (
           <div
-            className={`px-6 py-3 border-b border-gray-200 text-sm font-medium
-                ${notification.type === "success" ? "bg-green-50 text-green-700" : ""}
-                ${notification.type === "error" ? "bg-red-50 text-red-700" : ""}
-                ${notification.type === "info" ? "bg-blue-50 text-blue-700" : ""}
-            `}
+            className={`px-6 py-3 border-b text-sm font-medium transition-opacity duration-300 ease-in-out ${notification.type === "success" ? "bg-green-50 text-green-700 border-green-200" : ""} ${notification.type === "error" ? "bg-red-50 text-red-700 border-red-200" : ""} ${notification.type === "info" ? "bg-blue-50 text-blue-700 border-blue-200" : ""}`}
           >
             {notification.message}
+            <button
+              onClick={() => setNotification({ type: "", message: "" })}
+              className="float-right font-bold text-lg leading-none"
+            >
+              &times;
+            </button>
           </div>
         )}
 
-        {/* Table Area */}
         <div className="overflow-x-auto">
           {" "}
-          {/* ... */}
           <div className="min-w-full inline-block align-middle">
+            {" "}
             <table className="min-w-full divide-y divide-gray-200">
+              {" "}
               <thead className="bg-gray-50 sticky top-0 z-10">
                 <tr>
                   {tableColumns.map((column) => (
@@ -579,9 +703,10 @@ const TableContentManager = ({
                     </th>
                   ))}
                 </tr>
-              </thead>
+              </thead>{" "}
               <tbody className="bg-white divide-y divide-gray-200">
-                {isLoading ? (
+                {" "}
+                {isLoading && data.length === 0 ? (
                   <tr>
                     <td
                       colSpan={tableColumns.length}
@@ -612,7 +737,7 @@ const TableContentManager = ({
                       </div>
                     </td>
                   </tr>
-                ) : error ? (
+                ) : error && data.length === 0 ? (
                   <tr>
                     <td
                       colSpan={tableColumns.length}
@@ -633,23 +758,7 @@ const TableContentManager = ({
                       </div>
                     </td>
                   </tr>
-                ) : data.length > 0 ? (
-                  data.map((item) => (
-                    <tr
-                      key={item[itemKeyField]}
-                      className="hover:bg-gray-50 transition-colors duration-150"
-                    >
-                      {tableColumns.map((column) => (
-                        <td
-                          key={`${item[itemKeyField]}-${column.key}`}
-                          className="px-6 py-4 whitespace-nowrap text-sm"
-                        >
-                          {renderCell(item, column)}
-                        </td>
-                      ))}
-                    </tr>
-                  ))
-                ) : (
+                ) : !isLoading && data.length === 0 ? (
                   <tr>
                     <td
                       colSpan={tableColumns.length}
@@ -669,15 +778,31 @@ const TableContentManager = ({
                       </div>
                     </td>
                   </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
+                ) : (
+                  data.map((item) => (
+                    <tr
+                      key={item[itemKeyField]}
+                      className="hover:bg-gray-50 transition-colors duration-150"
+                    >
+                      {tableColumns.map((column) => (
+                        <td
+                          key={`${item[itemKeyField]}-${column.key}`}
+                          className="px-6 py-4 whitespace-nowrap text-sm"
+                        >
+                          {renderCell(item, column)}
+                        </td>
+                      ))}
+                    </tr>
+                  ))
+                )}{" "}
+              </tbody>{" "}
+            </table>{" "}
+          </div>{" "}
         </div>
 
-        {/* Pagination */}
-        {totalPages > 0 /* ... */ && (
+        {totalPages > 0 && (
           <div className="bg-white border-t border-gray-200 px-6 py-4 flex flex-col sm:flex-row items-center justify-between gap-4 text-sm">
+            {" "}
             <div className="flex items-center space-x-4">
               <div className="text-gray-700">
                 Showing{" "}
@@ -702,7 +827,7 @@ const TableContentManager = ({
                   ))}
                 </select>
               </div>
-            </div>
+            </div>{" "}
             <div className="flex items-center space-x-1">
               <button
                 onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
@@ -722,7 +847,7 @@ const TableContentManager = ({
                 >
                   {page}
                 </button>
-              ))}
+              ))}{" "}
               <button
                 onClick={() =>
                   setCurrentPage((prev) => Math.min(prev + 1, totalPages || 1))
@@ -734,123 +859,144 @@ const TableContentManager = ({
               >
                 <ChevronRight size={18} />
               </button>
-            </div>
+            </div>{" "}
           </div>
         )}
-      </div>
 
-      {/* View Item Modal */}
-      <Modal
-        isOpen={isViewModalOpen}
-        onClose={() => setIsViewModalOpen(false)}
-        title="View Item Details"
-      >
-        {selectedItem /* ... */ && (
-          <div className="space-y-3">
-            {initialColumns
-              .filter((col) => col.key !== "actions")
-              .map((col) => (
-                <div key={col.key}>
-                  <strong className="font-medium text-gray-700">
-                    {col.label}:
-                  </strong>
-                  <span className="ml-2 text-gray-600">
-                    {renderCell(selectedItem, col)}
-                  </span>
-                </div>
-              ))}
-          </div>
-        )}
-      </Modal>
-
-      {/* Edit Item Modal */}
-      <Modal
-        isOpen={isEditModalOpen}
-        onClose={() => setIsEditModalOpen(false)}
-        title="Edit Item"
-      >
-        {selectedItem && formFields.length > 0 && (
-          <EditItemForm
-            item={selectedItem}
-            formFields={formFields}
-            onSubmit={handleSaveEdit}
-            onCancel={() => setIsEditModalOpen(false)}
-            itemKeyField={itemKeyField}
-          />
-        )}
-      </Modal>
-
-      {/* Create Item Modal */}
-      <Modal
-        isOpen={isCreateModalOpen}
-        onClose={() => setIsCreateModalOpen(false)}
-        title="Create New Item"
-      >
-        {formFields.length > 0 && (
-          <EditItemForm
-            item={null} // Pass null for item to signify create mode
-            formFields={formFields}
-            onSubmit={handleCreateSubmit}
-            onCancel={() => setIsCreateModalOpen(false)}
-            itemKeyField={itemKeyField} // May not be strictly needed for create but good for consistency
-          />
-        )}
-      </Modal>
-
-      {/* Delete Confirmation Modal */}
-      <Modal
-        isOpen={isDeleteModalOpen}
-        onClose={() => setIsDeleteModalOpen(false)}
-        title="Confirm Deletion"
-      >
-        {selectedItem /* ... */ && (
-          <div>
-            <p className="text-gray-700 mb-6">
-              Are you sure you want to delete this item? This action cannot be
-              undone.
-            </p>
-            <div className="flex justify-end space-x-3">
-              <button
-                onClick={() => setIsDeleteModalOpen(false)}
-                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleConfirmDelete}
-                className="px-4 py-2 text-sm font-medium text-white bg-red-500 hover:bg-red-600 rounded-md transition-colors flex items-center"
-                disabled={isLoading}
-              >
-                {isLoading ? (
-                  <svg
-                    className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
+        <Modal
+          isOpen={isViewModalOpen}
+          onClose={() => setIsViewModalOpen(false)}
+          title={`View ${pageTitle.replace("Management", "").trim()} Details`}
+        >
+          {selectedItem && (
+            <div className="space-y-3 text-sm">
+              {initialColumns
+                .filter(
+                  (col) => col.type !== "actions" && col.key !== "actions",
+                )
+                .map((col) => (
+                  <div
+                    key={col.key}
+                    className="flex border-b py-2.5 last:border-b-0"
                   >
-                    <circle
-                      className="opacity-25"
-                      cx="12"
-                      cy="12"
-                      r="10"
-                      stroke="currentColor"
-                      strokeWidth="4"
-                    ></circle>
-                    <path
-                      className="opacity-75"
-                      fill="currentColor"
-                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                    ></path>
-                  </svg>
-                ) : (
-                  <AlertTriangle size={16} className="mr-2" />
-                )}
-                Delete
-              </button>
+                    <strong className="w-2/5 font-semibold text-gray-700">
+                      {col.label}:
+                    </strong>
+                    <div className="w-3/5 text-gray-600 flex items-center">
+                      {renderCell(selectedItem, col)}
+                    </div>
+                  </div>
+                ))}
             </div>
-          </div>
-        )}
-      </Modal>
+          )}
+        </Modal>
+        <Modal
+          isOpen={isEditModalOpen}
+          onClose={() => setIsEditModalOpen(false)}
+          title={`Edit ${pageTitle.replace("Management", "").trim()}`}
+        >
+          {selectedItem && formFields.length > 0 && (
+            <EditItemForm
+              item={selectedItem}
+              formFields={formFields}
+              onSubmit={handleSaveEdit}
+              onCancel={() => setIsEditModalOpen(false)}
+              itemKeyField={itemKeyField}
+              dynamicSelectOptions={dynamicSelectDataSources}
+            />
+          )}
+        </Modal>
+        <Modal
+          isOpen={isCreateModalOpen}
+          onClose={() => setIsCreateModalOpen(false)}
+          title={`Create New ${pageTitle.replace("Management", "").trim()}`}
+        >
+          {formFields.length > 0 && (
+            <EditItemForm
+              item={null}
+              formFields={formFields}
+              onSubmit={handleCreateSubmit}
+              onCancel={() => setIsCreateModalOpen(false)}
+              itemKeyField={itemKeyField}
+              dynamicSelectOptions={dynamicSelectDataSources}
+            />
+          )}
+        </Modal>
+        <Modal
+          isOpen={isDeleteModalOpen}
+          onClose={() => setIsDeleteModalOpen(false)}
+          title="Confirm Deletion"
+          size="sm"
+        >
+          {selectedItem && (
+            <div>
+              <div className="flex items-center mb-4">
+                <AlertTriangle
+                  size={24}
+                  className="text-red-500 mr-3 flex-shrink-0"
+                />
+                <p className="text-gray-700 text-md">
+                  Are you sure you want to delete this item? <br />
+                  This action cannot be undone.
+                </p>
+              </div>
+              <div className="text-sm bg-gray-50 p-3 rounded-md mb-6">
+                <strong>Item ID:</strong> {selectedItem[itemKeyField]}
+                {initialColumns.find(
+                  (col) => col.key === "name" && selectedItem.name,
+                )
+                  ? ` - ${selectedItem.name}`
+                  : initialColumns.find(
+                        (col) =>
+                          getNestedValue(selectedItem, col.key) &&
+                          col.key.includes("name"),
+                      )
+                    ? ` - ${getNestedValue(selectedItem, initialColumns.find((col) => col.key.includes("name")).key)}`
+                    : ""}
+              </div>
+              <div className="flex justify-end space-x-3">
+                <button
+                  onClick={() => setIsDeleteModalOpen(false)}
+                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-gray-300"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleConfirmDelete}
+                  className="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-md transition-colors flex items-center focus:outline-none focus:ring-2 focus:ring-red-400"
+                  disabled={isLoading}
+                >
+                  {isLoading ? (
+                    <svg
+                      className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                      ></circle>
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                      ></path>
+                    </svg>
+                  ) : (
+                    <Trash2 size={16} className="mr-2" />
+                  )}
+                  Delete
+                </button>
+              </div>
+            </div>
+          )}
+        </Modal>
+      </div>
     </DashboardLayout>
   );
 };

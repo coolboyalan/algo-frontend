@@ -1,5 +1,3 @@
-"use client";
-
 import TableContentManager from "@/components/CrudTable/TableContentManager";
 
 const BrokerDashboardPage = () => {
@@ -18,15 +16,14 @@ const BrokerDashboardPage = () => {
     },
   ];
 
-  const brokerFilters = [
-    {
-      key: "name",
-      label: "Broker Name",
-      type: "text",
-    },
-  ];
-
   const brokerFormFields = [
+    {
+      key: "id",
+      label: "Broker ID",
+      type: "number", // Or number, but text usually safer for IDs if they can have leading zeros or be non-numeric
+      disabled: true, // Example: ID is system-generated and read-only when editing
+      placeholder: "ID (auto-generated)",
+    },
     {
       key: "name",
       label: "Broker Name",
@@ -38,12 +35,12 @@ const BrokerDashboardPage = () => {
 
   return (
     <TableContentManager
-      apiEndpoint="/api/broker"
+      apiEndpoint="/api/broker" // Your actual API endpoint for brokers
       columns={brokerColumns}
-      filters={brokerFilters}
       formFields={brokerFormFields}
-      itemKeyField="id"
+      itemKeyField="id" // The unique identifier field for a broker item
       pageTitle="Broker Management"
+      canAddItem={true} // Allow adding new brokers
     />
   );
 };
