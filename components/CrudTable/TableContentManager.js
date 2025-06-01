@@ -58,7 +58,7 @@ const TableContentManager = ({
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [sortConfig, setSortConfig] = useState({ key: null, direction: "asc" });
   const [searchTerm, setSearchTerm] = useState("");
-  const [searchColumn, setSearchColumn] = useState("all");
+  const [searchColumn, setSearchColumn] = useState("id");
   const [activeFilters, setActiveFilters] = useState({});
   const [showFilters, setShowFilters] = useState(false);
   const [dateRange, setDateRange] = useState({ start: null, end: null });
@@ -493,7 +493,6 @@ const TableContentManager = ({
                   onChange={(e) => handleSearchColumnChange(e.target.value)}
                   className="h-full bg-transparent border-none text-sm text-gray-500 focus:ring-0 pr-7 appearance-none"
                 >
-                  <option value="all">All Columns</option>
                   {initialColumns
                     .filter(
                       (c) => c.searchable !== false && c.type !== "actions",
@@ -508,7 +507,7 @@ const TableContentManager = ({
               <input
                 type="text"
                 placeholder="Search..."
-                className="pl-10 pr-28 py-2.5 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-sm"
+                className="text-gray-600 pl-10 pr-28 py-2.5 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-sm"
                 value={searchTerm}
                 onChange={(e) => handleSearchTermChange(e.target.value)}
               />
@@ -586,7 +585,7 @@ const TableContentManager = ({
                     {filter.type === "boolean" ? (
                       <select
                         id={`filter-${filter.key}`}
-                        className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-1 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                        className="text-black w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-1 focus:ring-blue-500 focus:border-blue-500 transition-all"
                         value={
                           activeFilters[filter.key] === undefined ||
                           activeFilters[filter.key] === null
@@ -612,7 +611,7 @@ const TableContentManager = ({
                     ) : filter.type === "select" ? (
                       <select
                         id={`filter-${filter.key}`}
-                        className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-1 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                        className="text-black w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-1 focus:ring-blue-500 focus:border-blue-500 transition-all"
                         value={activeFilters[filter.key] || "all"}
                         onChange={(e) =>
                           handleFilterChange(

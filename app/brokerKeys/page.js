@@ -26,17 +26,34 @@ export default async function BrokerKeyDashboardPage() {
   const allBrokersData = await getAllBrokers();
 
   const brokerKeyColumns = [
-    { key: "id", label: "ID", type: "number", sortable: true },
+    {
+      key: "id",
+      label: "ID",
+      type: "number",
+      sortable: true,
+      searchable: false,
+    },
     // Ensure API response for /api/broker-key includes e.g. item.Broker = { name: "..." }
     // Adjust "Broker.name" or "User.name" to match the exact path in your API response objects
-    { key: "Broker.name", label: "Broker Name", type: "text", sortable: true },
-    { key: "User.name", label: "User Name", type: "text", sortable: true },
+    {
+      key: "Broker.name",
+      label: "Broker Name",
+      type: "text",
+      sortable: true,
+    },
+    {
+      key: "User.name",
+      label: "User Name",
+      type: "text",
+      sortable: true,
+    },
     {
       key: "apiKey",
       label: "API Key",
       type: "text",
       sortable: false,
       maxWidth: "150px",
+      searchable: false,
     }, // No custom render
     {
       key: "apiSecret",
@@ -44,8 +61,9 @@ export default async function BrokerKeyDashboardPage() {
       type: "text",
       sortable: false,
       maxWidth: "100px",
+      searchable: false,
     }, // No custom render (shows actual secret)
-    { key: "tokenDate", label: "Token Date", type: "date", sortable: true },
+    // { key: "tokenDate", label: "Token Date", type: "date", sortable: true },
     {
       key: "status",
       label: "Status",
@@ -65,6 +83,7 @@ export default async function BrokerKeyDashboardPage() {
         },
       ],
       sortable: true,
+      searchable: false,
     },
   ];
 
@@ -111,24 +130,24 @@ export default async function BrokerKeyDashboardPage() {
       required: true,
       placeholder: "Enter API Secret",
     },
-    {
-      key: "token",
-      label: "Token",
-      type: "text",
-      placeholder: "Enter token (optional)",
-    },
-    { key: "tokenDate", label: "Token Date", type: "date" },
-    {
-      key: "status",
-      label: "Status",
-      type: "select",
-      required: true,
-      defaultValue: "true",
-      options: [
-        { value: "true", label: "Active" },
-        { value: "false", label: "Inactive" },
-      ],
-    },
+    // {
+    //   key: "token",
+    //   label: "Token",
+    //   type: "text",
+    //   placeholder: "Enter token (optional)",
+    // },
+    // { key: "tokenDate", label: "Token Date", type: "date" },
+    // {
+    //   key: "status",
+    //   label: "Status",
+    //   type: "select",
+    //   required: true,
+    //   defaultValue: "true",
+    //   options: [
+    //     { value: "true", label: "Active" },
+    //     { value: "false", label: "Inactive" },
+    //   ],
+    // },
   ];
 
   const dynamicOptionsForFilters = {
