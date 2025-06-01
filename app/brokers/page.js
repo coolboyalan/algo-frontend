@@ -14,6 +14,12 @@ const BrokerDashboardPage = () => {
       type: "text",
       sortable: true,
     },
+    {
+      key: "createdAt",
+      label: "Created at",
+      type: "date",
+      sortable: true,
+    },
   ];
 
   const brokerFormFields = [

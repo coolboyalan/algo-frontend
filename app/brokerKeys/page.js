@@ -1,77 +1,50 @@
-// app/broker-keys/page.js (or your equivalent page route)
-import TableContentManager from "@/components/CrudTable/TableContentManager"; // Adjust path
+// app/broker-keys/page.js (Server Component)
+import TableContentManager from "@/components/CrudTable/TableContentManager";
 
-// Helper function (can be here or imported if used in many places)
-const getNestedValue = (obj, pathString) => {
-  if (!obj || typeof pathString !== "string" || pathString.trim() === "")
-    return undefined;
-  const path = pathString.split(".");
-  let current = obj;
-  for (let i = 0; i < path.length; i++) {
-    const key = path[i];
-    if (
-      current === null ||
-      typeof current !== "object" ||
-      !Object.prototype.hasOwnProperty.call(current, key)
-    ) {
-      return undefined;
-    }
-    current = current[key];
-  }
-  return current;
-};
-
-async function getBrokersForFilterOptions() {
-  // In a real app, fetch from your API
-  // Ensure you use absolute URLs for server-side fetch or have NEXT_PUBLIC_API_BASE_URL correctly set
-  const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL; // Fallback for local dev
+async function getAllBrokers() {
+  const apiBaseUrl =
+    process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:3000";
   try {
-    // Example: Fetching all brokers to populate the filter dropdown
-    // Adjust the endpoint and query params as needed (e.g., to get a simplified list for dropdowns)
-    const response = await fetch(`${apiBaseUrl}/api/broker?limit=1000`); // Fetch a large number or implement pagination if list is huge
+    const response = await fetch(`${apiBaseUrl}/api/broker?limit=1000`); // Fetch all brokers
     if (!response.ok) {
       console.error(
-        "Server: Failed to fetch brokers for filter:",
+        "Server: Failed to fetch brokers:",
         response.status,
         await response.text(),
       );
       return [];
     }
     const result = await response.json();
-    return result.data || []; // Assuming API returns { data: [{id: ..., name: ...}, ...] }
+    return result.data || [];
   } catch (error) {
-    console.error("Server: Error fetching brokers for filter:", error);
-    return []; // Return empty on error to prevent page crash
+    console.error("Server: Error fetching brokers:", error);
+    return [];
   }
 }
 
 export default async function BrokerKeyDashboardPage() {
-  const brokersDataForFilter = await getBrokersForFilterOptions();
+  const allBrokersData = await getAllBrokers();
 
   const brokerKeyColumns = [
     { key: "id", label: "ID", type: "number", sortable: true },
-    { key: "Broker.name", label: "Broker Name", type: "text", sortable: false }, // Adjust "Broker.name" based on your API response structure
-    { key: "User.name", label: "User Name", type: "text", sortable: false }, // Adjust "User.name" based on your API response
+    // Ensure API response for /api/broker-key includes e.g. item.Broker = { name: "..." }
+    // Adjust "Broker.name" or "User.name" to match the exact path in your API response objects
+    { key: "Broker.name", label: "Broker Name", type: "text", sortable: true },
+    { key: "User.name", label: "User Name", type: "text", sortable: true },
     {
       key: "apiKey",
       label: "API Key",
       type: "text",
       sortable: false,
-      // maxWidth: "150px",
-      // render: (item) => {
-      //   const k = String(getNestedValue(item, "apiKey") || "");
-      //   return k.length > 7
-      //     ? `${k.substring(0, 3)}...${k.substring(k.length - 4)}`
-      //     : k;
-      // },
-    },
+      maxWidth: "150px",
+    }, // No custom render
     {
       key: "apiSecret",
       label: "API Secret",
       type: "text",
       sortable: false,
-      // render: () => "••••••••",
-    },
+      maxWidth: "100px",
+    }, // No custom render (shows actual secret)
     { key: "tokenDate", label: "Token Date", type: "date", sortable: true },
     {
       key: "status",
@@ -107,31 +80,22 @@ export default async function BrokerKeyDashboardPage() {
       key: "brokerId",
       label: "Broker",
       type: "select",
-      optionsSourceKey: "brokers", // This key will be used to find data in dynamicFilterOptionsData
-      optionValueKey: "id", // Property for value in broker objects
-      optionLabelKey: "name", // Property for label in broker objects
-    },
-    {
-      key: "userId",
-      label: "User ID",
-      type: "number", // Will render as a number input for filtering
+      optionsSourceKey: "brokersForFilter",
+      optionValueKey: "id",
+      optionLabelKey: "name",
     },
   ];
 
   const brokerKeyFormFields = [
     {
-      key: "userId",
-      label: "User ID",
-      type: "number",
-      required: true,
-      placeholder: "Enter User ID",
-    },
-    {
       key: "brokerId",
-      label: "Broker ID",
-      type: "number",
+      label: "Broker",
+      type: "select_dynamic",
       required: true,
-      placeholder: "Enter Broker ID",
+      placeholder: "Select Broker",
+      optionsSourceKey: "allBrokersList",
+      optionValueKey: "id",
+      optionLabelKey: "name",
     },
     {
       key: "apiKey",
@@ -159,23 +123,21 @@ export default async function BrokerKeyDashboardPage() {
       label: "Status",
       type: "select",
       required: true,
-      defaultValue: true, // Values for select options should be strings if not handled by form
+      defaultValue: "true",
       options: [
-        { value: "true", label: "Active" }, // Use strings for boolean options in simple select
+        { value: "true", label: "Active" },
         { value: "false", label: "Inactive" },
       ],
     },
   ];
 
   const dynamicOptionsForFilters = {
-    brokers: brokersDataForFilter, // Pass the server-fetched brokers here
+    brokersForFilter: allBrokersData,
   };
 
-  // If you wanted dynamic selects in the form, you'd fetch and pass data similarly:
-  // const dynamicOptionsForForms = {
-  //   allBrokers: brokersDataForFilter, // Could be the same or a different list
-  //   allUsers: await getUsersForFormOptions(),
-  // };
+  const dynamicOptionsForForms = {
+    allBrokersList: allBrokersData,
+  };
 
   return (
     <TableContentManager
@@ -187,7 +149,7 @@ export default async function BrokerKeyDashboardPage() {
       pageTitle="Broker Key Management"
       canAddItem={true}
       dynamicFilterOptionsData={dynamicOptionsForFilters}
-      // dynamicSelectDataSources={dynamicOptionsForForms} // Pass if forms need dynamic data
+      dynamicSelectDataSources={dynamicOptionsForForms}
     />
   );
 }

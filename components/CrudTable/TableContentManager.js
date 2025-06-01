@@ -50,8 +50,8 @@ const TableContentManager = ({
   formFields = [],
   pageTitle = "Data Management",
   canAddItem = true,
-  dynamicSelectDataSources = {}, // For EditItemForm's dynamic selects
-  dynamicFilterOptionsData = {}, // For dynamic filter dropdown options
+  dynamicSelectDataSources = {},
+  dynamicFilterOptionsData = {},
 }) => {
   const [data, setData] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
@@ -86,11 +86,26 @@ const TableContentManager = ({
       typeof window !== "undefined" ? localStorage.getItem("token") : null;
     const headers = { "Content-Type": "application/json" };
     if (token) headers["Authorization"] = `Bearer ${token}`;
+
+    let requestBody = body;
+    if (body && (method === "POST" || method === "PUT")) {
+      // Clean up body: remove null or undefined values, but keep false and 0
+      requestBody = Object.entries(body).reduce((acc, [key, value]) => {
+        if (value !== null && value !== undefined && value !== "") {
+          acc[key] = value;
+        }
+        return acc;
+      }, {});
+    }
+
     try {
       const response = await fetch(fullEndpoint, {
         method,
         headers,
-        ...(body && { body: JSON.stringify(body) }),
+        ...(requestBody &&
+          (method === "POST" || method === "PUT") && {
+            body: JSON.stringify(requestBody),
+          }),
       });
       const responseBody = await response.json().catch(() => response.text());
       if (!response.ok) {
@@ -99,7 +114,7 @@ const TableContentManager = ({
           responseBody !== null &&
           responseBody.message
             ? responseBody.message
-            : typeof responseBody === "string"
+            : typeof responseBody === "string" && responseBody.trim() !== ""
               ? responseBody
               : `Operation failed with status ${response.status}`;
         throw new Error(errorMessage);
@@ -169,7 +184,8 @@ const TableContentManager = ({
     searchColumn,
     activeFilters,
     dateRange,
-  ]);
+    itemKeyField,
+  ]); // Added itemKeyField to dep array just in case, though unlikely to change
 
   useEffect(() => {
     fetchData();
