@@ -14,8 +14,21 @@ async function getAllBrokers() {
   }
 }
 
+async function getAllAssets() {
+  const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
+  try {
+    const response = await fetch(`${apiBaseUrl}/api/base-asset?limit=10000`);
+    const result = await response.json();
+    return result.data || [];
+  } catch (err) {
+    console.error("Error fetching assets", err);
+    return [];
+  }
+}
+
 export default async function TradeDashboardPage() {
   const allBrokers = await getAllBrokers();
+  const allAssets = await getAllAssets();
 
   const tradeColumns = [
     { key: "id", label: "ID", type: "number", sortable: true },
@@ -28,6 +41,12 @@ export default async function TradeDashboardPage() {
       label: "Price",
       type: "currency",
       currency: "INR",
+      sortable: true,
+    },
+    {
+      key: "quantity",
+      label: "Quantity",
+      type: "number",
       sortable: true,
     },
     {
@@ -81,20 +100,14 @@ export default async function TradeDashboardPage() {
       optionValueKey: "id",
       optionLabelKey: "name",
     },
-    // {
-    //   key: "userId",
-    //   label: "User",
-    //   type: "select_dynamic",
-    //   required: true,
-    //   optionsSourceKey: "usersList",
-    //   optionValueKey: "id",
-    //   optionLabelKey: "name",
-    // },
     {
-      key: "baseAsset",
+      key: "baseAssetId",
       label: "Base Asset",
-      type: "text",
+      type: "select_dynamic",
       required: true,
+      optionsSourceKey: "assetList",
+      optionValueKey: "id",
+      optionLabelKey: "name",
     },
     {
       key: "asset",
@@ -134,10 +147,12 @@ export default async function TradeDashboardPage() {
 
   const dynamicFilterOptionsData = {
     brokersForFilter: allBrokers,
+    assetsForFilter: allAssets,
   };
 
   const dynamicSelectDataSources = {
     brokersList: allBrokers,
+    assetsList: allAssets,
   };
 
   return (
@@ -145,10 +160,10 @@ export default async function TradeDashboardPage() {
       apiEndpoint="/api/trade"
       columns={tradeColumns}
       filters={tradeFilters}
-      formFields={tradeFormFields}
+      // formFields={tradeFormFields}
       itemKeyField="id"
       pageTitle="Trade Management"
-      canAddItem={true}
+      canAddItem={false}
       dynamicFilterOptionsData={dynamicFilterOptionsData}
       dynamicSelectDataSources={dynamicSelectDataSources}
     />

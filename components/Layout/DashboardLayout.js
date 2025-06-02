@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
+import Image from "next/image";
 import {
   User,
   LogOut,
@@ -10,6 +11,8 @@ import {
   Settings,
   Banknote,
   Home,
+  Notebook,
+  DollarSign,
 } from "lucide-react";
 
 const DashboardLayout = ({ pageTitle, children }) => {
@@ -21,6 +24,8 @@ const DashboardLayout = ({ pageTitle, children }) => {
   // Define sidebar navigation items with actual paths
   const sidebarNavItems = [
     { label: "Dashboard", icon: Home, path: "/dashboard" },
+    { label: "Asset", icon: DollarSign, path: "/assets" },
+    { label: "Daily Asset", icon: Notebook, path: "/daily-asset" },
     { label: "Trades", icon: ArrowRightLeft, path: "/trades" },
     { label: "Broker Keys", icon: BarChart2, path: "/brokerKeys" },
     { label: "Brokers", icon: Banknote, path: "/brokers" },
@@ -44,6 +49,8 @@ const DashboardLayout = ({ pageTitle, children }) => {
 
   const handleLogout = () => {
     localStorage.removeItem("token");
+    localStorage.removeItem("name");
+    localStorage.removeItem("email");
     window.location.href = "/login"; // Navigate to login page
   };
 
@@ -57,20 +64,18 @@ const DashboardLayout = ({ pageTitle, children }) => {
     <div className="flex h-screen bg-gray-100 font-sans">
       {/* Sidebar */}
       <div
-        className={`bg-white text-gray-700 ${sidebarOpen ? "w-64" : "w-20"} transition-all duration-300 ease-in-out flex flex-col border-r border-gray-200 shadow-sm`}
+        className={`bg-white text-gray-700 ${sidebarOpen ? "w-64" : "w-30"} transition-all duration-300 ease-in-out flex flex-col border-r border-gray-200 shadow-sm`}
       >
         <div className="p-4 flex items-center justify-between border-b border-gray-200 h-16">
           {sidebarOpen ? (
-            <h1 className="text-xl font-bold text-gray-900 flex items-center">
-              <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center text-white font-bold mr-2 text-sm">
-                A
-              </div>
-              Algoman
-            </h1>
+            <>
+              <Image src="/logo.png" width={45} height={45} />
+              <h1 className="text-xl font-bold text-gray-900 flex items-center">
+                Algoman
+              </h1>
+            </>
           ) : (
-            <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center text-white font-bold text-sm">
-              A
-            </div>
+            <Image src="/logo.png" width={45} height={45} />
           )}
           <button
             onClick={() => setSidebarOpen(!sidebarOpen)}
@@ -116,9 +121,11 @@ const DashboardLayout = ({ pageTitle, children }) => {
               </div>
               <div className="ml-3">
                 <div className="text-sm font-medium text-gray-900">
-                  User Name
+                  {localStorage.getItem("name")}
                 </div>
-                <div className="text-xs text-gray-500">user@example.com</div>
+                <div className="text-xs text-gray-500">
+                  {localStorage.getItem("email")}
+                </div>
               </div>
             </div>
           ) : (
@@ -148,7 +155,9 @@ const DashboardLayout = ({ pageTitle, children }) => {
                 {profileOpen && (
                   <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-xl py-1 z-20 border border-gray-200 animate-fadeIn">
                     <div className="px-4 py-3 text-sm text-gray-700 border-b border-gray-100">
-                      <p className="font-medium truncate">user@example.com</p>
+                      <p className="font-medium truncate">
+                        {localStorage.getItem("email")}
+                      </p>
                     </div>
                     <button
                       onClick={handleLogout}
