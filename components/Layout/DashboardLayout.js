@@ -120,11 +120,9 @@ const DashboardLayout = ({ pageTitle, children }) => {
               </div>
               <div className="ml-3">
                 <div className="text-sm font-medium text-gray-900">
-                  {localStorage.getItem("name")}
+                  {"Name"}
                 </div>
-                <div className="text-xs text-gray-500">
-                  {localStorage.getItem("email")}
-                </div>
+                <div className="text-xs text-gray-500">{"Email"}</div>
               </div>
             </div>
           ) : (
@@ -154,9 +152,7 @@ const DashboardLayout = ({ pageTitle, children }) => {
                 {profileOpen && (
                   <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-xl py-1 z-20 border border-gray-200 animate-fadeIn">
                     <div className="px-4 py-3 text-sm text-gray-700 border-b border-gray-100">
-                      <p className="font-medium truncate">
-                        {localStorage.getItem("email")}
-                      </p>
+                      <p className="font-medium truncate">{"Email"}</p>
                     </div>
                     <button
                       onClick={handleLogout}
