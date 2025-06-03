@@ -17,10 +17,12 @@ import {
   PlusCircle,
   ArrowUp,
   ArrowDown,
+  Link2,
 } from "lucide-react";
 import DashboardLayout from "@/components/Layout/DashboardLayout"; // Adjust path
 import Modal from "@/components/Common/Modal"; // Adjust path
 import EditItemForm from "./EditItemForm"; // Adjust path
+import { useRouter } from "next/navigation";
 
 // Helper function to get nested property value
 const getNestedValue = (obj, pathString) => {
@@ -50,9 +52,11 @@ const TableContentManager = ({
   formFields = [],
   pageTitle = "Data Management",
   canAddItem = true,
+  customLink,
   dynamicSelectDataSources = {},
   dynamicFilterOptionsData = {},
 }) => {
+  const router = useRouter();
   const [data, setData] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
@@ -190,6 +194,28 @@ const TableContentManager = ({
   useEffect(() => {
     fetchData();
   }, [fetchData]);
+
+  const handleCustomLink = async (item) => {
+    try {
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/broker/${item.brokerId}`,
+      );
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
+
+      const data = await response.json(); // or .text(), .blob(), etc.
+
+      if (!data.data) {
+        window.alert("Please add broker first");
+        return;
+      }
+
+      router.push(`${item.loginUrl}`);
+    } catch (error) {
+      window.alert("Unable to login, Internal Error");
+    }
+  };
 
   const handleViewItem = (item) => {
     setSelectedItem(item);
@@ -347,7 +373,17 @@ const TableContentManager = ({
     if (column.type === "actions") {
       return (
         <div className="flex items-center space-x-1.5">
-          {" "}
+          {customLink ? (
+            <button
+              onClick={() => handleCustomLink(item)}
+              className="text-blue-600 hover:text-blue-800 p-1.5 rounded hover:bg-blue-100 transition-colors"
+              title="View"
+            >
+              <Link2 size={16} />
+            </button>
+          ) : (
+            ""
+          )}{" "}
           <button
             onClick={() => handleViewItem(item)}
             className="text-blue-600 hover:text-blue-800 p-1.5 rounded hover:bg-blue-100 transition-colors"
@@ -441,7 +477,7 @@ const TableContentManager = ({
       <div
         className="text-sm text-gray-700 whitespace-nowrap truncate"
         title={displayValue}
-        style={{ maxWidth: column.maxWidth || "200px" }}
+        style={{ maxWidth: "auto" }}
       >
         {displayValue}
       </div>

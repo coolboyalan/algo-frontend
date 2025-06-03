@@ -18,13 +18,13 @@ export default async function DailyAssetDashboardPage() {
 
   const dailyAssetColumns = [
     { key: "id", label: "ID", type: "number", sortable: true },
-    { key: "Asset.name", label: "Asset Name", type: "text", sortable: true },
     {
       key: "day",
       label: "day",
       type: "text",
       sortable: true,
     },
+    { key: "Asset.name", label: "Asset Name", type: "text", sortable: true },
   ];
   const dailyAssetFilters = [
     {
@@ -39,15 +39,6 @@ export default async function DailyAssetDashboardPage() {
 
   const dailyAssetFormFields = [
     {
-      key: "assetId",
-      label: "Asset",
-      type: "select_dynamic",
-      required: true,
-      optionsSourceKey: "assetsList",
-      optionValueKey: "id",
-      optionLabelKey: "name",
-    },
-    {
       key: "day",
       label: "Week Day",
       type: "select",
@@ -60,6 +51,15 @@ export default async function DailyAssetDashboardPage() {
         { value: "Thursday", label: "Thursday" },
         { value: "Friday", label: "Friday" },
       ],
+    },
+    {
+      key: "assetId",
+      label: "Asset",
+      type: "select_dynamic",
+      required: true,
+      optionsSourceKey: "assetsList",
+      optionValueKey: "id",
+      optionLabelKey: "name",
     },
   ];
 

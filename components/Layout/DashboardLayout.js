@@ -29,7 +29,6 @@ const DashboardLayout = ({ pageTitle, children }) => {
     { label: "Trades", icon: ArrowRightLeft, path: "/trades" },
     { label: "Broker Keys", icon: BarChart2, path: "/brokerKeys" },
     { label: "Brokers", icon: Banknote, path: "/brokers" },
-    { label: "Settings", icon: Settings, path: "/settings" },
   ];
 
   useEffect(() => {

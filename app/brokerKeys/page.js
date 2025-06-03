@@ -48,6 +48,11 @@ export default async function BrokerKeyDashboardPage() {
       sortable: true,
     },
     {
+      key: "redirectUrl",
+      label: "Redirection Url",
+      type: "text",
+    },
+    {
       key: "apiKey",
       label: "API Key",
       type: "text",
@@ -167,6 +172,7 @@ export default async function BrokerKeyDashboardPage() {
       itemKeyField="id"
       pageTitle="Broker Key Management"
       canAddItem={true}
+      customLink={"https://kite.trade/connect/login?api_key="}
       dynamicFilterOptionsData={dynamicOptionsForFilters}
       dynamicSelectDataSources={dynamicOptionsForForms}
     />
