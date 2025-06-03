@@ -20,6 +20,7 @@ const DashboardLayout = ({ pageTitle, children }) => {
   const [profileOpen, setProfileOpen] = useState(false);
   const profileRef = useRef(null);
   const [activePath, setActivePath] = useState("");
+  const [isAuthenticated, setIsAuthenticated] = useState(false); // Added for clarity before redirect
 
   // Define sidebar navigation items with actual paths
   const sidebarNavItems = [
@@ -32,6 +33,15 @@ const DashboardLayout = ({ pageTitle, children }) => {
   ];
 
   useEffect(() => {
+    // Authentication Check
+    const token = localStorage.getItem("token");
+    if (!token) {
+      window.location.href = "/login"; // Redirect to login if no token
+      // No need to run the rest of the effect if not authenticated
+      return;
+    }
+    setIsAuthenticated(true); // User is authenticated
+
     // Set the initial active path based on the current window location
     if (typeof window !== "undefined") {
       setActivePath(window.location.pathname);
@@ -44,7 +54,7 @@ const DashboardLayout = ({ pageTitle, children }) => {
     };
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
+  }, []); // Empty dependency array ensures this runs only once on mount
 
   const handleLogout = () => {
     localStorage.removeItem("token");
@@ -59,6 +69,20 @@ const DashboardLayout = ({ pageTitle, children }) => {
     window.location.href = path; // Perform navigation
   };
 
+  // If not authenticated, you might want to render nothing or a loader
+  // to prevent a flash of the dashboard content before redirection.
+  // The redirect in useEffect should be quick, but this is an option.
+  if (
+    !isAuthenticated &&
+    typeof window !== "undefined" &&
+    !localStorage.getItem("token")
+  ) {
+    // Check localStorage again because isAuthenticated might not be updated immediately
+    // before the first render pass if the redirect is very fast.
+    // This helps prevent a flash of unstyled or dashboard content.
+    return null; // Or a loading spinner component
+  }
+
   return (
     <div className="flex h-screen bg-gray-100 font-sans">
       {/* Sidebar */}
@@ -68,13 +92,18 @@ const DashboardLayout = ({ pageTitle, children }) => {
         <div className="p-4 flex items-center justify-between border-b border-gray-200 h-16">
           {sidebarOpen ? (
             <>
-              <Image src="/logo.png" width={45} height={45} />
+              <Image
+                src="/logo.png"
+                alt="Algoman Logo"
+                width={45}
+                height={45}
+              />
               <h1 className="text-xl font-bold text-gray-900 flex items-center">
                 Algoman
               </h1>
             </>
           ) : (
-            <Image src="/logo.png" width={45} height={45} />
+            <Image src="/logo.png" alt="Algoman Logo" width={45} height={45} />
           )}
           <button
             onClick={() => setSidebarOpen(!sidebarOpen)}
@@ -120,9 +149,15 @@ const DashboardLayout = ({ pageTitle, children }) => {
               </div>
               <div className="ml-3">
                 <div className="text-sm font-medium text-gray-900">
-                  {"Name"}
+                  {typeof window !== "undefined"
+                    ? localStorage.getItem("name") || "User Name"
+                    : "User Name"}
                 </div>
-                <div className="text-xs text-gray-500">{"Email"}</div>
+                <div className="text-xs text-gray-500">
+                  {typeof window !== "undefined"
+                    ? localStorage.getItem("email") || "user@example.com"
+                    : "user@example.com"}
+                </div>
               </div>
             </div>
           ) : (
@@ -152,7 +187,11 @@ const DashboardLayout = ({ pageTitle, children }) => {
                 {profileOpen && (
                   <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-xl py-1 z-20 border border-gray-200 animate-fadeIn">
                     <div className="px-4 py-3 text-sm text-gray-700 border-b border-gray-100">
-                      <p className="font-medium truncate">{"Email"}</p>
+                      <p className="font-medium truncate">
+                        {typeof window !== "undefined"
+                          ? localStorage.getItem("email") || "user@example.com"
+                          : "user@example.com"}
+                      </p>
                     </div>
                     <button
                       onClick={handleLogout}
