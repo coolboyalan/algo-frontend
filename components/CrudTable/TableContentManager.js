@@ -164,8 +164,8 @@ const TableContentManager = ({
         throw new Error(
           result.message || `Failed to fetch data (status: ${response.status})`,
         );
-      setData(result?.data || []);
-      setTotalServerItems(result?.totalCount || 0);
+      setData(result?.data?.result || []);
+      setTotalServerItems(result?.data?.pagination?.totalItems || 0);
     } catch (e) {
       console.error("Fetch data error:", e);
       setError(e.message || "Failed to load data.");
@@ -383,28 +383,28 @@ const TableContentManager = ({
             </button>
           ) : (
             ""
-          )}{" "}
+          )}
           <button
             onClick={() => handleViewItem(item)}
             className="text-blue-600 hover:text-blue-800 p-1.5 rounded hover:bg-blue-100 transition-colors"
             title="View"
           >
             <Eye size={16} />
-          </button>{" "}
+          </button>
           <button
             onClick={() => handleEditItem(item)}
             className="text-green-600 hover:text-green-800 p-1.5 rounded hover:bg-green-100 transition-colors"
             title="Edit"
           >
             <Edit3 size={16} />
-          </button>{" "}
+          </button>
           <button
             onClick={() => handleDeleteItem(item)}
             className="text-red-600 hover:text-red-800 p-1.5 rounded hover:bg-red-100 transition-colors"
             title="Delete"
           >
             <Trash2 size={16} />
-          </button>{" "}
+          </button>
         </div>
       );
     }
@@ -669,8 +669,7 @@ const TableContentManager = ({
                                 key={option[filter.optionValueKey || "id"]}
                                 value={option[filter.optionValueKey || "id"]}
                               >
-                                {" "}
-                                {option[filter.optionLabelKey || "name"]}{" "}
+                                {option[filter.optionLabelKey || "name"]}
                               </option>
                             ))
                           : (filter.options || []).map((option) => (
@@ -719,11 +718,8 @@ const TableContentManager = ({
         )}
 
         <div className="overflow-x-auto">
-          {" "}
           <div className="min-w-full inline-block align-middle">
-            {" "}
             <table className="min-w-full divide-y divide-gray-200">
-              {" "}
               <thead className="bg-gray-50 sticky top-0 z-10">
                 <tr>
                   {tableColumns.map((column) => (
@@ -754,9 +750,8 @@ const TableContentManager = ({
                     </th>
                   ))}
                 </tr>
-              </thead>{" "}
+              </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {" "}
                 {isLoading && data.length === 0 ? (
                   <tr>
                     <td
@@ -845,15 +840,14 @@ const TableContentManager = ({
                       ))}
                     </tr>
                   ))
-                )}{" "}
-              </tbody>{" "}
-            </table>{" "}
-          </div>{" "}
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
 
         {totalPages > 0 && (
           <div className="bg-white border-t border-gray-200 px-6 py-4 flex flex-col sm:flex-row items-center justify-between gap-4 text-sm">
-            {" "}
             <div className="flex items-center space-x-4">
               <div className="text-gray-700">
                 Showing{" "}
@@ -878,7 +872,7 @@ const TableContentManager = ({
                   ))}
                 </select>
               </div>
-            </div>{" "}
+            </div>
             <div className="flex items-center space-x-1">
               <button
                 onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
@@ -898,7 +892,7 @@ const TableContentManager = ({
                 >
                   {page}
                 </button>
-              ))}{" "}
+              ))}
               <button
                 onClick={() =>
                   setCurrentPage((prev) => Math.min(prev + 1, totalPages || 1))
@@ -910,7 +904,7 @@ const TableContentManager = ({
               >
                 <ChevronRight size={18} />
               </button>
-            </div>{" "}
+            </div>
           </div>
         )}
 
@@ -964,7 +958,7 @@ const TableContentManager = ({
         >
           {formFields.length > 0 && (
             <EditItemForm
-              item={null}
+              item={null} // Passing null for create mode
               formFields={formFields}
               onSubmit={handleCreateSubmit}
               onCancel={() => setIsCreateModalOpen(false)}

@@ -1,11 +1,11 @@
 "use client";
 import { useState, useEffect } from "react";
-import { Save, AlertCircle } from "lucide-react"; // Added AlertCircle for error icon
+import { Save, AlertCircle } from "lucide-react";
 
 const EditItemForm = ({
   item,
   formFields,
-  onSubmit, // This prop will now be an async function that returns { success: boolean, error?: string }
+  onSubmit,
   onCancel,
   dynamicSelectOptions = {},
 }) => {
@@ -44,13 +44,12 @@ const EditItemForm = ({
       });
     }
     setFormData(initialData);
-    setSubmissionError(null); // Clear errors when item or formFields change
+    setSubmissionError(null);
   }, [item, formFields]);
 
   const handleChange = (key, value) => {
     setFormData((prev) => ({ ...prev, [key]: value }));
     if (submissionError) {
-      // Clear error when user starts typing again
       setSubmissionError(null);
     }
   };
@@ -86,18 +85,14 @@ const EditItemForm = ({
     });
 
     try {
-      const result = await onSubmit(processedFormData); // onSubmit is expected to be async and return status
+      const result = await onSubmit(processedFormData);
       if (result && !result.success) {
         setSubmissionError(
           result.error ||
             "Submission failed. Please check your input and try again.",
         );
       }
-      // On successful submission, TableContentManager will close the modal,
-      // and EditItemForm will unmount or its item prop will change, triggering useEffect.
     } catch (e) {
-      // This catch is a fallback if onSubmit itself throws an unhandled error
-      // (though ideally, onSubmit should always return the structured result).
       setSubmissionError(
         e.message || "An unexpected error occurred during submission.",
       );
@@ -135,11 +130,13 @@ const EditItemForm = ({
             {field.label}{" "}
             {field.required && <span className="text-red-500">*</span>}
           </label>
-          {/* ... (input rendering logic remains the same as your last provided version) ... */}
           {field.type === "select_dynamic" ? (
             (() => {
-              const optionsList =
-                dynamicSelectOptions[field.optionsSourceKey] || [];
+              const sourceOptions =
+                dynamicSelectOptions[field.optionsSourceKey];
+              const optionsList = Array.isArray(sourceOptions)
+                ? sourceOptions
+                : []; // Corrected line
               return (
                 <select
                   id={`form-field-${field.key}`}

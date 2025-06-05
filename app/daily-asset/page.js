@@ -4,7 +4,7 @@ import TableContentManager from "@/components/CrudTable/TableContentManager";
 async function getAllAssets() {
   const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
   try {
-    const response = await fetch(`${apiBaseUrl}/api/asset?limit=10000`);
+    const response = await fetch(`${apiBaseUrl}/api/asset?pagination=false`);
     const result = await response.json();
     return result.data || [];
   } catch (err) {

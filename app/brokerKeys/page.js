@@ -5,7 +5,7 @@ async function getAllBrokers() {
   const apiBaseUrl =
     process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:3000";
   try {
-    const response = await fetch(`${apiBaseUrl}/api/broker?limit=1000`); // Fetch all brokers
+    const response = await fetch(`${apiBaseUrl}/api/broker?pagination=false`); // Fetch all brokers
     if (!response.ok) {
       console.error(
         "Server: Failed to fetch brokers:",

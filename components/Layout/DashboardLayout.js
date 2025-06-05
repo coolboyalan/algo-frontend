@@ -20,9 +20,12 @@ const DashboardLayout = ({ pageTitle, children }) => {
   const [profileOpen, setProfileOpen] = useState(false);
   const profileRef = useRef(null);
   const [activePath, setActivePath] = useState("");
-  const [isAuthenticated, setIsAuthenticated] = useState(false); // Added for clarity before redirect
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
-  // Define sidebar navigation items with actual paths
+  // State for displaying user info, initialized to server-rendered defaults
+  const [displayName, setDisplayName] = useState("User Name");
+  const [displayEmail, setDisplayEmail] = useState("user@example.com");
+
   const sidebarNavItems = [
     { label: "Dashboard", icon: Home, path: "/dashboard" },
     { label: "Asset", icon: DollarSign, path: "/assets" },
@@ -33,19 +36,27 @@ const DashboardLayout = ({ pageTitle, children }) => {
   ];
 
   useEffect(() => {
-    // Authentication Check
     const token = localStorage.getItem("token");
     if (!token) {
-      window.location.href = "/login"; // Redirect to login if no token
-      // No need to run the rest of the effect if not authenticated
-      return;
+      window.location.href = "/login";
+      return; // Stop execution if not authenticated
     }
     setIsAuthenticated(true); // User is authenticated
 
-    // Set the initial active path based on the current window location
-    if (typeof window !== "undefined") {
-      setActivePath(window.location.pathname);
+    // Now that we are on the client and authenticated, update displayed info
+    // This will cause a re-render only on the client after initial hydration
+    const nameFromStorage = localStorage.getItem("name");
+    const emailFromStorage = localStorage.getItem("email");
+
+    if (nameFromStorage) {
+      setDisplayName(nameFromStorage);
     }
+    if (emailFromStorage) {
+      setDisplayEmail(emailFromStorage);
+    }
+
+    // Set the initial active path based on the current window location
+    setActivePath(window.location.pathname);
 
     const handleClickOutside = (event) => {
       if (profileRef.current && !profileRef.current.contains(event.target)) {
@@ -54,40 +65,36 @@ const DashboardLayout = ({ pageTitle, children }) => {
     };
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []); // Empty dependency array ensures this runs only once on mount
+  }, []); // Empty dependency array: runs once on mount & client-side
 
   const handleLogout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("name");
     localStorage.removeItem("email");
-    window.location.href = "/login"; // Navigate to login page
+    window.location.href = "/login";
   };
 
   const handleNavClick = (e, path) => {
-    e.preventDefault(); // Prevent default anchor behavior before navigation
+    e.preventDefault();
     setActivePath(path);
-    window.location.href = path; // Perform navigation
+    window.location.href = path;
   };
 
-  // If not authenticated, you might want to render nothing or a loader
-  // to prevent a flash of the dashboard content before redirection.
-  // The redirect in useEffect should be quick, but this is an option.
+  // This check helps prevent a flash of dashboard content if redirect is slow
+  // or if the component renders before useEffect fully processes the auth state.
   if (
     !isAuthenticated &&
     typeof window !== "undefined" &&
     !localStorage.getItem("token")
   ) {
-    // Check localStorage again because isAuthenticated might not be updated immediately
-    // before the first render pass if the redirect is very fast.
-    // This helps prevent a flash of unstyled or dashboard content.
-    return null; // Or a loading spinner component
+    return null; // Or a loading spinner
   }
 
   return (
     <div className="flex h-screen bg-gray-100 font-sans">
       {/* Sidebar */}
       <div
-        className={`bg-white text-gray-700 ${sidebarOpen ? "w-64" : "w-30"} transition-all duration-300 ease-in-out flex flex-col border-r border-gray-200 shadow-sm`}
+        className={`bg-white text-gray-700 ${sidebarOpen ? "w-64" : "w-20"} transition-all duration-300 ease-in-out flex flex-col border-r border-gray-200 shadow-sm`} // Corrected className placement
       >
         <div className="p-4 flex items-center justify-between border-b border-gray-200 h-16">
           {sidebarOpen ? (
@@ -103,7 +110,13 @@ const DashboardLayout = ({ pageTitle, children }) => {
               </h1>
             </>
           ) : (
-            <Image src="/logo.png" alt="Algoman Logo" width={45} height={45} />
+            <Image
+              src="/logo.png"
+              alt="Algoman Logo"
+              width={45}
+              height={45}
+              className="mx-auto"
+            />
           )}
           <button
             onClick={() => setSidebarOpen(!sidebarOpen)}
@@ -122,15 +135,16 @@ const DashboardLayout = ({ pageTitle, children }) => {
           {sidebarNavItems.map((item) => (
             <a
               key={item.label}
-              href={item.path} // Use actual path for href
-              onClick={(e) => handleNavClick(e, item.path)} // Handle click for navigation and active state
+              href={item.path}
+              onClick={(e) => handleNavClick(e, item.path)}
               className={`group flex items-center px-3 py-2.5 rounded-lg transition-colors ease-in-out duration-150
                 ${sidebarOpen ? "" : "justify-center"}
                 ${
-                  activePath === item.path // Dynamic check for current item
+                  activePath === item.path
                     ? "bg-blue-50 text-blue-600 font-medium"
                     : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
                 }`}
+              title={sidebarOpen ? "" : item.label}
             >
               <item.icon
                 className={`text-lg ${sidebarOpen ? "mr-3" : "mx-auto"} ${activePath === item.path ? "text-blue-500" : "text-gray-400 group-hover:text-gray-500"}`}
@@ -149,19 +163,16 @@ const DashboardLayout = ({ pageTitle, children }) => {
               </div>
               <div className="ml-3">
                 <div className="text-sm font-medium text-gray-900">
-                  {typeof window !== "undefined"
-                    ? localStorage.getItem("name") || "User Name"
-                    : "User Name"}
+                  {displayName}
                 </div>
-                <div className="text-xs text-gray-500">
-                  {typeof window !== "undefined"
-                    ? localStorage.getItem("email") || "user@example.com"
-                    : "user@example.com"}
-                </div>
+                <div className="text-xs text-gray-500">{displayEmail}</div>
               </div>
             </div>
           ) : (
-            <div className="w-10 h-10 rounded-full bg-gradient-to-r from-cyan-400 to-blue-500 flex items-center justify-center text-white mx-auto">
+            <div
+              className="w-10 h-10 rounded-full bg-gradient-to-r from-cyan-400 to-blue-500 flex items-center justify-center text-white mx-auto"
+              title={displayName}
+            >
               <User size={20} />
             </div>
           )}
@@ -187,11 +198,7 @@ const DashboardLayout = ({ pageTitle, children }) => {
                 {profileOpen && (
                   <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-xl py-1 z-20 border border-gray-200 animate-fadeIn">
                     <div className="px-4 py-3 text-sm text-gray-700 border-b border-gray-100">
-                      <p className="font-medium truncate">
-                        {typeof window !== "undefined"
-                          ? localStorage.getItem("email") || "user@example.com"
-                          : "user@example.com"}
-                      </p>
+                      <p className="font-medium truncate">{displayEmail}</p>
                     </div>
                     <button
                       onClick={handleLogout}

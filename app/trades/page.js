@@ -5,7 +5,7 @@ async function getAllBrokers() {
   const apiBaseUrl =
     process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:3000";
   try {
-    const response = await fetch(`${apiBaseUrl}/api/broker?limit=1000`);
+    const response = await fetch(`${apiBaseUrl}/api/broker?pagination=false`);
     const result = await response.json();
     return result.data || [];
   } catch (err) {
