@@ -25,23 +25,35 @@ const DashboardLayout = ({ pageTitle, children }) => {
   // State for displaying user info, initialized to server-rendered defaults
   const [displayName, setDisplayName] = useState("User Name");
   const [displayEmail, setDisplayEmail] = useState("user@example.com");
-
-  const sidebarNavItems = [
-    { label: "Dashboard", icon: Home, path: "/dashboard" },
-    { label: "Asset", icon: DollarSign, path: "/assets" },
-    { label: "Daily Asset", icon: Notebook, path: "/daily-asset" },
-    { label: "Trades", icon: ArrowRightLeft, path: "/trades" },
-    { label: "Broker Keys", icon: BarChart2, path: "/brokerKeys" },
-    { label: "Brokers", icon: Banknote, path: "/brokers" },
-  ];
+  const [sidebarNavItems, setSidebarNavItems] = useState([]);
 
   useEffect(() => {
     const token = localStorage.getItem("token");
+    const role = localStorage.getItem("role");
+
     if (!token) {
       window.location.href = "/login";
       return; // Stop execution if not authenticated
     }
     setIsAuthenticated(true); // User is authenticated
+
+    if (role === "admin") {
+      setSidebarNavItems([
+        { label: "Dashboard", icon: Home, path: "/dashboard" },
+        { label: "Asset", icon: DollarSign, path: "/assets" },
+        { label: "Daily Asset", icon: Notebook, path: "/daily-asset" },
+        { label: "Trades", icon: ArrowRightLeft, path: "/trades" },
+        { label: "Broker Keys", icon: BarChart2, path: "/brokerKeys/admin" },
+        { label: "Brokers", icon: Banknote, path: "/brokers" },
+        { label: "Users", icon: User, path: "/users" },
+      ]);
+    } else if (role === "user") {
+      setSidebarNavItems([
+        { label: "Dashboard", icon: Home, path: "/dashboard" },
+        { label: "Trades", icon: ArrowRightLeft, path: "/trades" },
+        { label: "Broker Keys", icon: BarChart2, path: "/brokerKeys" },
+      ]);
+    }
 
     // Now that we are on the client and authenticated, update displayed info
     // This will cause a re-render only on the client after initial hydration

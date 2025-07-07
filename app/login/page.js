@@ -130,7 +130,7 @@ export default function Login() {
           localStorage.setItem("token", data.token); // Store token
           localStorage.setItem("name", data.name);
           localStorage.setItem("email", data.email);
-
+          localStorage.setItem("role", data.role);
           console.log("Token stored in localStorage.");
         } else {
           console.warn("No token received from backend upon login.");
