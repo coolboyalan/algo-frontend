@@ -1,5 +1,6 @@
 // app/broker-keys/page.js (Server Component)
 import TableContentManager from "@/components/CrudTable/TableContentManager";
+import { Cross } from "lucide-react";
 
 async function getAllBrokers() {
   const apiBaseUrl =
@@ -156,7 +157,7 @@ export default async function BrokerKeyDashboardPage() {
       dynamicSelectDataSources={dynamicOptionsForForms}
       customActions={[
         {
-          icon: <X size={16} />,
+          icon: <Cross size={16} />,
           actionUrl: "/api/broker-key/custom-action", // Custom API endpoint
           title: "Custom Action",
           color: "text-purple-600 hover:text-purple-800",
