@@ -1,11 +1,12 @@
 // app/broker-keys/page.js (Server Component)
 import TableContentManager from "@/components/CrudTable/TableContentManager";
+import { Cross } from "lucide-react";
 
 async function getAllBrokers() {
   const apiBaseUrl =
     process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:3000";
   try {
-    const response = await fetch(`${apiBaseUrl}/api/broker?pagination=false`); // Fetch all brokers
+    const response = await fetch(`${apiBaseUrl}/api/broker?pagination=false`);
     if (!response.ok) {
       console.error(
         "Server: Failed to fetch brokers:",
@@ -33,8 +34,6 @@ export default async function BrokerKeyDashboardPage() {
       sortable: true,
       searchable: false,
     },
-    // Ensure API response for /api/broker-key includes e.g. item.Broker = { name: "..." }
-    // Adjust "Broker.name" or "User.name" to match the exact path in your API response objects
     {
       key: "Broker.name",
       label: "Broker Name",
@@ -59,7 +58,7 @@ export default async function BrokerKeyDashboardPage() {
       sortable: false,
       maxWidth: "150px",
       searchable: false,
-    }, // No custom render
+    },
     {
       key: "apiSecret",
       label: "API Secret",
@@ -67,8 +66,7 @@ export default async function BrokerKeyDashboardPage() {
       sortable: false,
       maxWidth: "100px",
       searchable: false,
-    }, // No custom render (shows actual secret)
-    // { key: "tokenDate", label: "Token Date", type: "date", sortable: true },
+    },
     {
       key: "status",
       label: "Status",
@@ -135,24 +133,6 @@ export default async function BrokerKeyDashboardPage() {
       required: true,
       placeholder: "Enter API Secret",
     },
-    // {
-    //   key: "token",
-    //   label: "Token",
-    //   type: "text",
-    //   placeholder: "Enter token (optional)",
-    // },
-    // { key: "tokenDate", label: "Token Date", type: "date" },
-    // {
-    //   key: "status",
-    //   label: "Status",
-    //   type: "select",
-    //   required: true,
-    //   defaultValue: "true",
-    //   options: [
-    //     { value: "true", label: "Active" },
-    //     { value: "false", label: "Inactive" },
-    //   ],
-    // },
   ];
 
   const dynamicOptionsForFilters = {
@@ -175,6 +155,15 @@ export default async function BrokerKeyDashboardPage() {
       customLink={"https://kite.trade/connect/login?api_key="}
       dynamicFilterOptionsData={dynamicOptionsForFilters}
       dynamicSelectDataSources={dynamicOptionsForForms}
+      customActions={[
+        {
+          icon: <Cross size={16} />,
+          actionUrl: "/api/broker-key/stop", // Custom API endpoint
+          title: "Custom Action",
+          color: "text-purple-600 hover:text-purple-800",
+          bgColor: "hover:bg-purple-100",
+        },
+      ]}
     />
   );
 }

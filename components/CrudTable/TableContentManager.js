@@ -8,7 +8,7 @@ import {
   Filter,
   Search,
   CalendarDays,
-  X,
+  Cross,
   XCircle,
   Eye,
   Edit3,
@@ -19,12 +19,11 @@ import {
   ArrowDown,
   Link2,
 } from "lucide-react";
-import DashboardLayout from "@/components/Layout/DashboardLayout"; // Adjust path
-import Modal from "@/components/Common/Modal"; // Adjust path
-import EditItemForm from "./EditItemForm"; // Adjust path
+import DashboardLayout from "@/components/Layout/DashboardLayout";
+import Modal from "@/components/Common/Modal";
+import EditItemForm from "./EditItemForm";
 import { useRouter } from "next/navigation";
 
-// Helper function to get nested property value
 const getNestedValue = (obj, pathString) => {
   if (!obj || typeof pathString !== "string" || pathString.trim() === "")
     return undefined;
@@ -55,6 +54,7 @@ const TableContentManager = ({
   customLink,
   dynamicSelectDataSources = {},
   dynamicFilterOptionsData = {},
+  customActions = [],
 }) => {
   const router = useRouter();
   const [data, setData] = useState([]);
@@ -93,7 +93,6 @@ const TableContentManager = ({
 
     let requestBody = body;
     if (body && (method === "POST" || method === "PUT")) {
-      // Clean up body: remove null or undefined values, but keep false and 0
       requestBody = Object.entries(body).reduce((acc, [key, value]) => {
         if (value !== null && value !== undefined && value !== "") {
           acc[key] = value;
@@ -127,6 +126,34 @@ const TableContentManager = ({
     } catch (e) {
       console.error(`API call failed for ${method} ${fullEndpoint}:`, e);
       throw e;
+    }
+  };
+
+  const handleCustomAction = async (item, action) => {
+    if (!action.actionUrl) return;
+
+    setIsLoading(true);
+    try {
+      const result = await makeApiCall(
+        `${action.actionUrl}/${item[itemKeyField]}`,
+        action.method || "PUT",
+        action.payload || {},
+      );
+      setNotification({
+        type: "success",
+        message:
+          result.message ||
+          action.successMessage ||
+          "Action completed successfully!",
+      });
+      fetchData();
+    } catch (e) {
+      setNotification({
+        type: "error",
+        message: e.message || action.errorMessage || "Failed to perform action",
+      });
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -189,7 +216,7 @@ const TableContentManager = ({
     activeFilters,
     dateRange,
     itemKeyField,
-  ]); // Added itemKeyField to dep array just in case, though unlikely to change
+  ]);
 
   useEffect(() => {
     fetchData();
@@ -204,7 +231,7 @@ const TableContentManager = ({
         throw new Error(`HTTP error! Status: ${response.status}`);
       }
 
-      const data = await response.json(); // or .text(), .blob(), etc.
+      const data = await response.json();
 
       if (!data.data) {
         window.alert("Please add broker first");
@@ -373,7 +400,7 @@ const TableContentManager = ({
     if (column.type === "actions") {
       return (
         <div className="flex items-center space-x-1.5">
-          {customLink ? (
+          {customLink && (
             <button
               onClick={() => handleCustomLink(item)}
               className="text-blue-600 hover:text-blue-800 p-1.5 rounded hover:bg-blue-100 transition-colors"
@@ -381,8 +408,6 @@ const TableContentManager = ({
             >
               <Link2 size={16} />
             </button>
-          ) : (
-            ""
           )}
           <button
             onClick={() => handleViewItem(item)}
@@ -405,10 +430,26 @@ const TableContentManager = ({
           >
             <Trash2 size={16} />
           </button>
+
+          {/* Custom Actions */}
+          {customActions.map((action, index) => {
+            return (
+              <button
+                key={index}
+                onClick={() => handleCustomAction(item, action)}
+                className={`${action.color || "text-gray-600 hover:text-gray-800"} ${action.bgColor || "hover:bg-gray-100"} p-1.5 rounded transition-colors`}
+                title={action.title}
+              >
+                {action.icon || <Cross size={16} />}
+              </button>
+            );
+          })}
         </div>
       );
     }
+
     const value = getNestedValue(item, column.key);
+
     if (column.type === "enum") {
       const enumConfig = column.enumConfig?.find(
         (e) => String(e.value) === String(value),
@@ -483,6 +524,7 @@ const TableContentManager = ({
       </div>
     );
   };
+
   const getPageNumbers = () => {
     const pages = [];
     const maxVisiblePages = 5;
@@ -958,7 +1000,7 @@ const TableContentManager = ({
         >
           {formFields.length > 0 && (
             <EditItemForm
-              item={null} // Passing null for create mode
+              item={null}
               formFields={formFields}
               onSubmit={handleCreateSubmit}
               onCancel={() => setIsCreateModalOpen(false)}
@@ -1045,4 +1087,5 @@ const TableContentManager = ({
     </DashboardLayout>
   );
 };
+
 export default TableContentManager;
