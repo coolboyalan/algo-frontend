@@ -346,7 +346,6 @@ const TradingDashboardPage = () => {
             })}
           </p>
         </header>
-
         <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
           {[
             {
@@ -387,54 +386,161 @@ const TradingDashboardPage = () => {
             </div>
           ))}
         </section>
-
         <section className="mb-10">
           <h2 className="text-2xl font-semibold mb-5 text-slate-700">
-            {" "}
-            Broker Status{" "}
+            Broker Status
           </h2>
           {brokers.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-5">
-              {brokers.map((broker) => (
-                <div
-                  key={broker.id}
-                  className={`bg-white p-5 rounded-lg shadow-lg border-l-4 ${getBrokerStatusColor(broker.status)} transition-all duration-300 hover:shadow-md hover:shadow-blue-300/50 hover:scale-105`}
-                >
-                  <div className="flex justify-between items-start mb-3">
-                    {" "}
-                    <h3 className="text-lg font-semibold text-slate-800 leading-tight">
-                      {" "}
-                      {broker.name}{" "}
-                    </h3>{" "}
-                    {getBrokerStatusIcon(broker.status)}{" "}
+              {brokers.map((broker) => {
+                // Determine button properties based on status
+                let buttonProps = {
+                  url: broker.loginUrl,
+                  text: "Login to Broker",
+                  color:
+                    "bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700",
+                  icon: (
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-4 w-4"
+                      viewBox="0 0 20 20"
+                      fill="currentColor"
+                    >
+                      <path
+                        fillRule="evenodd"
+                        d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z"
+                        clipRule="evenodd"
+                      />
+                    </svg>
+                  ),
+                };
+
+                if (broker.status === "active" && broker.inactiveUrl) {
+                  buttonProps = {
+                    url: broker.inactiveUrl,
+                    text: "Disable Account",
+                    color:
+                      "bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700",
+                    icon: (
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        className="h-4 w-4"
+                        viewBox="0 0 20 20"
+                        fill="currentColor"
+                      >
+                        <path
+                          fillRule="evenodd"
+                          d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z"
+                          clipRule="evenodd"
+                        />
+                      </svg>
+                    ),
+                  };
+                } else if (broker.status === "maintenance") {
+                  buttonProps = {
+                    url: broker.loginUrl,
+                    text: "Under Maintenance",
+                    color:
+                      "bg-gradient-to-r from-gray-400 to-gray-500 cursor-not-allowed",
+                    icon: (
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        className="h-4 w-4"
+                        viewBox="0 0 20 20"
+                        fill="currentColor"
+                      >
+                        <path
+                          fillRule="evenodd"
+                          d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+                          clipRule="evenodd"
+                        />
+                      </svg>
+                    ),
+                  };
+                }
+
+                return (
+                  <div
+                    key={broker.id}
+                    className={`bg-white p-5 rounded-lg shadow-lg border-l-4 ${getBrokerStatusColor(broker.status)} transition-all duration-300 hover:shadow-md hover:shadow-blue-300/50 hover:scale-105 flex flex-col`}
+                  >
+                    <div className="flex-grow">
+                      <div className="flex justify-between items-start mb-3">
+                        <h3 className="text-lg font-semibold text-slate-800 leading-tight">
+                          {broker.name}
+                        </h3>
+                        {getBrokerStatusIcon(broker.status)}
+                      </div>
+                      <p className="text-xs text-slate-500 uppercase tracking-wider mb-1">
+                        Status
+                      </p>
+                      <p
+                        className={`text-sm font-medium capitalize ${
+                          broker.status === "active"
+                            ? "text-green-600"
+                            : broker.status === "inactive"
+                              ? "text-red-600"
+                              : broker.status === "maintenance"
+                                ? "text-yellow-600"
+                                : "text-gray-600"
+                        }`}
+                      >
+                        {broker.status}
+                      </p>
+                      <p className="text-xs text-slate-500 uppercase tracking-wider mt-3 mb-1">
+                        P&L ({broker.currency})
+                      </p>
+                      <p
+                        className={`text-sm font-medium ${
+                          broker.pnl >= 0 ? "text-green-600" : "text-red-600"
+                        }`}
+                      >
+                        {formatCurrency(broker.pnl, broker.currency)}
+                      </p>
+                    </div>
+
+                    {/* Login/Renew Button */}
+                    {buttonProps.url ? (
+                      <a
+                        href={buttonProps.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className={`${buttonProps.color} mt-4 w-full inline-flex items-center justify-center gap-2 rounded-md px-3 py-2 text-sm font-semibold text-white shadow-sm transition-all duration-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 ${
+                          broker.status === "maintenance"
+                            ? "pointer-events-none"
+                            : ""
+                        }`}
+                      >
+                        {buttonProps.icon}
+                        {buttonProps.text}
+                      </a>
+                    ) : (
+                      <button
+                        disabled
+                        className="mt-4 w-full inline-flex items-center justify-center gap-2 rounded-md bg-gradient-to-r from-gray-400 to-gray-500 px-3 py-2 text-sm font-semibold text-white shadow-sm cursor-not-allowed"
+                      >
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          className="h-4 w-4"
+                          viewBox="0 0 20 20"
+                          fill="currentColor"
+                        >
+                          <path
+                            fillRule="evenodd"
+                            d="M13.477 14.89A6 6 0 015.11 6.524l8.367 8.368zm1.414-1.414L6.524 5.11a6 6 0 018.367 8.367zM18 10a8 8 0 11-16 0 8 8 0 0116 0z"
+                            clipRule="evenodd"
+                          />
+                        </svg>
+                        Service Unavailable
+                      </button>
+                    )}
                   </div>
-                  <p className="text-xs text-slate-500 uppercase tracking-wider mb-1">
-                    {" "}
-                    Status{" "}
-                  </p>
-                  <p
-                    className={`text-sm font-medium capitalize ${broker.status === "active" ? "text-green-600" : broker.status === "inactive" ? "text-red-600" : broker.status === "maintenance" ? "text-yellow-600" : "text-gray-600"}`}
-                  >
-                    {" "}
-                    {broker.status}{" "}
-                  </p>
-                  <p className="text-xs text-slate-500 uppercase tracking-wider mt-3 mb-1">
-                    {" "}
-                    P&L ({broker.currency}){" "}
-                  </p>
-                  <p
-                    className={`text-sm font-medium ${broker.pnl >= 0 ? "text-green-600" : "text-red-600"}`}
-                  >
-                    {" "}
-                    {formatCurrency(broker.pnl, broker.currency)}{" "}
-                  </p>
-                </div>
-              ))}
+                );
+              })}
             </div>
           ) : (
             <p className="text-slate-500 text-center py-8">
-              {" "}
-              No broker key data available.{" "}
+              No broker key data available.
             </p>
           )}
         </section>
@@ -619,7 +725,6 @@ const TradingDashboardPage = () => {
             </ResponsiveContainer>
           </div>
         </section>
-
         <footer className="mt-12 pt-8 border-t border-gray-300 text-center text-xs sm:text-sm text-slate-600">
           <p>
             {" "}
