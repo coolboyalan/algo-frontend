@@ -155,6 +155,8 @@ export default async function BrokerKeyDashboardPage() {
       customLink={"https://kite.trade/connect/login?api_key="}
       dynamicFilterOptionsData={dynamicOptionsForFilters}
       dynamicSelectDataSources={dynamicOptionsForForms}
+      mobileColumns={["Broker.name", "id"]}
+      disableMobilePagination={true}
       customActions={[
         {
           icon: <Cross size={16} />,

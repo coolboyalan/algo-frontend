@@ -1,3 +1,4 @@
+// components/CrudTable/TableContentManager.jsx
 "use client";
 import { useState, useEffect, useCallback } from "react";
 import {
@@ -19,10 +20,10 @@ import {
   ArrowDown,
   Link2,
 } from "lucide-react";
-import DashboardLayout from "@/components/Layout/DashboardLayout";
 import Modal from "@/components/Common/Modal";
 import EditItemForm from "./EditItemForm";
 import { useRouter } from "next/navigation";
+import DashboardLayout from "../Layout/DashboardLayout";
 
 const getNestedValue = (obj, pathString) => {
   if (!obj || typeof pathString !== "string" || pathString.trim() === "")
@@ -55,6 +56,8 @@ const TableContentManager = ({
   dynamicSelectDataSources = {},
   dynamicFilterOptionsData = {},
   customActions = [],
+  mobileColumns = [],
+  disableMobilePagination = false, // New prop to disable pagination on mobile
 }) => {
   const router = useRouter();
   const [data, setData] = useState([]);
@@ -70,6 +73,7 @@ const TableContentManager = ({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
   const [notification, setNotification] = useState({ type: "", message: "" });
+  const [isMobile, setIsMobile] = useState(false); // Track mobile state
 
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -83,6 +87,20 @@ const TableContentManager = ({
       process.env &&
       process.env.NEXT_PUBLIC_API_BASE_URL) ||
     "";
+
+  // Check for mobile view
+  useEffect(() => {
+    const checkIfMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+
+    checkIfMobile();
+    window.addEventListener("resize", checkIfMobile);
+
+    return () => {
+      window.removeEventListener("resize", checkIfMobile);
+    };
+  }, []);
 
   const makeApiCall = async (endpointSuffix, method = "GET", body = null) => {
     const fullEndpoint = `${baseUrl}${endpointSuffix}`;
@@ -341,9 +359,19 @@ const TableContentManager = ({
     }
   };
 
+  // Enhance columns with mobile visibility information
   const tableColumns = [
-    ...initialColumns,
-    { key: "actions", label: "Actions", type: "actions", sortable: false },
+    ...initialColumns.map((col) => ({
+      ...col,
+      showOnMobile: mobileColumns.includes(col.key),
+    })),
+    {
+      key: "actions",
+      label: "Actions",
+      type: "actions",
+      sortable: false,
+      showOnMobile: true, // Always show actions on mobile
+    },
   ];
 
   const requestSort = (key) => {
@@ -557,8 +585,8 @@ const TableContentManager = ({
   };
 
   return (
-    <DashboardLayout pageTitle={pageTitle}>
-      <div className="bg-white shadow-md rounded-lg">
+    <DashboardLayout>
+      <div className="bg-white shadow-md rounded-lg w-full overflow-hidden">
         <div className="px-6 py-4 border-b border-gray-200">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div className="relative flex-grow max-w-xl">
@@ -768,7 +796,9 @@ const TableContentManager = ({
                     <th
                       key={column.key}
                       scope="col"
-                      className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider group whitespace-nowrap"
+                      className={`px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider group whitespace-nowrap ${
+                        column.showOnMobile ? "" : "hidden sm:table-cell"
+                      }`}
                       onClick={() => requestSort(column.key)}
                       style={{
                         cursor:
@@ -875,7 +905,9 @@ const TableContentManager = ({
                       {tableColumns.map((column) => (
                         <td
                           key={`${item[itemKeyField]}-${column.key}`}
-                          className="px-6 py-4 whitespace-nowrap text-sm"
+                          className={`px-6 py-4 whitespace-nowrap text-sm ${
+                            column.showOnMobile ? "" : "hidden sm:table-cell"
+                          }`}
                         >
                           {renderCell(item, column)}
                         </td>
@@ -915,38 +947,46 @@ const TableContentManager = ({
                 </select>
               </div>
             </div>
-            <div className="flex items-center space-x-1">
-              <button
-                onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-                disabled={currentPage === 1 || isLoading}
-                className={`p-2 rounded-md border ${currentPage === 1 || isLoading ? "bg-gray-100 text-gray-400 cursor-not-allowed" : "bg-white text-gray-600 hover:bg-gray-50"} transition-colors shadow-sm`}
-              >
-                <ChevronLeft size={18} />
-              </button>
-              {getPageNumbers().map((page, index) => (
+
+            {/* Conditionally render pagination controls */}
+            {!disableMobilePagination || !isMobile ? (
+              <div className="flex items-center space-x-1">
                 <button
-                  key={index}
                   onClick={() =>
-                    typeof page === "number" ? setCurrentPage(page) : null
+                    setCurrentPage((prev) => Math.max(prev - 1, 1))
                   }
-                  className={`w-9 h-9 rounded-md flex items-center justify-center font-medium ${page === currentPage ? "bg-blue-500 text-white border-blue-500" : "bg-white text-gray-600 border-gray-300 hover:bg-gray-50"} border transition-colors ${typeof page !== "number" || isLoading ? "pointer-events-none opacity-60" : ""} shadow-sm`}
-                  disabled={page === "..." || isLoading}
+                  disabled={currentPage === 1 || isLoading}
+                  className={`p-2 rounded-md border ${currentPage === 1 || isLoading ? "bg-gray-100 text-gray-400 cursor-not-allowed" : "bg-white text-gray-600 hover:bg-gray-50"} transition-colors shadow-sm`}
                 >
-                  {page}
+                  <ChevronLeft size={18} />
                 </button>
-              ))}
-              <button
-                onClick={() =>
-                  setCurrentPage((prev) => Math.min(prev + 1, totalPages || 1))
-                }
-                disabled={
-                  currentPage === totalPages || totalPages === 0 || isLoading
-                }
-                className={`p-2 rounded-md border ${currentPage === totalPages || totalPages === 0 || isLoading ? "bg-gray-100 text-gray-400 cursor-not-allowed" : "bg-white text-gray-600 hover:bg-gray-50"} transition-colors shadow-sm`}
-              >
-                <ChevronRight size={18} />
-              </button>
-            </div>
+                {getPageNumbers().map((page, index) => (
+                  <button
+                    key={index}
+                    onClick={() =>
+                      typeof page === "number" ? setCurrentPage(page) : null
+                    }
+                    className={`w-9 h-9 rounded-md flex items-center justify-center font-medium ${page === currentPage ? "bg-blue-500 text-white border-blue-500" : "bg-white text-gray-600 border-gray-300 hover:bg-gray-50"} border transition-colors ${typeof page !== "number" || isLoading ? "pointer-events-none opacity-60" : ""} shadow-sm`}
+                    disabled={page === "..." || isLoading}
+                  >
+                    {page}
+                  </button>
+                ))}
+                <button
+                  onClick={() =>
+                    setCurrentPage((prev) =>
+                      Math.min(prev + 1, totalPages || 1),
+                    )
+                  }
+                  disabled={
+                    currentPage === totalPages || totalPages === 0 || isLoading
+                  }
+                  className={`p-2 rounded-md border ${currentPage === totalPages || totalPages === 0 || isLoading ? "bg-gray-100 text-gray-400 cursor-not-allowed" : "bg-white text-gray-600 hover:bg-gray-50"} transition-colors shadow-sm`}
+                >
+                  <ChevronRight size={18} />
+                </button>
+              </div>
+            ) : null}
           </div>
         )}
 
