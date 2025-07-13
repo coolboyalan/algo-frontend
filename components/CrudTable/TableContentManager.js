@@ -59,6 +59,12 @@ const TableContentManager = ({
   mobileColumns = [],
   disableMobilePagination = false, // New prop to disable pagination on mobile
 }) => {
+  if (!mobileColumns.length) {
+    mobileColumns = initialColumns.map((ele) => {
+      return ele.key;
+    });
+  }
+
   const router = useRouter();
   const [data, setData] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
