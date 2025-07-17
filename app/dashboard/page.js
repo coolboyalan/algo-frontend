@@ -16,6 +16,7 @@ import {
   RefreshCw,
   ArrowUpRight,
   ArrowDownRight,
+  StopCircle,
   Briefcase,
   Clock,
 } from "lucide-react";
@@ -155,6 +156,60 @@ const TradingDashboardPage = () => {
   const onPieEnter = useCallback((_, index) => {
     setActivePieIndex(index);
   }, []);
+
+  const stopAll = async () => {
+    setError(null);
+    console.log("Dashboard: Starting data fetch...");
+
+    try {
+      const token =
+        typeof window !== "undefined" ? localStorage.getItem("token") : null;
+      const headers = { "Content-Type": "application/json" };
+      if (token) {
+        headers["Authorization"] = `Bearer ${token}`;
+      }
+
+      const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || ""; // Ensure this is set in your .env file
+
+      const response = await fetch(`${apiBaseUrl}/api/broker-key/stop`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          ...headers,
+        },
+        body: JSON.stringify({}),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("Dashboard: API error response:", errorText);
+        throw new Error(
+          `Failed to fetch dashboard data: ${response.status} ${errorText || response.statusText}`,
+        );
+      }
+
+      const result = await response.json();
+      console.log("Dashboard: Received data:", result);
+
+      if (
+        !result ||
+        typeof result !== "object" ||
+        !result.success ||
+        typeof result.data !== "object"
+      ) {
+        throw new Error(
+          "Invalid API response structure. Expected { success: true, data: { ... } }.",
+        );
+      }
+      window.alert("Deactivated successfully");
+    } catch (e) {
+      setError(
+        err.message || "Failed to load dashboard data. Please try refreshing.",
+      );
+
+      console.log(e);
+    }
+  };
 
   const fetchData = useCallback(async () => {
     setIsLoading(true);
@@ -324,13 +379,23 @@ const TradingDashboardPage = () => {
             <h1 className="text-3xl sm:text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-600 via-teal-500 to-green-500 pb-1 self-start sm:self-center">
               AlgoMan Dashboard
             </h1>
-            <button
-              onClick={fetchData}
-              className="px-4 py-2 bg-white text-sm text-slate-700 rounded-lg hover:bg-gray-50 transition-colors flex items-center shadow-md border border-gray-300"
-              title="Refresh Data"
-            >
-              <RefreshCw size={16} className="mr-2 text-slate-600" /> Refresh
-            </button>
+            <div className="flex">
+              <button
+                onClick={stopAll}
+                className="mx-1 px-4 py-2 bg-white text-sm text-red-700 rounded-lg hover:bg-gray-50 transition-colors flex items-center shadow-md border border-red-300"
+                title="Refresh Data"
+              >
+                <StopCircle size={16} className="mr-2 text-red-600" /> Stop All
+              </button>
+
+              <button
+                onClick={fetchData}
+                className="px-4 py-2 bg-white text-sm text-slate-700 rounded-lg hover:bg-gray-50 transition-colors flex items-center shadow-md border border-gray-300"
+                title="Refresh Data"
+              >
+                <RefreshCw size={16} className="mr-2 text-slate-600" /> Refresh
+              </button>
+            </div>{" "}
           </div>
           <p className="text-xs sm:text-sm text-slate-500 flex items-center">
             <Clock size={14} className="mr-1.5" /> Last updated:{" "}
