@@ -294,7 +294,9 @@ const TradingDashboardPage = () => {
     }
   }, []);
 
+  let role;
   useEffect(() => {
+    role = localStorage.getItem("role");
     fetchData();
   }, [fetchData]);
 
@@ -380,14 +382,16 @@ const TradingDashboardPage = () => {
               AlgoMan Dashboard
             </h1>
             <div className="flex">
-              <button
-                onClick={stopAll}
-                className="mx-1 px-4 py-2 bg-white text-sm text-red-700 rounded-lg hover:bg-gray-50 transition-colors flex items-center shadow-md border border-red-300"
-                title="Refresh Data"
-              >
-                <StopCircle size={16} className="mr-2 text-red-600" /> Stop All
-              </button>
-
+              {localStorage.getItem("role") === "admin" ? (
+                <button
+                  onClick={stopAll}
+                  className="mx-1 px-4 py-2 bg-white text-sm text-red-700 rounded-lg hover:bg-gray-50 transition-colors flex items-center shadow-md border border-red-300"
+                  title="Refresh Data"
+                >
+                  <StopCircle size={16} className="mr-2 text-red-600" /> Stop
+                  All
+                </button>
+              ) : null}
               <button
                 onClick={fetchData}
                 className="px-4 py-2 bg-white text-sm text-slate-700 rounded-lg hover:bg-gray-50 transition-colors flex items-center shadow-md border border-gray-300"
