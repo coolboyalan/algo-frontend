@@ -1,0 +1,15 @@
+{
+  "/_not-found/page": "app/_not-found/page.js",
+  "/favicon.ico/route": "app/favicon.ico/route.js",
+  "/assets/page": "app/assets/page.js",
+  "/brokerKeys/admin/page": "app/brokerKeys/admin/page.js",
+  "/brokerKeys/page": "app/brokerKeys/page.js",
+  "/brokers/page": "app/brokers/page.js",
+  "/daily-asset/page": "app/daily-asset/page.js",
+  "/dashboard/page": "app/dashboard/page.js",
+  "/login/page": "app/login/page.js",
+  "/page": "app/page.js",
+  "/register/page": "app/register/page.js",
+  "/trades/page": "app/trades/page.js",
+  "/users/page": "app/users/page.js"
+}

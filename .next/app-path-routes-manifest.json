@@ -1,0 +1,15 @@
+{
+  "/_not-found/page": "/_not-found",
+  "/favicon.ico/route": "/favicon.ico",
+  "/assets/page": "/assets",
+  "/brokerKeys/admin/page": "/brokerKeys/admin",
+  "/brokerKeys/page": "/brokerKeys",
+  "/brokers/page": "/brokers",
+  "/daily-asset/page": "/daily-asset",
+  "/dashboard/page": "/dashboard",
+  "/login/page": "/login",
+  "/page": "/",
+  "/register/page": "/register",
+  "/trades/page": "/trades",
+  "/users/page": "/users"
+}
