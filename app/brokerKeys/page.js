@@ -16,6 +16,7 @@ async function getAllBrokers() {
       return [];
     }
     const result = await response.json();
+    console.log(result.data);
     return result.data || [];
   } catch (error) {
     console.error("Server: Error fetching brokers:", error);
