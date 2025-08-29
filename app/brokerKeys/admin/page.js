@@ -60,6 +60,13 @@ export default async function BrokerKeyDashboardPage() {
       searchable: false,
     },
     {
+      key: "timeFrame",
+      label: "Time Frame",
+      type: "number",
+      sortable: true,
+      searchable: false,
+    },
+    {
       key: "apiSecret",
       label: "API Secret",
       type: "text",
@@ -132,6 +139,17 @@ export default async function BrokerKeyDashboardPage() {
       type: "password",
       required: true,
       placeholder: "Enter API Secret",
+    },
+    {
+      key: "timeFrame",
+      label: "Time Frame",
+      type: "select",
+      required: true,
+      defaultValue: "true",
+      options: [
+        { value: 5, label: "5 Minute" },
+        { value: 3, label: "3 Minute" },
+      ],
     },
   ];
 
