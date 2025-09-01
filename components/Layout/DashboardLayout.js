@@ -104,7 +104,7 @@ const DashboardLayout = ({ pageTitle, children }) => {
       {/* Mobile Sidebar Overlay - Fixed black background issue */}
       {mobileMenuOpen && (
         <div
-          className="fixed inset-0 bg-transparent bg-opacity-50 z-30 lg:hidden"
+          className="fixed inset-0 bg-black bg-opacity-50 z-30 lg:hidden"
           onClick={() => setMobileMenuOpen(false)}
         />
       )}
@@ -115,7 +115,7 @@ const DashboardLayout = ({ pageTitle, children }) => {
           transform ${
             mobileMenuOpen ? "translate-x-0" : "-translate-x-full"
           } lg:translate-x-0
-          w-64
+          ${mobileMenuOpen ? "w-full" : "w-64"}
           transition-all duration-300 ease-in-out flex flex-col border-r border-gray-200 shadow-lg`}
       >
         <div className="p-4 flex items-center justify-between border-b border-gray-200 h-16">
