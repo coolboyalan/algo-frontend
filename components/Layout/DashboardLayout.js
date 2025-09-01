@@ -104,7 +104,7 @@ const DashboardLayout = ({ pageTitle, children }) => {
       {/* Mobile Sidebar Overlay - Fixed black background issue */}
       {mobileMenuOpen && (
         <div
-          className="fixed inset-0 bg-black bg-opacity-50 z-30 lg:hidden"
+          className="fixed inset-0 bg-transparent bg-opacity-50 z-30 lg:hidden"
           onClick={() => setMobileMenuOpen(false)}
         />
       )}
@@ -119,7 +119,7 @@ const DashboardLayout = ({ pageTitle, children }) => {
           transition-all duration-300 ease-in-out flex flex-col border-r border-gray-200 shadow-lg`}
       >
         <div className="p-4 flex items-center justify-between border-b border-gray-200 h-16">
-          <div className="flex items-center">
+          <a className="flex items-center" href="/dashboard">
             <div className="bg-indigo-600 p-2 rounded-lg">
               <Image
                 src="/logo.png"
@@ -129,7 +129,7 @@ const DashboardLayout = ({ pageTitle, children }) => {
               />
             </div>
             <h1 className="text-xl font-bold text-gray-900 ml-3">Algoman</h1>
-          </div>
+          </a>
 
           {/* Close button for mobile sidebar - Improved positioning */}
           <button

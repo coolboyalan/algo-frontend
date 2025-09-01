@@ -373,14 +373,74 @@ const TradingDashboardPage = () => {
     );
   }
 
+  const DashboardTitle = () => {
+    // Get name from localStorage, fallback to "Trader" if not found
+    const userName = localStorage.getItem("name") || "Trader";
+
+    // Get current time in Indian timezone
+    const getIndianTime = () => {
+      const now = new Date();
+      const utc = now.getTime() + now.getTimezoneOffset() * 60000;
+      const indianTime = new Date(utc + 330 * 60000); // +5:30 IST
+      return indianTime;
+    };
+
+    // Determine greeting based on time
+    const getGreeting = () => {
+      const hour = getIndianTime().getHours();
+
+      if (hour >= 5 && hour < 12) {
+        return "Good Morning";
+      } else if (hour >= 12 && hour < 17) {
+        return "Good Afternoon";
+      } else if (hour >= 17 && hour < 21) {
+        return "Good Evening";
+      } else {
+        return "Good Night";
+      }
+    };
+
+    // Success quotes array
+    const successQuotes = [
+      "Success is not final, failure is not fatal: It is the courage to continue that counts.",
+      "Don't watch the clock; do what it does. Keep going.",
+      "Success usually comes to those who are too busy to be looking for it.",
+      "The harder you work for something, the greater you'll feel when you achieve it.",
+      "Don't stop when you're tired. Stop when you're done.",
+      "The stock market is filled with individuals who know the price of everything, but the value of nothing.",
+      "Risk comes from not knowing what you're doing.",
+      "In investing, what is comfortable is rarely profitable.",
+      "The best investment you can make is in yourself.",
+      "It's not about timing the market, but time in the market.",
+    ];
+
+    // Get random quote
+    const getRandomQuote = () => {
+      const randomIndex = Math.floor(Math.random() * successQuotes.length);
+      return successQuotes[randomIndex];
+    };
+
+    const greeting = getGreeting();
+    const quote = getRandomQuote();
+
+    return (
+      <div className="flex flex-col items-center space-y-2">
+        <h1 className="text-3xl sm:text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-600 via-teal-500 to-green-500 pb-1">
+          {greeting}, {userName}!{" "}
+        </h1>
+        <p className="text-sm sm:text-base text-gray-600 italic text-center max-w-2xl">
+          "{quote}"
+        </p>
+      </div>
+    );
+  };
+
   return (
     <DashboardLayout>
       <div className="min-h-screen bg-gradient-to-br from-gray-100 to-blue-50 text-gray-800 p-4 sm:p-6 lg:p-8 font-sans">
         <header className="mb-8">
           <div className="flex flex-col sm:flex-row justify-between items-center mb-2 gap-4">
-            <h1 className="text-3xl sm:text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-600 via-teal-500 to-green-500 pb-1 self-start sm:self-center">
-              AlgoMan Dashboard
-            </h1>
+            <DashboardTitle />
             <div className="flex">
               {localStorage.getItem("role") === "admin" ? (
                 <button

@@ -12,6 +12,7 @@ import {
   Cross,
   XCircle,
   Eye,
+  X,
   Edit3,
   Trash2,
   AlertTriangle,
@@ -595,7 +596,7 @@ const TableContentManager = ({
       <div className="bg-white shadow-md rounded-lg w-full overflow-hidden">
         <div className="px-6 py-4 border-b border-gray-200">
           <div className="flex flex-wrap items-center justify-between gap-4">
-            <div className="relative flex-grow max-w-xl">
+            <div className="relative flex-grow max-w-l">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                 <Search size={18} className="text-gray-400" />
               </div>
@@ -603,7 +604,7 @@ const TableContentManager = ({
                 <select
                   value={searchColumn}
                   onChange={(e) => handleSearchColumnChange(e.target.value)}
-                  className="h-full bg-transparent border-none text-sm text-gray-500 focus:ring-0 pr-7 appearance-none"
+                  className="h-full bg-transparent border-none text-sm text-right text-gray-500 pr-3 focus:ring-0 appearance-none"
                 >
                   {initialColumns
                     .filter(
@@ -641,7 +642,7 @@ const TableContentManager = ({
                   <Filter size={16} className="mr-2" /> Filters
                 </button>
               )}
-              <div className="flex items-center space-x-1 bg-white rounded-lg border border-gray-300 px-3 py-1.5 text-sm hover:border-gray-400 transition-colors">
+              <div className="flex items-center space-x-1 bg-white rounded-lg border border-gray-300 px-3 py-1.5 my-2 text-sm hover:border-gray-400 transition-colors">
                 <CalendarDays size={16} className="text-gray-500" />
                 <input
                   type="date"
