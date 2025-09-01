@@ -1,54 +1,53 @@
+// app/brokers/page.js - Dark Theme Optimized
 import TableContentManager from "@/components/CrudTable/TableContentManager";
+import { Building2, Calendar, Hash } from "lucide-react";
 
-const BrokerDashboardPage = () => {
+const darkEnumConfig = [
+  {
+    value: true,
+    display: "Active",
+    bgColor: "bg-emerald-500/20 border border-emerald-500/30",
+    textColor: "text-emerald-400",
+  },
+  {
+    value: false,
+    display: "Inactive",
+    bgColor: "bg-red-500/20 border border-red-500/30",
+    textColor: "text-red-400",
+  },
+];
+
+export default function BrokerDashboardPage() {
+  // Simplified columns without render functions
   const brokerColumns = [
-    {
-      key: "id",
-      label: "ID",
-      type: "number",
-      sortable: true,
-    },
-    {
-      key: "name",
-      label: "Broker Name",
-      type: "text",
-      sortable: true,
-    },
-    {
-      key: "createdAt",
-      label: "Created at",
-      type: "date",
-      sortable: true,
-    },
+    { key: "id", label: "ID", type: "number", sortable: true },
+    { key: "name", label: "Broker Name", type: "text", sortable: true },
+    { key: "createdAt", label: "Created At", type: "date", sortable: true },
   ];
 
   const brokerFormFields = [
-    {
-      key: "id",
-      label: "Broker ID",
-      type: "number", // Or number, but text usually safer for IDs if they can have leading zeros or be non-numeric
-      disabled: true, // Example: ID is system-generated and read-only when editing
-      placeholder: "ID (auto-generated)",
-    },
     {
       key: "name",
       label: "Broker Name",
       type: "text",
       required: true,
-      placeholder: "Enter broker name",
+      placeholder: "Enter broker name (e.g. Zerodha, Upstox)",
     },
   ];
 
   return (
     <TableContentManager
-      apiEndpoint="/api/broker" // Your actual API endpoint for brokers
+      apiEndpoint="/api/broker"
       columns={brokerColumns}
       formFields={brokerFormFields}
-      itemKeyField="id" // The unique identifier field for a broker item
-      pageTitle="Broker Management"
-      canAddItem={true} // Allow adding new brokers
+      itemKeyField="id"
+      pageTitle="Brokers"
+      canAddItem={true}
     />
   );
-};
+}
 
-export default BrokerDashboardPage;
+export const metadata = {
+  title: "Broker Management | Algoman Dashboard",
+  description: "Manage supported trading brokers and platforms",
+};

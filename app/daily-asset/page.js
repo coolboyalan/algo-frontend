@@ -1,14 +1,14 @@
-// app/dailyAssets/page.js
+// app/dailyAssets/page.js - Dark Theme Optimized
 import TableContentManager from "@/components/CrudTable/TableContentManager";
 
 async function getAllAssets() {
   const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
   try {
     const response = await fetch(`${apiBaseUrl}/api/asset?pagination=false`);
+    if (!response.ok) return [];
     const result = await response.json();
     return result.data || [];
-  } catch (err) {
-    console.error("Error fetching assets", err);
+  } catch {
     return [];
   }
 }
@@ -18,14 +18,10 @@ export default async function DailyAssetDashboardPage() {
 
   const dailyAssetColumns = [
     { key: "id", label: "ID", type: "number", sortable: true },
-    {
-      key: "day",
-      label: "day",
-      type: "text",
-      sortable: true,
-    },
+    { key: "day", label: "Day", type: "text", sortable: true },
     { key: "Asset.name", label: "Asset Name", type: "text", sortable: true },
   ];
+
   const dailyAssetFilters = [
     {
       key: "assetId",
@@ -43,7 +39,7 @@ export default async function DailyAssetDashboardPage() {
       label: "Week Day",
       type: "select",
       required: true,
-      defaultValue: "true",
+      defaultValue: "Monday",
       options: [
         { value: "Monday", label: "Monday" },
         { value: "Tuesday", label: "Tuesday" },
@@ -57,19 +53,12 @@ export default async function DailyAssetDashboardPage() {
       label: "Asset",
       type: "select_dynamic",
       required: true,
+      placeholder: "Select an asset",
       optionsSourceKey: "assetsList",
       optionValueKey: "id",
       optionLabelKey: "name",
     },
   ];
-
-  const dynamicFilterOptionsData = {
-    assetsForFilter: allAssets,
-  };
-
-  const dynamicSelectDataSources = {
-    assetsList: allAssets,
-  };
 
   return (
     <TableContentManager
@@ -78,10 +67,15 @@ export default async function DailyAssetDashboardPage() {
       filters={dailyAssetFilters}
       formFields={dailyAssetFormFields}
       itemKeyField="id"
-      pageTitle="Daily-Asset Management"
+      pageTitle="Daily Assets"
       canAddItem={true}
-      dynamicFilterOptionsData={dynamicFilterOptionsData}
-      dynamicSelectDataSources={dynamicSelectDataSources}
+      dynamicFilterOptionsData={{ assetsForFilter: allAssets }}
+      dynamicSelectDataSources={{ assetsList: allAssets }}
     />
   );
 }
+
+export const metadata = {
+  title: "Daily Asset Management | Algoman Dashboard",
+  description: "Manage daily asset allocations and trading schedules",
+};

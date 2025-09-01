@@ -1,4 +1,3 @@
-// components/CrudTable/TableContentManager.jsx
 "use client";
 import { useState, useEffect, useCallback } from "react";
 import {
@@ -26,23 +25,31 @@ import EditItemForm from "./EditItemForm";
 import { useRouter } from "next/navigation";
 import DashboardLayout from "../Layout/DashboardLayout";
 
+// Dark theme configuration
+const darkTheme = {
+  background: "bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900",
+  card: "bg-slate-800/90 border-slate-700/50 backdrop-blur-sm",
+  cardHover: "hover:bg-slate-700/50",
+  text: "text-slate-100",
+  textMuted: "text-slate-400",
+  textSecondary: "text-slate-300",
+  primary: "bg-sky-600 hover:bg-sky-700 border-sky-500",
+  secondary: "bg-slate-700/50 hover:bg-slate-600/50 border-slate-600/50",
+  success: "bg-emerald-500/20 text-emerald-400 border-emerald-500/30",
+  danger: "bg-red-500/20 text-red-400 border-red-500/30",
+  warning: "bg-yellow-500/20 text-yellow-400 border-yellow-500/30",
+  input:
+    "bg-slate-700/50 border-slate-600 text-slate-100 placeholder-slate-400",
+  table: "bg-slate-800/60 divide-slate-700",
+  tableHeader: "bg-slate-900/80",
+  tableRow: "hover:bg-slate-700/30",
+};
+
+// Utility functions
 const getNestedValue = (obj, pathString) => {
-  if (!obj || typeof pathString !== "string" || pathString.trim() === "")
+  if (!obj || typeof pathString !== "string" || !pathString.trim())
     return undefined;
-  const path = pathString.split(".");
-  let current = obj;
-  for (let i = 0; i < path.length; i++) {
-    const key = path[i];
-    if (
-      current === null ||
-      typeof current !== "object" ||
-      !Object.prototype.hasOwnProperty.call(current, key)
-    ) {
-      return undefined;
-    }
-    current = current[key];
-  }
-  return current;
+  return pathString.split(".").reduce((current, key) => current?.[key], obj);
 };
 
 const TableContentManager = ({
@@ -58,315 +65,359 @@ const TableContentManager = ({
   dynamicFilterOptionsData = {},
   customActions = [],
   mobileColumns = [],
-  disableMobilePagination = false, // New prop to disable pagination on mobile
+  disableMobilePagination = false,
 }) => {
-  if (!mobileColumns.length) {
-    mobileColumns = initialColumns.map((ele) => {
-      return ele.key;
-    });
-  }
-
   const router = useRouter();
-  const [data, setData] = useState([]);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(10);
-  const [sortConfig, setSortConfig] = useState({ key: null, direction: "asc" });
-  const [searchTerm, setSearchTerm] = useState("");
-  const [searchColumn, setSearchColumn] = useState("id");
-  const [activeFilters, setActiveFilters] = useState({});
-  const [showFilters, setShowFilters] = useState(false);
-  const [dateRange, setDateRange] = useState({ start: null, end: null });
-  const [totalServerItems, setTotalServerItems] = useState(0);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState(null);
-  const [notification, setNotification] = useState({ type: "", message: "" });
-  const [isMobile, setIsMobile] = useState(false); // Track mobile state
 
-  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const [selectedItem, setSelectedItem] = useState(null);
+  // Consolidated state
+  const [state, setState] = useState({
+    data: [],
+    currentPage: 1,
+    itemsPerPage: 10,
+    sortConfig: { key: null, direction: "asc" },
+    searchTerm: "",
+    searchColumn: "id",
+    activeFilters: {},
+    showFilters: false,
+    dateRange: { start: null, end: null },
+    totalServerItems: 0,
+    isLoading: false,
+    error: null,
+    notification: { type: "", message: "" },
+    isMobile: false,
+    // Modal states
+    isViewModalOpen: false,
+    isEditModalOpen: false,
+    isCreateModalOpen: false,
+    isDeleteModalOpen: false,
+    selectedItem: null,
+  });
+
+  const updateState = (updates) =>
+    setState((prev) => ({ ...prev, ...updates }));
 
   const baseUrl =
+    process.env.NEXT_PUBLIC_API_BASE_URL ||
     (typeof window !== "undefined" && window.NEXT_PUBLIC_API_BASE_URL) ||
-    (typeof process !== "undefined" &&
-      process.env &&
-      process.env.NEXT_PUBLIC_API_BASE_URL) ||
     "";
 
-  // Check for mobile view
+  // Mobile detection
   useEffect(() => {
-    const checkIfMobile = () => {
-      setIsMobile(window.innerWidth < 768);
-    };
-
-    checkIfMobile();
-    window.addEventListener("resize", checkIfMobile);
-
-    return () => {
-      window.removeEventListener("resize", checkIfMobile);
-    };
+    const checkMobile = () =>
+      updateState({ isMobile: window.innerWidth < 768 });
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
   }, []);
 
+  // Default mobile columns
+  if (!mobileColumns.length) {
+    mobileColumns = initialColumns.map((col) => col.key);
+  }
+
+  // API helper
   const makeApiCall = async (endpointSuffix, method = "GET", body = null) => {
-    const fullEndpoint = `${baseUrl}${endpointSuffix}`;
-    const token =
-      typeof window !== "undefined" ? localStorage.getItem("token") : null;
+    const token = localStorage.getItem("token");
     const headers = { "Content-Type": "application/json" };
     if (token) headers["Authorization"] = `Bearer ${token}`;
 
-    let requestBody = body;
-    if (body && (method === "POST" || method === "PUT")) {
-      requestBody = Object.entries(body).reduce((acc, [key, value]) => {
-        if (value !== null && value !== undefined && value !== "") {
-          acc[key] = value;
-        }
-        return acc;
-      }, {});
-    }
+    const requestBody =
+      body && (method === "POST" || method === "PUT")
+        ? Object.fromEntries(
+            Object.entries(body).filter(
+              ([_, value]) =>
+                value !== null && value !== undefined && value !== "",
+            ),
+          )
+        : body;
 
     try {
-      const response = await fetch(fullEndpoint, {
+      const response = await fetch(`${baseUrl}${endpointSuffix}`, {
         method,
         headers,
-        ...(requestBody &&
-          (method === "POST" || method === "PUT") && {
-            body: JSON.stringify(requestBody),
-          }),
+        ...(requestBody && { body: JSON.stringify(requestBody) }),
       });
+
       const responseBody = await response.json().catch(() => response.text());
       if (!response.ok) {
         const errorMessage =
-          typeof responseBody === "object" &&
-          responseBody !== null &&
-          responseBody.message
-            ? responseBody.message
-            : typeof responseBody === "string" && responseBody.trim() !== ""
-              ? responseBody
-              : `Operation failed with status ${response.status}`;
+          responseBody?.message ||
+          responseBody ||
+          `Operation failed with status ${response.status}`;
         throw new Error(errorMessage);
       }
       return responseBody;
-    } catch (e) {
-      console.error(`API call failed for ${method} ${fullEndpoint}:`, e);
-      throw e;
+    } catch (error) {
+      console.error(`API call failed for ${method} ${endpointSuffix}:`, error);
+      throw error;
     }
   };
 
-  const handleCustomAction = async (item, action) => {
-    if (!action.actionUrl) return;
-
-    setIsLoading(true);
-    try {
-      const result = await makeApiCall(
-        `${action.actionUrl}/${item[itemKeyField]}`,
-        action.method || "PUT",
-        action.payload || {},
-      );
-      setNotification({
-        type: "success",
-        message:
-          result.message ||
-          action.successMessage ||
-          "Action completed successfully!",
-      });
-      fetchData();
-    } catch (e) {
-      setNotification({
-        type: "error",
-        message: e.message || action.errorMessage || "Failed to perform action",
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
+  // Data fetching
   const fetchData = useCallback(async () => {
-    setIsLoading(true);
-    setError(null);
-    const params = new URLSearchParams();
-    params.append("page", currentPage.toString());
-    params.append("limit", itemsPerPage.toString());
-    if (sortConfig.key) {
-      params.append("sortBy", sortConfig.key);
-      params.append("sortOrder", sortConfig.direction);
-    }
-    if (searchTerm) {
-      params.append("search", searchTerm);
-      if (searchColumn !== "all") params.append("searchIn", searchColumn);
-    }
-    if (dateRange.start) params.append("startDate", dateRange.start);
-    if (dateRange.end) params.append("endDate", dateRange.end);
-    Object.entries(activeFilters).forEach(([key, value]) => {
-      if (value !== null && value !== undefined && String(value).trim() !== "")
-        params.append(key, String(value));
+    updateState({ isLoading: true, error: null });
+
+    const params = new URLSearchParams({
+      page: state.currentPage,
+      limit: state.itemsPerPage,
+      ...(state.sortConfig.key && {
+        sortBy: state.sortConfig.key,
+        sortOrder: state.sortConfig.direction,
+      }),
+      ...(state.searchTerm && {
+        search: state.searchTerm,
+        ...(state.searchColumn !== "all" && { searchIn: state.searchColumn }),
+      }),
+      ...(state.dateRange.start && { startDate: state.dateRange.start }),
+      ...(state.dateRange.end && { endDate: state.dateRange.end }),
+      ...Object.fromEntries(
+        Object.entries(state.activeFilters).filter(
+          ([_, value]) =>
+            value !== null && value !== undefined && String(value).trim(),
+        ),
+      ),
     });
-    const fullApiUrl = `${baseUrl}${apiEndpoint}?${params.toString()}`;
+
     try {
-      const token =
-        typeof window !== "undefined" ? localStorage.getItem("token") : null;
-      const headers = {};
-      if (token) headers["Authorization"] = `Bearer ${token}`;
-      const response = await fetch(fullApiUrl, { headers });
-      const result = await response.json().catch(async () => {
-        throw new Error(await response.text());
+      const token = localStorage.getItem("token");
+      const headers = token ? { Authorization: `Bearer ${token}` } : {};
+
+      const response = await fetch(`${baseUrl}${apiEndpoint}?${params}`, {
+        headers,
       });
-      if (!response.ok)
+      const result = await response.json().catch(() => {
+        throw new Error(response.text());
+      });
+
+      if (!response.ok) {
         throw new Error(
           result.message || `Failed to fetch data (status: ${response.status})`,
         );
-      setData(result?.data?.result || []);
-      setTotalServerItems(result?.data?.pagination?.totalItems || 0);
-    } catch (e) {
-      console.error("Fetch data error:", e);
-      setError(e.message || "Failed to load data.");
-      setData([]);
-      setTotalServerItems(0);
-      setNotification({
-        type: "error",
-        message: e.message || "Failed to load data.",
+      }
+
+      updateState({
+        data: result?.data?.result || [],
+        totalServerItems: result?.data?.pagination?.totalItems || 0,
+        isLoading: false,
       });
-    } finally {
-      setIsLoading(false);
+    } catch (error) {
+      console.error("Fetch error:", error);
+      updateState({
+        error: error.message || "Failed to load data.",
+        data: [],
+        totalServerItems: 0,
+        isLoading: false,
+        notification: {
+          type: "error",
+          message: error.message || "Failed to load data.",
+        },
+      });
     }
   }, [
     apiEndpoint,
     baseUrl,
-    currentPage,
-    itemsPerPage,
-    sortConfig,
-    searchTerm,
-    searchColumn,
-    activeFilters,
-    dateRange,
-    itemKeyField,
+    state.currentPage,
+    state.itemsPerPage,
+    state.sortConfig,
+    state.searchTerm,
+    state.searchColumn,
+    state.activeFilters,
+    state.dateRange,
   ]);
 
   useEffect(() => {
     fetchData();
   }, [fetchData]);
 
+  // Event handlers
+  const handleCustomAction = async (item, action) => {
+    if (!action.actionUrl) return;
+    updateState({ isLoading: true });
+
+    try {
+      const result = await makeApiCall(
+        `${action.actionUrl}/${item[itemKeyField]}`,
+        action.method || "PUT",
+        action.payload || {},
+      );
+      updateState({
+        notification: {
+          type: "success",
+          message:
+            result.message ||
+            action.successMessage ||
+            "Action completed successfully!",
+        },
+        isLoading: false,
+      });
+      fetchData();
+    } catch (error) {
+      updateState({
+        notification: {
+          type: "error",
+          message:
+            error.message || action.errorMessage || "Failed to perform action",
+        },
+        isLoading: false,
+      });
+    }
+  };
+
   const handleCustomLink = async (item) => {
     try {
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/broker/${item.brokerId}`,
-      );
-      if (!response.ok) {
+      const response = await fetch(`${baseUrl}/api/broker/${item.brokerId}`);
+      if (!response.ok)
         throw new Error(`HTTP error! Status: ${response.status}`);
-      }
 
       const data = await response.json();
-
       if (!data.data) {
-        window.alert("Please add broker first");
+        alert("Please add broker first");
         return;
       }
-
-      router.push(`${item.loginUrl}`);
+      router.push(item.loginUrl);
     } catch (error) {
-      window.alert("Unable to login, Internal Error");
+      alert("Unable to login, Internal Error");
     }
   };
 
-  const handleViewItem = (item) => {
-    setSelectedItem(item);
-    setIsViewModalOpen(true);
-  };
-  const handleEditItem = (item) => {
-    setSelectedItem(item);
-    setIsEditModalOpen(true);
-  };
-  const handleDeleteItem = (item) => {
-    setSelectedItem(item);
-    setIsDeleteModalOpen(true);
-  };
-  const handleOpenCreateModal = () => {
-    setSelectedItem(null);
-    setIsCreateModalOpen(true);
+  // Modal handlers
+  const modalHandlers = {
+    view: (item) => updateState({ selectedItem: item, isViewModalOpen: true }),
+    edit: (item) => updateState({ selectedItem: item, isEditModalOpen: true }),
+    delete: (item) =>
+      updateState({ selectedItem: item, isDeleteModalOpen: true }),
+    create: () => updateState({ selectedItem: null, isCreateModalOpen: true }),
   };
 
+  // CRUD operations
   const handleCreateSubmit = async (newItemData) => {
-    setIsLoading(true);
+    updateState({ isLoading: true });
     try {
       const result = await makeApiCall(apiEndpoint, "POST", newItemData);
-      setNotification({
-        type: "success",
-        message: result.message || "Item created successfully!",
+      updateState({
+        notification: {
+          type: "success",
+          message: result.message || "Item created successfully!",
+        },
+        isCreateModalOpen: false,
+        isLoading: false,
       });
-      setIsCreateModalOpen(false);
       fetchData();
-    } catch (e) {
-      setNotification({
-        type: "error",
-        message: e.message || "Failed to create item.",
+    } catch (error) {
+      updateState({
+        notification: {
+          type: "error",
+          message: error.message || "Failed to create item.",
+        },
+        isLoading: false,
       });
-    } finally {
-      setIsLoading(false);
     }
   };
+
   const handleSaveEdit = async (editedItem) => {
-    if (!selectedItem || selectedItem[itemKeyField] === undefined) {
-      setNotification({
-        type: "error",
-        message: "No item selected or item has no ID.",
+    if (!state.selectedItem?.[itemKeyField]) {
+      updateState({
+        notification: {
+          type: "error",
+          message: "No item selected or item has no ID.",
+        },
       });
       return;
     }
-    const itemId = selectedItem[itemKeyField];
-    setIsLoading(true);
+
+    updateState({ isLoading: true });
     try {
       const result = await makeApiCall(
-        `${apiEndpoint}/${itemId}`,
+        `${apiEndpoint}/${state.selectedItem[itemKeyField]}`,
         "PUT",
         editedItem,
       );
-      setNotification({
-        type: "success",
-        message: result.message || "Item updated successfully!",
+      updateState({
+        notification: {
+          type: "success",
+          message: result.message || "Item updated successfully!",
+        },
+        isEditModalOpen: false,
+        selectedItem: null,
+        isLoading: false,
       });
-      setIsEditModalOpen(false);
-      setSelectedItem(null);
       fetchData();
-    } catch (e) {
-      setNotification({
-        type: "error",
-        message: e.message || "Failed to update item.",
+    } catch (error) {
+      updateState({
+        notification: {
+          type: "error",
+          message: error.message || "Failed to update item.",
+        },
+        isLoading: false,
       });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-  const handleConfirmDelete = async () => {
-    if (!selectedItem || selectedItem[itemKeyField] === undefined) {
-      setNotification({
-        type: "error",
-        message: "No item selected or item has no ID.",
-      });
-      return;
-    }
-    const itemId = selectedItem[itemKeyField];
-    setIsLoading(true);
-    try {
-      const result = await makeApiCall(`${apiEndpoint}/${itemId}`, "DELETE");
-      setNotification({
-        type: "success",
-        message: result.message || "Item deleted successfully!",
-      });
-      setIsDeleteModalOpen(false);
-      setSelectedItem(null);
-      fetchData();
-    } catch (e) {
-      setNotification({
-        type: "error",
-        message: e.message || "Failed to delete item.",
-      });
-    } finally {
-      setIsLoading(false);
     }
   };
 
-  // Enhance columns with mobile visibility information
+  const handleConfirmDelete = async () => {
+    if (!state.selectedItem?.[itemKeyField]) {
+      updateState({
+        notification: {
+          type: "error",
+          message: "No item selected or item has no ID.",
+        },
+      });
+      return;
+    }
+
+    updateState({ isLoading: true });
+    try {
+      const result = await makeApiCall(
+        `${apiEndpoint}/${state.selectedItem[itemKeyField]}`,
+        "DELETE",
+      );
+      updateState({
+        notification: {
+          type: "success",
+          message: result.message || "Item deleted successfully!",
+        },
+        isDeleteModalOpen: false,
+        selectedItem: null,
+        isLoading: false,
+      });
+      fetchData();
+    } catch (error) {
+      updateState({
+        notification: {
+          type: "error",
+          message: error.message || "Failed to delete item.",
+        },
+        isLoading: false,
+      });
+    }
+  };
+
+  // Filter and search handlers
+  const handleSearchTermChange = (newSearchTerm) => {
+    updateState({ searchTerm: newSearchTerm, currentPage: 1 });
+  };
+
+  const handleFilterChange = (key, value) => {
+    updateState({
+      activeFilters: {
+        ...state.activeFilters,
+        [key]: value === "all" || value === "" ? null : value,
+      },
+      currentPage: 1,
+    });
+  };
+
+  const handleClearAllFilters = () => {
+    updateState({
+      searchTerm: "",
+      searchColumn: "all",
+      activeFilters: {},
+      dateRange: { start: null, end: null },
+      sortConfig: { key: null, direction: "asc" },
+      currentPage: 1,
+    });
+  };
+
+  // Table configuration
   const tableColumns = [
     ...initialColumns.map((col) => ({
       ...col,
@@ -377,108 +428,57 @@ const TableContentManager = ({
       label: "Actions",
       type: "actions",
       sortable: false,
-      showOnMobile: true, // Always show actions on mobile
+      showOnMobile: true,
     },
   ];
 
-  const requestSort = (key) => {
-    const columnConfig = tableColumns.find((col) => col.key === key);
-    if (!columnConfig || columnConfig.sortable === false) return;
-    let direction = "asc";
-    if (sortConfig.key === key && sortConfig.direction === "asc")
-      direction = "desc";
-    setSortConfig({ key, direction });
-    setCurrentPage(1);
-  };
-  const handleFilterChange = (key, value) => {
-    setActiveFilters((prev) => ({
-      ...prev,
-      [key]: value === "all" || value === "" ? null : value,
-    }));
-    setCurrentPage(1);
-  };
-  const clearDateRange = () => {
-    setDateRange({ start: null, end: null });
-    setCurrentPage(1);
-  };
-  const handleSearchTermChange = (newSearchTerm) => {
-    setSearchTerm(newSearchTerm);
-    setCurrentPage(1);
-  };
-  const handleSearchColumnChange = (newSearchColumn) => {
-    setSearchColumn(newSearchColumn);
-    setCurrentPage(1);
-  };
-  const handleDateChange = (newDateRange) => {
-    setDateRange(newDateRange);
-    setCurrentPage(1);
-  };
-  const handleClearAllFilters = () => {
-    setSearchTerm("");
-    setSearchColumn("all");
-    setActiveFilters({});
-    setDateRange({ start: null, end: null });
-    setSortConfig({ key: null, direction: "asc" });
-    setCurrentPage(1);
-  };
-
-  const totalPages =
-    totalServerItems > 0 ? Math.ceil(totalServerItems / itemsPerPage) : 0;
-  const firstItemIndexOnPage =
-    data.length > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0;
-  const lastItemIndexOnPage = (currentPage - 1) * itemsPerPage + data.length;
-
+  // Cell renderer
   const renderCell = (item, column) => {
-    if (column.render && typeof column.render === "function") {
-      return column.render(item, column);
-    }
+    if (column.render) return column.render(item, column);
+
     if (column.type === "actions") {
       return (
         <div className="flex items-center space-x-1.5">
           {customLink && (
             <button
               onClick={() => handleCustomLink(item)}
-              className="text-blue-600 hover:text-blue-800 p-1.5 rounded hover:bg-blue-100 transition-colors"
-              title="View"
+              className="text-sky-400 hover:text-sky-300 p-1.5 rounded hover:bg-sky-500/20 transition-colors"
+              title="Link"
             >
               <Link2 size={16} />
             </button>
           )}
           <button
-            onClick={() => handleViewItem(item)}
-            className="text-blue-600 hover:text-blue-800 p-1.5 rounded hover:bg-blue-100 transition-colors"
+            onClick={() => modalHandlers.view(item)}
+            className="text-cyan-400 hover:text-cyan-300 p-1.5 rounded hover:bg-cyan-500/20 transition-colors"
             title="View"
           >
             <Eye size={16} />
           </button>
           <button
-            onClick={() => handleEditItem(item)}
-            className="text-green-600 hover:text-green-800 p-1.5 rounded hover:bg-green-100 transition-colors"
+            onClick={() => modalHandlers.edit(item)}
+            className="text-emerald-400 hover:text-emerald-300 p-1.5 rounded hover:bg-emerald-500/20 transition-colors"
             title="Edit"
           >
             <Edit3 size={16} />
           </button>
           <button
-            onClick={() => handleDeleteItem(item)}
-            className="text-red-600 hover:text-red-800 p-1.5 rounded hover:bg-red-100 transition-colors"
+            onClick={() => modalHandlers.delete(item)}
+            className="text-red-400 hover:text-red-300 p-1.5 rounded hover:bg-red-500/20 transition-colors"
             title="Delete"
           >
             <Trash2 size={16} />
           </button>
-
-          {/* Custom Actions */}
-          {customActions.map((action, index) => {
-            return (
-              <button
-                key={index}
-                onClick={() => handleCustomAction(item, action)}
-                className={`${action.color || "text-gray-600 hover:text-gray-800"} ${action.bgColor || "hover:bg-gray-100"} p-1.5 rounded transition-colors`}
-                title={action.title}
-              >
-                {action.icon || <Cross size={16} />}
-              </button>
-            );
-          })}
+          {customActions.map((action, index) => (
+            <button
+              key={index}
+              onClick={() => handleCustomAction(item, action)}
+              className={`${action.color || "text-slate-400 hover:text-slate-300"} ${action.bgColor || "hover:bg-slate-600/50"} p-1.5 rounded transition-colors`}
+              title={action.title}
+            >
+              {action.icon || <Cross size={16} />}
+            </button>
+          ))}
         </div>
       );
     }
@@ -491,17 +491,24 @@ const TableContentManager = ({
       );
       return (
         <span
-          className={`px-2.5 py-1 rounded-full text-xs font-medium whitespace-nowrap ${enumConfig?.bgColor || "bg-gray-100"} ${enumConfig?.textColor || "text-gray-800"}`}
+          className={`px-2.5 py-1 rounded-full text-xs font-medium whitespace-nowrap ${
+            enumConfig?.bgColor || "bg-slate-600/50"
+          } ${enumConfig?.textColor || "text-slate-300"}`}
         >
           {enumConfig?.display ||
             (value !== null && value !== undefined ? String(value) : "")}
         </span>
       );
     }
+
     if (column.type === "direction") {
       return (
         <span
-          className={`flex items-center px-2.5 py-1 rounded-full text-xs font-medium whitespace-nowrap ${value === "long" ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}`}
+          className={`flex items-center px-2.5 py-1 rounded-full text-xs font-medium whitespace-nowrap ${
+            value === "long"
+              ? "bg-emerald-500/20 text-emerald-400"
+              : "bg-red-500/20 text-red-400"
+          }`}
         >
           {value === "long" ? (
             <ArrowUp size={14} className="mr-1" />
@@ -512,10 +519,11 @@ const TableContentManager = ({
         </span>
       );
     }
+
     if (column.type === "date" && value) {
       try {
         return (
-          <div className="text-sm text-gray-700 whitespace-nowrap">
+          <div className="text-sm text-slate-300 whitespace-nowrap">
             {new Date(value).toLocaleDateString("en-US", {
               month: "short",
               day: "numeric",
@@ -523,10 +531,11 @@ const TableContentManager = ({
             })}
           </div>
         );
-      } catch (e) {
-        return <div className="text-sm text-red-500">Invalid Date</div>;
+      } catch {
+        return <div className="text-sm text-red-400">Invalid Date</div>;
       }
     }
+
     if (
       column.type === "currency" &&
       (typeof value === "number" ||
@@ -535,7 +544,7 @@ const TableContentManager = ({
           !isNaN(parseFloat(String(value)))))
     ) {
       return (
-        <div className="text-sm font-medium text-gray-900 whitespace-nowrap">
+        <div className="text-sm font-medium text-slate-200 whitespace-nowrap">
           {new Intl.NumberFormat("en-US", {
             style: "currency",
             currency: column.currency || "USD",
@@ -543,46 +552,64 @@ const TableContentManager = ({
         </div>
       );
     }
+
     const displayValue =
       value === null || value === undefined
         ? ""
         : typeof value === "object"
           ? JSON.stringify(value)
           : String(value);
+
     return (
       <div
-        className="text-sm text-gray-700 whitespace-nowrap truncate"
+        className="text-sm text-slate-300 whitespace-nowrap truncate"
         title={displayValue}
-        style={{ maxWidth: "auto" }}
       >
         {displayValue}
       </div>
     );
   };
 
+  // Pagination helpers
+  const totalPages =
+    state.totalServerItems > 0
+      ? Math.ceil(state.totalServerItems / state.itemsPerPage)
+      : 0;
+  const firstItemIndex =
+    state.data.length > 0
+      ? (state.currentPage - 1) * state.itemsPerPage + 1
+      : 0;
+  const lastItemIndex =
+    (state.currentPage - 1) * state.itemsPerPage + state.data.length;
+
   const getPageNumbers = () => {
     const pages = [];
-    const maxVisiblePages = 5;
+    const maxVisible = 5;
+
     if (!totalPages || totalPages <= 0) return [];
-    if (totalPages <= maxVisiblePages) {
+    if (totalPages <= maxVisible) {
       for (let i = 1; i <= totalPages; i++) pages.push(i);
     } else {
       let leftBound = Math.max(
         1,
-        currentPage - Math.floor(maxVisiblePages / 2),
+        state.currentPage - Math.floor(maxVisible / 2),
       );
-      let rightBound = Math.min(totalPages, leftBound + maxVisiblePages - 1);
-      if (rightBound - leftBound + 1 < maxVisiblePages) {
-        if (leftBound === 1)
-          rightBound = Math.min(totalPages, leftBound + maxVisiblePages - 1);
-        else if (rightBound === totalPages)
-          leftBound = Math.max(1, rightBound - maxVisiblePages + 1);
+      let rightBound = Math.min(totalPages, leftBound + maxVisible - 1);
+
+      if (rightBound - leftBound + 1 < maxVisible) {
+        leftBound =
+          rightBound === totalPages
+            ? Math.max(1, rightBound - maxVisible + 1)
+            : leftBound;
       }
+
       if (leftBound > 1) {
         pages.push(1);
         if (leftBound > 2) pages.push("...");
       }
+
       for (let i = leftBound; i <= rightBound; i++) pages.push(i);
+
       if (rightBound < totalPages) {
         if (rightBound < totalPages - 1) pages.push("...");
         pages.push(totalPages);
@@ -593,232 +620,264 @@ const TableContentManager = ({
 
   return (
     <DashboardLayout>
-      <div className="bg-white shadow-md rounded-lg w-full overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-200">
-          <div className="flex flex-wrap items-center justify-between gap-4">
-            <div className="relative flex-grow max-w-l">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <Search size={18} className="text-gray-400" />
-              </div>
-              <div className="absolute inset-y-0 right-0 pr-2 flex items-center">
+      <div className={`${darkTheme.background} min-h-screen p-4 sm:p-6`}>
+        <div
+          className={`${darkTheme.card} shadow-xl rounded-xl border overflow-hidden`}
+        >
+          {/* Header Section */}
+          <div className="px-6 py-4 border-b border-slate-700/50">
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              {/* Search */}
+              <div className="relative flex-grow max-w-lg">
+                <Search
+                  size={18}
+                  className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400"
+                />
                 <select
-                  value={searchColumn}
-                  onChange={(e) => handleSearchColumnChange(e.target.value)}
-                  className="h-full bg-transparent border-none text-sm text-right text-gray-500 pr-3 focus:ring-0 appearance-none"
+                  value={state.searchColumn}
+                  onChange={(e) =>
+                    updateState({ searchColumn: e.target.value })
+                  }
+                  className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-transparent border-none text-sm text-slate-400 focus:ring-0"
                 >
                   {initialColumns
                     .filter(
                       (c) => c.searchable !== false && c.type !== "actions",
                     )
-                    .map((column) => (
-                      <option key={column.key} value={column.key}>
-                        {column.label}
+                    .map((col) => (
+                      <option key={col.key} value={col.key}>
+                        {col.label}
                       </option>
                     ))}
                 </select>
+                <input
+                  type="text"
+                  placeholder="Search..."
+                  value={state.searchTerm}
+                  onChange={(e) => handleSearchTermChange(e.target.value)}
+                  className={`${darkTheme.input} pl-10 pr-32 py-2.5 w-full rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-all text-sm`}
+                />
               </div>
-              <input
-                type="text"
-                placeholder="Search..."
-                className="text-gray-600 pl-10 pr-28 py-2.5 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-sm"
-                value={searchTerm}
-                onChange={(e) => handleSearchTermChange(e.target.value)}
-              />
-            </div>
-            <div className="flex items-center space-x-3 flex-wrap">
-              {canAddItem && (
-                <button
-                  onClick={handleOpenCreateModal}
-                  className="flex items-center px-4 py-2.5 rounded-lg border text-sm font-medium transition-all bg-blue-600 text-white hover:bg-blue-700 focus:ring-2 focus:ring-blue-300 border-blue-500"
-                >
-                  <PlusCircle size={16} className="mr-2" /> Add New
-                </button>
-              )}
-              {filters && filters.length > 0 && (
-                <button
-                  onClick={() => setShowFilters(!showFilters)}
-                  className={`flex items-center px-4 py-2.5 rounded-lg border text-sm font-medium transition-all ${showFilters ? "bg-blue-50 text-blue-600 border-blue-300" : "bg-white text-gray-700 border-gray-300 hover:border-gray-400"}`}
-                >
-                  <Filter size={16} className="mr-2" /> Filters
-                </button>
-              )}
-              <div className="flex items-center space-x-1 bg-white rounded-lg border border-gray-300 px-3 py-1.5 my-2 text-sm hover:border-gray-400 transition-colors">
-                <CalendarDays size={16} className="text-gray-500" />
-                <input
-                  type="date"
-                  className="bg-transparent border-none focus:ring-0 text-sm text-gray-700 w-28"
-                  value={dateRange.start || ""}
-                  onChange={(e) =>
-                    handleDateChange({ ...dateRange, start: e.target.value })
-                  }
-                />
-                <span className="text-gray-400 mx-1">to</span>
-                <input
-                  type="date"
-                  className="bg-transparent border-none focus:ring-0 text-sm text-gray-700 w-28"
-                  value={dateRange.end || ""}
-                  onChange={(e) =>
-                    handleDateChange({ ...dateRange, end: e.target.value })
-                  }
-                />
-                {(dateRange.start || dateRange.end) && (
+
+              {/* Action Buttons */}
+              <div className="flex items-center space-x-3 flex-wrap">
+                {canAddItem && (
                   <button
-                    onClick={clearDateRange}
-                    className="ml-1 text-gray-400 hover:text-gray-600"
+                    onClick={modalHandlers.create}
+                    className={`${darkTheme.primary} flex items-center px-4 py-2.5 rounded-lg border text-sm font-medium transition-all text-white focus:ring-2 focus:ring-sky-300`}
                   >
-                    <X size={14} />
+                    <PlusCircle size={16} className="mr-2" /> Add New
                   </button>
                 )}
+
+                {filters?.length > 0 && (
+                  <button
+                    onClick={() =>
+                      updateState({ showFilters: !state.showFilters })
+                    }
+                    className={`${state.showFilters ? darkTheme.primary : darkTheme.secondary} flex items-center px-4 py-2.5 rounded-lg border text-sm font-medium transition-all ${darkTheme.text}`}
+                  >
+                    <Filter size={16} className="mr-2" /> Filters
+                  </button>
+                )}
+
+                {/* Date Range */}
+                <div
+                  className={`${darkTheme.secondary} flex items-center space-x-2 rounded-lg border px-3 py-2 text-sm transition-colors`}
+                >
+                  <CalendarDays size={16} className="text-slate-400" />
+                  <input
+                    type="date"
+                    value={state.dateRange.start || ""}
+                    onChange={(e) =>
+                      updateState({
+                        dateRange: {
+                          ...state.dateRange,
+                          start: e.target.value,
+                        },
+                        currentPage: 1,
+                      })
+                    }
+                    className="bg-transparent border-none focus:ring-0 text-sm text-slate-300 w-28"
+                  />
+                  <span className="text-slate-500">to</span>
+                  <input
+                    type="date"
+                    value={state.dateRange.end || ""}
+                    onChange={(e) =>
+                      updateState({
+                        dateRange: { ...state.dateRange, end: e.target.value },
+                        currentPage: 1,
+                      })
+                    }
+                    className="bg-transparent border-none focus:ring-0 text-sm text-slate-300 w-28"
+                  />
+                  {(state.dateRange.start || state.dateRange.end) && (
+                    <button
+                      onClick={() =>
+                        updateState({
+                          dateRange: { start: null, end: null },
+                          currentPage: 1,
+                        })
+                      }
+                      className="text-slate-400 hover:text-slate-300"
+                    >
+                      <X size={14} />
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
-          </div>
 
-          {showFilters && filters && filters.length > 0 && (
-            <div className="mt-4 p-4 bg-gray-50 rounded-lg border border-gray-200 animate-fadeIn">
-              <div className="flex items-center justify-between mb-3">
-                <h3 className="font-medium text-gray-700 text-xs uppercase tracking-wider">
-                  Filter by:
-                </h3>
-                <button
-                  onClick={() => setShowFilters(false)}
-                  className="text-gray-400 hover:text-gray-600"
-                >
-                  <X size={16} />
-                </button>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                {filters.map((filter) => (
-                  <div key={filter.key}>
-                    <label
-                      htmlFor={`filter-${filter.key}`}
-                      className="block text-xs font-medium text-gray-600 mb-1.5"
-                    >
-                      {filter.label}
-                    </label>
-                    {filter.type === "boolean" ? (
-                      <select
-                        id={`filter-${filter.key}`}
-                        className="text-black w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-1 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                        value={
-                          activeFilters[filter.key] === undefined ||
-                          activeFilters[filter.key] === null
-                            ? "all"
-                            : String(activeFilters[filter.key])
-                        }
-                        onChange={(e) => {
-                          let val;
-                          if (e.target.value === "true") val = true;
-                          else if (e.target.value === "false") val = false;
-                          else val = null;
-                          handleFilterChange(filter.key, val);
-                        }}
-                      >
-                        <option value="all">All</option>
-                        <option value="true">
-                          {filter.trueLabel || "True"}
-                        </option>
-                        <option value="false">
-                          {filter.falseLabel || "False"}
-                        </option>
-                      </select>
-                    ) : filter.type === "select" ? (
-                      <select
-                        id={`filter-${filter.key}`}
-                        className="text-black w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-1 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                        value={activeFilters[filter.key] || "all"}
-                        onChange={(e) =>
-                          handleFilterChange(
-                            filter.key,
-                            e.target.value === "all" ? null : e.target.value,
-                          )
-                        }
-                      >
-                        <option value="all">All {filter.label}</option>
-                        {filter.optionsSourceKey &&
-                        dynamicFilterOptionsData &&
-                        dynamicFilterOptionsData[filter.optionsSourceKey]
-                          ? (
-                              dynamicFilterOptionsData[
+            {/* Filters Section */}
+            {state.showFilters && filters?.length > 0 && (
+              <div className="mt-4 p-4 bg-slate-900/50 rounded-lg border border-slate-700/30">
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="font-medium text-slate-300 text-xs uppercase tracking-wider">
+                    Filter by:
+                  </h3>
+                  <button
+                    onClick={() => updateState({ showFilters: false })}
+                    className="text-slate-400 hover:text-slate-300"
+                  >
+                    <X size={16} />
+                  </button>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                  {filters.map((filter) => (
+                    <div key={filter.key}>
+                      <label className="block text-xs font-medium text-slate-400 mb-1.5">
+                        {filter.label}
+                      </label>
+                      {filter.type === "boolean" ? (
+                        <select
+                          value={state.activeFilters[filter.key] ?? "all"}
+                          onChange={(e) =>
+                            handleFilterChange(
+                              filter.key,
+                              e.target.value === "all"
+                                ? null
+                                : e.target.value === "true",
+                            )
+                          }
+                          className={`${darkTheme.input} w-full rounded-md px-3 py-2 text-sm focus:ring-1 focus:ring-sky-500`}
+                        >
+                          <option value="all">All</option>
+                          <option value="true">
+                            {filter.trueLabel || "True"}
+                          </option>
+                          <option value="false">
+                            {filter.falseLabel || "False"}
+                          </option>
+                        </select>
+                      ) : filter.type === "select" ? (
+                        <select
+                          value={state.activeFilters[filter.key] || "all"}
+                          onChange={(e) =>
+                            handleFilterChange(filter.key, e.target.value)
+                          }
+                          className={`${darkTheme.input} w-full rounded-md px-3 py-2 text-sm focus:ring-1 focus:ring-sky-500`}
+                        >
+                          <option value="all">All {filter.label}</option>
+                          {(
+                            (filter.optionsSourceKey &&
+                              dynamicFilterOptionsData?.[
                                 filter.optionsSourceKey
-                              ] || []
-                            ).map((option) => (
-                              <option
-                                key={option[filter.optionValueKey || "id"]}
-                                value={option[filter.optionValueKey || "id"]}
-                              >
-                                {option[filter.optionLabelKey || "name"]}
-                              </option>
-                            ))
-                          : (filter.options || []).map((option) => (
-                              <option key={option.value} value={option.value}>
-                                {option.label}
-                              </option>
-                            ))}
-                      </select>
-                    ) : (
-                      <input
-                        id={`filter-${filter.key}`}
-                        type={
-                          filter.type === "number"
-                            ? "number"
-                            : filter.type === "date"
-                              ? "date"
-                              : "text"
-                        }
-                        placeholder={`${filter.label}...`}
-                        className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-1 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                        value={activeFilters[filter.key] || ""}
-                        onChange={(e) =>
-                          handleFilterChange(filter.key, e.target.value)
-                        }
-                      />
-                    )}
-                  </div>
-                ))}
+                              ]) ||
+                            filter.options ||
+                            []
+                          ).map((option) => (
+                            <option
+                              key={option[filter.optionValueKey || "value"]}
+                              value={option[filter.optionValueKey || "value"]}
+                            >
+                              {option[filter.optionLabelKey || "label"]}
+                            </option>
+                          ))}
+                        </select>
+                      ) : (
+                        <input
+                          type={
+                            filter.type === "number"
+                              ? "number"
+                              : filter.type === "date"
+                                ? "date"
+                                : "text"
+                          }
+                          placeholder={`${filter.label}...`}
+                          value={state.activeFilters[filter.key] || ""}
+                          onChange={(e) =>
+                            handleFilterChange(filter.key, e.target.value)
+                          }
+                          className={`${darkTheme.input} w-full rounded-md px-3 py-2 text-sm focus:ring-1 focus:ring-sky-500`}
+                        />
+                      )}
+                    </div>
+                  ))}
+                </div>
               </div>
+            )}
+          </div>
+          {/* Notification */}
+          {state.notification.message && (
+            <div
+              className={`px-6 py-3 border-b text-sm font-medium transition-opacity ${
+                state.notification.type === "success"
+                  ? darkTheme.success
+                  : state.notification.type === "error"
+                    ? darkTheme.danger
+                    : darkTheme.warning
+              }`}
+            >
+              {state.notification.message}
+              <button
+                onClick={() =>
+                  updateState({ notification: { type: "", message: "" } })
+                }
+                className="float-right font-bold text-lg leading-none hover:opacity-70"
+              >
+                &times;
+              </button>
             </div>
           )}
-        </div>
-
-        {notification.message && (
-          <div
-            className={`px-6 py-3 border-b text-sm font-medium transition-opacity duration-300 ease-in-out ${notification.type === "success" ? "bg-green-50 text-green-700 border-green-200" : ""} ${notification.type === "error" ? "bg-red-50 text-red-700 border-red-200" : ""} ${notification.type === "info" ? "bg-blue-50 text-blue-700 border-blue-200" : ""}`}
-          >
-            {notification.message}
-            <button
-              onClick={() => setNotification({ type: "", message: "" })}
-              className="float-right font-bold text-lg leading-none"
-            >
-              &times;
-            </button>
-          </div>
-        )}
-
-        <div className="overflow-x-auto">
-          <div className="min-w-full inline-block align-middle">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50 sticky top-0 z-10">
+          {/* Table */}
+          <div className="overflow-x-auto">
+            <table className={`min-w-full divide-y ${darkTheme.table}`}>
+              <thead className={`${darkTheme.tableHeader} sticky top-0 z-10`}>
                 <tr>
                   {tableColumns.map((column) => (
                     <th
                       key={column.key}
-                      scope="col"
-                      className={`px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider group whitespace-nowrap ${
+                      className={`px-6 py-3 text-left text-xs font-semibold ${darkTheme.textMuted} uppercase tracking-wider group whitespace-nowrap ${
                         column.showOnMobile ? "" : "hidden sm:table-cell"
                       }`}
-                      onClick={() => requestSort(column.key)}
+                      onClick={() => {
+                        if (column.sortable !== false) {
+                          const direction =
+                            state.sortConfig.key === column.key &&
+                            state.sortConfig.direction === "asc"
+                              ? "desc"
+                              : "asc";
+                          updateState({
+                            sortConfig: { key: column.key, direction },
+                            currentPage: 1,
+                          });
+                        }
+                      }}
                       style={{
                         cursor:
                           column.sortable !== false ? "pointer" : "default",
                       }}
                     >
                       <div className="flex items-center justify-between">
-                        <span className="text-gray-700 group-hover:text-gray-900">
+                        <span
+                          className={`${darkTheme.textSecondary} group-hover:text-slate-100`}
+                        >
                           {column.label}
                         </span>
-                        {sortConfig.key === column.key && (
-                          <span className="ml-2 text-blue-500">
-                            {sortConfig.direction === "asc" ? (
+                        {state.sortConfig.key === column.key && (
+                          <span className="ml-2 text-sky-400">
+                            {state.sortConfig.direction === "asc" ? (
                               <ChevronUp size={16} />
                             ) : (
                               <ChevronDown size={16} />
@@ -830,17 +889,16 @@ const TableContentManager = ({
                   ))}
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {isLoading && data.length === 0 ? (
+              <tbody className={`divide-y divide-slate-700/50`}>
+                {state.isLoading && state.data.length === 0 ? (
                   <tr>
                     <td
                       colSpan={tableColumns.length}
                       className="px-6 py-12 text-center"
                     >
-                      <div className="flex flex-col items-center justify-center text-gray-500">
+                      <div className="flex flex-col items-center justify-center text-slate-400">
                         <svg
-                          className="animate-spin h-8 w-8 text-blue-500 mb-3"
-                          xmlns="http://www.w3.org/2000/svg"
+                          className="animate-spin h-8 w-8 text-sky-400 mb-3"
                           fill="none"
                           viewBox="0 0 24 24"
                         >
@@ -851,52 +909,54 @@ const TableContentManager = ({
                             r="10"
                             stroke="currentColor"
                             strokeWidth="4"
-                          ></circle>
+                          />
                           <path
                             className="opacity-75"
                             fill="currentColor"
                             d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                          ></path>
+                          />
                         </svg>
                         <p>Loading data...</p>
                       </div>
                     </td>
                   </tr>
-                ) : error && data.length === 0 ? (
+                ) : state.error && state.data.length === 0 ? (
                   <tr>
                     <td
                       colSpan={tableColumns.length}
                       className="px-6 py-12 text-center"
                     >
-                      <div className="flex flex-col items-center justify-center text-red-600">
-                        <XCircle size={32} className="mb-3 text-red-400" />
+                      <div className="flex flex-col items-center justify-center text-red-400">
+                        <XCircle size={32} className="mb-3" />
                         <p className="text-lg font-medium">
                           Error loading data
                         </p>
-                        <p className="text-sm text-gray-500 mt-1">{error}</p>
+                        <p className="text-sm text-slate-500 mt-1">
+                          {state.error}
+                        </p>
                         <button
                           onClick={fetchData}
-                          className="mt-4 px-4 py-2 bg-blue-50 text-blue-600 rounded-md text-sm font-medium hover:bg-blue-100"
+                          className="mt-4 px-4 py-2 bg-sky-500/20 text-sky-400 rounded-md text-sm font-medium hover:bg-sky-500/30"
                         >
                           Try Again
                         </button>
                       </div>
                     </td>
                   </tr>
-                ) : !isLoading && data.length === 0 ? (
+                ) : !state.isLoading && state.data.length === 0 ? (
                   <tr>
                     <td
                       colSpan={tableColumns.length}
                       className="px-6 py-12 text-center"
                     >
-                      <div className="flex flex-col items-center justify-center text-gray-500">
-                        <Search size={32} className="mb-3 text-gray-400" />
+                      <div className="flex flex-col items-center justify-center text-slate-400">
+                        <Search size={32} className="mb-3" />
                         <p className="text-lg font-medium">
                           No matching records found
                         </p>
                         <button
                           onClick={handleClearAllFilters}
-                          className="mt-3 px-4 py-2 bg-blue-50 text-blue-600 rounded-md text-sm font-medium hover:bg-blue-100"
+                          className="mt-3 px-4 py-2 bg-sky-500/20 text-sky-400 rounded-md text-sm font-medium hover:bg-sky-500/30"
                         >
                           Clear all filters
                         </button>
@@ -904,11 +964,8 @@ const TableContentManager = ({
                     </td>
                   </tr>
                 ) : (
-                  data.map((item) => (
-                    <tr
-                      key={item[itemKeyField]}
-                      className="hover:bg-gray-50 transition-colors duration-150"
-                    >
+                  state.data.map((item) => (
+                    <tr key={item[itemKeyField]} className={darkTheme.tableRow}>
                       {tableColumns.map((column) => (
                         <td
                           key={`${item[itemKeyField]}-${column.key}`}
@@ -925,211 +982,244 @@ const TableContentManager = ({
               </tbody>
             </table>
           </div>
-        </div>
-
-        {totalPages > 0 && (
-          <div className="bg-white border-t border-gray-200 px-6 py-4 flex flex-col sm:flex-row items-center justify-between gap-4 text-sm">
-            <div className="flex items-center space-x-4">
-              <div className="text-gray-700">
-                Showing{" "}
-                <span className="font-medium">{firstItemIndexOnPage}</span> to{" "}
-                <span className="font-medium">{lastItemIndexOnPage}</span> of{" "}
-                <span className="font-medium">{totalServerItems}</span> results
-              </div>
-              <div className="flex items-center space-x-2">
-                <span className="text-gray-700">Rows:</span>
-                <select
-                  value={itemsPerPage}
-                  onChange={(e) => {
-                    setItemsPerPage(Number(e.target.value));
-                    setCurrentPage(1);
-                  }}
-                  className="border border-gray-300 rounded-md px-2 py-1 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 shadow-sm text-gray-700"
-                >
-                  {[10, 20, 50, 100].map((size) => (
-                    <option key={size} value={size}>
-                      {size}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            {/* Conditionally render pagination controls */}
-            {!disableMobilePagination || !isMobile ? (
-              <div className="flex items-center space-x-1">
-                <button
-                  onClick={() =>
-                    setCurrentPage((prev) => Math.max(prev - 1, 1))
-                  }
-                  disabled={currentPage === 1 || isLoading}
-                  className={`p-2 rounded-md border ${currentPage === 1 || isLoading ? "bg-gray-100 text-gray-400 cursor-not-allowed" : "bg-white text-gray-600 hover:bg-gray-50"} transition-colors shadow-sm`}
-                >
-                  <ChevronLeft size={18} />
-                </button>
-                {getPageNumbers().map((page, index) => (
-                  <button
-                    key={index}
-                    onClick={() =>
-                      typeof page === "number" ? setCurrentPage(page) : null
+          {/* Pagination */}
+          {totalPages > 0 && (
+            <div
+              className={`${darkTheme.card} border-t border-slate-700/50 px-6 py-4 flex flex-col sm:flex-row items-center justify-between gap-4 text-sm`}
+            >
+              <div className="flex items-center space-x-4">
+                <div className={darkTheme.textSecondary}>
+                  Showing <span className="font-medium">{firstItemIndex}</span>{" "}
+                  to <span className="font-medium">{lastItemIndex}</span> of{" "}
+                  <span className="font-medium">{state.totalServerItems}</span>{" "}
+                  results
+                </div>
+                <div className="flex items-center space-x-2">
+                  <span className={darkTheme.textSecondary}>Rows:</span>
+                  <select
+                    value={state.itemsPerPage}
+                    onChange={(e) =>
+                      updateState({
+                        itemsPerPage: Number(e.target.value),
+                        currentPage: 1,
+                      })
                     }
-                    className={`w-9 h-9 rounded-md flex items-center justify-center font-medium ${page === currentPage ? "bg-blue-500 text-white border-blue-500" : "bg-white text-gray-600 border-gray-300 hover:bg-gray-50"} border transition-colors ${typeof page !== "number" || isLoading ? "pointer-events-none opacity-60" : ""} shadow-sm`}
-                    disabled={page === "..." || isLoading}
+                    className={`${darkTheme.input} border rounded-md px-2 py-1 focus:ring-1 focus:ring-sky-500`}
                   >
-                    {page}
-                  </button>
-                ))}
-                <button
-                  onClick={() =>
-                    setCurrentPage((prev) =>
-                      Math.min(prev + 1, totalPages || 1),
-                    )
-                  }
-                  disabled={
-                    currentPage === totalPages || totalPages === 0 || isLoading
-                  }
-                  className={`p-2 rounded-md border ${currentPage === totalPages || totalPages === 0 || isLoading ? "bg-gray-100 text-gray-400 cursor-not-allowed" : "bg-white text-gray-600 hover:bg-gray-50"} transition-colors shadow-sm`}
-                >
-                  <ChevronRight size={18} />
-                </button>
+                    {[10, 20, 50, 100].map((size) => (
+                      <option key={size} value={size}>
+                        {size}
+                      </option>
+                    ))}
+                  </select>
+                </div>
               </div>
-            ) : null}
-          </div>
-        )}
 
-        <Modal
-          isOpen={isViewModalOpen}
-          onClose={() => setIsViewModalOpen(false)}
-          title={`View ${pageTitle.replace("Management", "").trim()} Details`}
-        >
-          {selectedItem && (
-            <div className="space-y-3 text-sm">
-              {initialColumns
-                .filter(
-                  (col) => col.type !== "actions" && col.key !== "actions",
-                )
-                .map((col) => (
-                  <div
-                    key={col.key}
-                    className="flex border-b py-2.5 last:border-b-0"
+              {(!disableMobilePagination || !state.isMobile) && (
+                <div className="flex items-center space-x-1">
+                  <button
+                    onClick={() =>
+                      updateState({
+                        currentPage: Math.max(state.currentPage - 1, 1),
+                      })
+                    }
+                    disabled={state.currentPage === 1 || state.isLoading}
+                    className={`p-2 rounded-md border transition-colors ${
+                      state.currentPage === 1 || state.isLoading
+                        ? "bg-slate-700/50 text-slate-500 cursor-not-allowed"
+                        : `${darkTheme.secondary} ${darkTheme.textSecondary} hover:bg-slate-600/50`
+                    }`}
                   >
-                    <strong className="w-2/5 font-semibold text-gray-700">
-                      {col.label}:
-                    </strong>
-                    <div className="w-3/5 text-gray-600 flex items-center">
-                      {renderCell(selectedItem, col)}
-                    </div>
-                  </div>
-                ))}
-            </div>
-          )}
-        </Modal>
-        <Modal
-          isOpen={isEditModalOpen}
-          onClose={() => setIsEditModalOpen(false)}
-          title={`Edit ${pageTitle.replace("Management", "").trim()}`}
-        >
-          {selectedItem && formFields.length > 0 && (
-            <EditItemForm
-              item={selectedItem}
-              formFields={formFields}
-              onSubmit={handleSaveEdit}
-              onCancel={() => setIsEditModalOpen(false)}
-              itemKeyField={itemKeyField}
-              dynamicSelectOptions={dynamicSelectDataSources}
-            />
-          )}
-        </Modal>
-        <Modal
-          isOpen={isCreateModalOpen}
-          onClose={() => setIsCreateModalOpen(false)}
-          title={`Create New ${pageTitle.replace("Management", "").trim()}`}
-        >
-          {formFields.length > 0 && (
-            <EditItemForm
-              item={null}
-              formFields={formFields}
-              onSubmit={handleCreateSubmit}
-              onCancel={() => setIsCreateModalOpen(false)}
-              itemKeyField={itemKeyField}
-              dynamicSelectOptions={dynamicSelectDataSources}
-            />
-          )}
-        </Modal>
-        <Modal
-          isOpen={isDeleteModalOpen}
-          onClose={() => setIsDeleteModalOpen(false)}
-          title="Confirm Deletion"
-          size="sm"
-        >
-          {selectedItem && (
-            <div>
-              <div className="flex items-center mb-4">
-                <AlertTriangle
-                  size={24}
-                  className="text-red-500 mr-3 flex-shrink-0"
-                />
-                <p className="text-gray-700 text-md">
-                  Are you sure you want to delete this item? <br />
-                  This action cannot be undone.
-                </p>
-              </div>
-              <div className="text-sm bg-gray-50 p-3 rounded-md mb-6">
-                <strong>Item ID:</strong> {selectedItem[itemKeyField]}
-                {initialColumns.find(
-                  (col) => col.key === "name" && selectedItem.name,
-                )
-                  ? ` - ${selectedItem.name}`
-                  : initialColumns.find(
-                        (col) =>
-                          getNestedValue(selectedItem, col.key) &&
-                          col.key.includes("name"),
-                      )
-                    ? ` - ${getNestedValue(selectedItem, initialColumns.find((col) => col.key.includes("name")).key)}`
-                    : ""}
-              </div>
-              <div className="flex justify-end space-x-3">
-                <button
-                  onClick={() => setIsDeleteModalOpen(false)}
-                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-gray-300"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleConfirmDelete}
-                  className="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-md transition-colors flex items-center focus:outline-none focus:ring-2 focus:ring-red-400"
-                  disabled={isLoading}
-                >
-                  {isLoading ? (
-                    <svg
-                      className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
-                      xmlns="http://www.w3.org/2000/svg"
-                      fill="none"
-                      viewBox="0 0 24 24"
+                    <ChevronLeft size={18} />
+                  </button>
+
+                  {getPageNumbers().map((page, index) => (
+                    <button
+                      key={index}
+                      onClick={() =>
+                        typeof page === "number"
+                          ? updateState({ currentPage: page })
+                          : null
+                      }
+                      disabled={page === "..." || state.isLoading}
+                      className={`w-9 h-9 rounded-md flex items-center justify-center font-medium border transition-colors ${
+                        page === state.currentPage
+                          ? "bg-sky-600 text-white border-sky-500"
+                          : `${darkTheme.secondary} ${darkTheme.textSecondary} hover:bg-slate-600/50`
+                      } ${typeof page !== "number" || state.isLoading ? "pointer-events-none opacity-60" : ""}`}
                     >
-                      <circle
-                        className="opacity-25"
-                        cx="12"
-                        cy="12"
-                        r="10"
-                        stroke="currentColor"
-                        strokeWidth="4"
-                      ></circle>
-                      <path
-                        className="opacity-75"
-                        fill="currentColor"
-                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                      ></path>
-                    </svg>
-                  ) : (
-                    <Trash2 size={16} className="mr-2" />
-                  )}
-                  Delete
-                </button>
-              </div>
+                      {page}
+                    </button>
+                  ))}
+
+                  <button
+                    onClick={() =>
+                      updateState({
+                        currentPage: Math.min(
+                          state.currentPage + 1,
+                          totalPages || 1,
+                        ),
+                      })
+                    }
+                    disabled={
+                      state.currentPage === totalPages ||
+                      totalPages === 0 ||
+                      state.isLoading
+                    }
+                    className={`p-2 rounded-md border transition-colors ${
+                      state.currentPage === totalPages ||
+                      totalPages === 0 ||
+                      state.isLoading
+                        ? "bg-slate-700/50 text-slate-500 cursor-not-allowed"
+                        : `${darkTheme.secondary} ${darkTheme.textSecondary} hover:bg-slate-600/50`
+                    }`}
+                  >
+                    <ChevronRight size={18} />
+                  </button>
+                </div>
+              )}
             </div>
           )}
-        </Modal>
+          {/* Modals */}
+          <Modal
+            isOpen={state.isViewModalOpen}
+            onClose={() => updateState({ isViewModalOpen: false })}
+            title={`View ${pageTitle.replace("Management", "").trim()} Details`}
+          >
+            {state.selectedItem && (
+              <div className="space-y-3 text-sm">
+                {initialColumns
+                  .filter((col) => col.type !== "actions")
+                  .map((col) => (
+                    <div
+                      key={col.key}
+                      className="flex border-b border-slate-700/50 py-2.5 last:border-b-0"
+                    >
+                      <strong className="w-2/5 font-semibold text-slate-300">
+                        {col.label}:
+                      </strong>
+                      <div className="w-3/5 text-slate-400 flex items-center">
+                        {renderCell(state.selectedItem, col)}
+                      </div>
+                    </div>
+                  ))}
+              </div>
+            )}
+          </Modal>
+          {/* Edit Modal - Updated with Scroll Fix */}
+          <Modal
+            isOpen={state.isEditModalOpen}
+            onClose={() => updateState({ isEditModalOpen: false })}
+            title={`Edit ${pageTitle.replace("Management", "").trim()}`}
+            size="lg"
+          >
+            {state.selectedItem && formFields.length > 0 && (
+              <div className="max-h-[60vh] overflow-y-auto">
+                <EditItemForm
+                  item={state.selectedItem}
+                  formFields={formFields}
+                  onSubmit={handleSaveEdit}
+                  onCancel={() => updateState({ isEditModalOpen: false })}
+                  itemKeyField={itemKeyField}
+                  dynamicSelectOptions={dynamicSelectDataSources}
+                />
+              </div>
+            )}
+          </Modal>
+          {/* Create Modal - Similar Fix */}
+          <Modal
+            isOpen={state.isCreateModalOpen}
+            onClose={() => updateState({ isCreateModalOpen: false })}
+            title={`Create New ${pageTitle.replace("Management", "").trim()}`}
+            size="lg"
+          >
+            {formFields.length > 0 && (
+              <div className="max-h-[60vh] overflow-y-auto">
+                <EditItemForm
+                  item={null}
+                  formFields={formFields}
+                  onSubmit={handleCreateSubmit}
+                  onCancel={() => updateState({ isCreateModalOpen: false })}
+                  itemKeyField={itemKeyField}
+                  dynamicSelectOptions={dynamicSelectDataSources}
+                />
+              </div>
+            )}
+          </Modal>{" "}
+          <Modal
+            isOpen={state.isDeleteModalOpen}
+            onClose={() => updateState({ isDeleteModalOpen: false })}
+            title="Confirm Deletion"
+            size="sm"
+          >
+            {state.selectedItem && (
+              <div>
+                <div className="flex items-center mb-4">
+                  <AlertTriangle
+                    size={24}
+                    className="text-red-400 mr-3 flex-shrink-0"
+                  />
+                  <p className="text-slate-300 text-md">
+                    Are you sure you want to delete this item? <br />
+                    This action cannot be undone.
+                  </p>
+                </div>
+                <div className="text-sm bg-slate-900/50 p-3 rounded-md mb-6 border border-slate-700/50">
+                  <strong className="text-slate-300">Item ID:</strong>{" "}
+                  <span className="text-slate-400">
+                    {state.selectedItem[itemKeyField]}
+                  </span>
+                  {initialColumns.find(
+                    (col) => col.key === "name" && state.selectedItem.name,
+                  ) && (
+                    <span className="text-slate-400">
+                      {" "}
+                      - {state.selectedItem.name}
+                    </span>
+                  )}
+                </div>
+                <div className="flex justify-end space-x-3">
+                  <button
+                    onClick={() => updateState({ isDeleteModalOpen: false })}
+                    className="px-4 py-2 text-sm font-medium text-slate-300 bg-slate-700/50 hover:bg-slate-600/50 rounded-md transition-colors focus:ring-2 focus:ring-slate-500"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleConfirmDelete}
+                    disabled={state.isLoading}
+                    className="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-md transition-colors flex items-center focus:ring-2 focus:ring-red-400 disabled:opacity-50"
+                  >
+                    {state.isLoading ? (
+                      <svg
+                        className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                      >
+                        <circle
+                          className="opacity-25"
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          strokeWidth="4"
+                        />
+                        <path
+                          className="opacity-75"
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                        />
+                      </svg>
+                    ) : (
+                      <Trash2 size={16} className="mr-2" />
+                    )}
+                    Delete
+                  </button>
+                </div>
+              </div>
+            )}
+          </Modal>
+        </div>
       </div>
     </DashboardLayout>
   );

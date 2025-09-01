@@ -1,24 +1,31 @@
-// app/broker-keys/page.js (Server Component)
+// app/broker-keys/page.js (Server Component) - SIMPLIFIED
 import TableContentManager from "@/components/CrudTable/TableContentManager";
 import { Cross } from "lucide-react";
+
+const darkEnumConfig = [
+  {
+    value: true,
+    display: "Active",
+    bgColor: "bg-emerald-500/20",
+    textColor: "text-emerald-400",
+  },
+  {
+    value: false,
+    display: "Inactive",
+    bgColor: "bg-red-500/20",
+    textColor: "text-red-400",
+  },
+];
 
 async function getAllBrokers() {
   const apiBaseUrl =
     process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:3000";
   try {
     const response = await fetch(`${apiBaseUrl}/api/broker?pagination=false`);
-    if (!response.ok) {
-      console.error(
-        "Server: Failed to fetch brokers:",
-        response.status,
-        await response.text(),
-      );
-      return [];
-    }
+    if (!response.ok) return [];
     const result = await response.json();
     return result.data || [];
-  } catch (error) {
-    console.error("Server: Error fetching brokers:", error);
+  } catch {
     return [];
   }
 }
@@ -26,6 +33,7 @@ async function getAllBrokers() {
 export default async function BrokerKeyDashboardPage() {
   const allBrokersData = await getAllBrokers();
 
+  // Simple columns without render functions
   const brokerKeyColumns = [
     {
       key: "id",
@@ -34,29 +42,14 @@ export default async function BrokerKeyDashboardPage() {
       sortable: true,
       searchable: false,
     },
-    {
-      key: "Broker.name",
-      label: "Broker Name",
-      type: "text",
-      sortable: true,
-    },
-    {
-      key: "User.name",
-      label: "User Name",
-      type: "text",
-      sortable: true,
-    },
-    {
-      key: "redirectUrl",
-      label: "Redirection Url",
-      type: "text",
-    },
+    { key: "Broker.name", label: "Broker Name", type: "text", sortable: true },
+    { key: "User.name", label: "User Name", type: "text", sortable: true },
+    { key: "redirectUrl", label: "Redirect URL", type: "text" },
     {
       key: "apiKey",
       label: "API Key",
       type: "text",
       sortable: false,
-      maxWidth: "150px",
       searchable: false,
     },
     {
@@ -71,27 +64,13 @@ export default async function BrokerKeyDashboardPage() {
       label: "API Secret",
       type: "text",
       sortable: false,
-      maxWidth: "100px",
       searchable: false,
     },
     {
       key: "status",
       label: "Status",
       type: "enum",
-      enumConfig: [
-        {
-          value: true,
-          display: "Active",
-          bgColor: "bg-green-100",
-          textColor: "text-green-700",
-        },
-        {
-          value: false,
-          display: "Inactive",
-          bgColor: "bg-red-100",
-          textColor: "text-red-700",
-        },
-      ],
+      enumConfig: darkEnumConfig,
       sortable: true,
       searchable: false,
     },
@@ -145,21 +124,23 @@ export default async function BrokerKeyDashboardPage() {
       label: "Time Frame",
       type: "select",
       required: true,
-      defaultValue: "true",
+      defaultValue: 5,
       options: [
-        { value: 5, label: "5 Minute" },
-        { value: 3, label: "3 Minute" },
+        { value: 5, label: "5 Minutes" },
+        { value: 3, label: "3 Minutes" },
       ],
     },
   ];
 
-  const dynamicOptionsForFilters = {
-    brokersForFilter: allBrokersData,
-  };
-
-  const dynamicOptionsForForms = {
-    allBrokersList: allBrokersData,
-  };
+  const customActions = [
+    {
+      icon: <Cross size={16} />,
+      actionUrl: "/api/broker-key/stop",
+      title: "Stop Trading",
+      color: "text-red-400",
+      bgColor: "hover:bg-red-500/20",
+    },
+  ];
 
   return (
     <TableContentManager
@@ -170,18 +151,10 @@ export default async function BrokerKeyDashboardPage() {
       itemKeyField="id"
       pageTitle="Broker Key Management"
       canAddItem={true}
-      customLink={"https://kite.trade/connect/login?api_key="}
-      dynamicFilterOptionsData={dynamicOptionsForFilters}
-      dynamicSelectDataSources={dynamicOptionsForForms}
-      customActions={[
-        {
-          icon: <Cross size={16} />,
-          actionUrl: "/api/broker-key/stop", // Custom API endpoint
-          title: "Custom Action",
-          color: "text-purple-600 hover:text-purple-800",
-          bgColor: "hover:bg-purple-100",
-        },
-      ]}
+      customLink="https://kite.trade/connect/login?api_key="
+      dynamicFilterOptionsData={{ brokersForFilter: allBrokersData }}
+      dynamicSelectDataSources={{ allBrokersList: allBrokersData }}
+      customActions={customActions}
     />
   );
 }

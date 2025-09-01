@@ -11,19 +11,42 @@ import {
   Notebook,
   Menu,
   X,
+  IndianRupee,
 } from "lucide-react";
 
-const DashboardLayout = ({ pageTitle, children }) => {
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [profileOpen, setProfileOpen] = useState(false);
-  const profileRef = useRef(null);
-  const [activePath, setActivePath] = useState("");
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+// Dark theme configuration
+const darkTheme = {
+  background: "bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900",
+  sidebar: "bg-slate-900/95 backdrop-blur-sm border-slate-700/50",
+  sidebarHover: "hover:bg-slate-700/50",
+  sidebarActive:
+    "bg-gradient-to-r from-sky-500/20 to-cyan-500/20 text-sky-400 border-r-2 border-sky-400",
+  header: "bg-slate-800/90 backdrop-blur-sm border-slate-700/50",
+  card: "bg-slate-800/60 border-slate-700/50",
+  text: "text-slate-100",
+  textMuted: "text-slate-400",
+  textSecondary: "text-slate-300",
+  button:
+    "bg-gradient-to-r from-sky-500 to-cyan-600 hover:from-sky-600 hover:to-cyan-700",
+  buttonSecondary: "bg-slate-700/50 hover:bg-slate-600/50 border-slate-600/50",
+};
 
-  // State for displaying user info
-  const [displayName, setDisplayName] = useState("User Name");
-  const [displayEmail, setDisplayEmail] = useState("user@example.com");
-  const [sidebarNavItems, setSidebarNavItems] = useState([]);
+const DashboardLayout = ({ pageTitle, children }) => {
+  // Consolidated state
+  const [state, setState] = useState({
+    mobileMenuOpen: false,
+    profileOpen: false,
+    activePath: "",
+    isAuthenticated: false,
+    displayName: "User Name",
+    displayEmail: "user@example.com",
+    sidebarNavItems: [],
+  });
+
+  const profileRef = useRef(null);
+
+  const updateState = (updates) =>
+    setState((prev) => ({ ...prev, ...updates }));
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -33,43 +56,37 @@ const DashboardLayout = ({ pageTitle, children }) => {
       window.location.href = "/login";
       return;
     }
-    setIsAuthenticated(true);
 
-    if (role === "admin") {
-      setSidebarNavItems([
+    // Navigation items based on role
+    const navItems = {
+      admin: [
         { label: "Dashboard", icon: Home, path: "/dashboard" },
-        {
-          label: "Asset",
-          icon: () => (
-            <span className="font-bold text-2xl text-gray-400 mr-1">₹</span>
-          ),
-          path: "/assets",
-        },
+        { label: "Asset", icon: IndianRupee, path: "/assets" },
         { label: "Daily Asset", icon: Notebook, path: "/daily-asset" },
         { label: "Trades", icon: ArrowRightLeft, path: "/trades" },
         { label: "Broker Keys", icon: BarChart2, path: "/brokerKeys/admin" },
         { label: "Brokers", icon: Banknote, path: "/brokers" },
         { label: "Users", icon: User, path: "/users" },
-      ]);
-    } else if (role === "user") {
-      setSidebarNavItems([
+      ],
+      user: [
         { label: "Dashboard", icon: Home, path: "/dashboard" },
         { label: "Trades", icon: ArrowRightLeft, path: "/trades" },
         { label: "Broker Keys", icon: BarChart2, path: "/brokerKeys" },
-      ]);
-    }
+      ],
+    };
 
-    const nameFromStorage = localStorage.getItem("name");
-    const emailFromStorage = localStorage.getItem("email");
+    updateState({
+      isAuthenticated: true,
+      sidebarNavItems: navItems[role] || navItems.user,
+      displayName: localStorage.getItem("name") || "User Name",
+      displayEmail: localStorage.getItem("email") || "user@example.com",
+      activePath: window.location.pathname,
+    });
 
-    if (nameFromStorage) setDisplayName(nameFromStorage);
-    if (emailFromStorage) setDisplayEmail(emailFromStorage);
-
-    setActivePath(window.location.pathname);
-
+    // Click outside handler for profile dropdown
     const handleClickOutside = (event) => {
       if (profileRef.current && !profileRef.current.contains(event.target)) {
-        setProfileOpen(false);
+        updateState({ profileOpen: false });
       }
     };
 
@@ -78,21 +95,20 @@ const DashboardLayout = ({ pageTitle, children }) => {
   }, []);
 
   const handleLogout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("name");
-    localStorage.removeItem("email");
+    ["token", "name", "email", "role"].forEach((item) =>
+      localStorage.removeItem(item),
+    );
     window.location.href = "/login";
   };
 
   const handleNavClick = (e, path) => {
     e.preventDefault();
-    setActivePath(path);
-    setMobileMenuOpen(false);
+    updateState({ activePath: path, mobileMenuOpen: false });
     window.location.href = path;
   };
 
   if (
-    !isAuthenticated &&
+    !state.isAuthenticated &&
     typeof window !== "undefined" &&
     !localStorage.getItem("token")
   ) {
@@ -100,27 +116,30 @@ const DashboardLayout = ({ pageTitle, children }) => {
   }
 
   return (
-    <div className="flex h-screen bg-gray-100 font-sans">
-      {/* Mobile Sidebar Overlay - Fixed black background issue */}
-      {mobileMenuOpen && (
+    <div
+      className={`flex h-screen ${darkTheme.background} font-sans ${darkTheme.text}`}
+    >
+      {/* Mobile Overlay */}
+      {state.mobileMenuOpen && (
         <div
-          className="fixed inset-0 bg-black bg-opacity-50 z-30 lg:hidden"
-          onClick={() => setMobileMenuOpen(false)}
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-30 lg:hidden"
+          onClick={() => updateState({ mobileMenuOpen: false })}
         />
       )}
 
-      {/* Sidebar - Fixed z-index to appear above overlay */}
+      {/* Sidebar */}
       <div
-        className={`fixed lg:static inset-y-0 left-0 z-40 bg-white text-gray-700
-          transform ${
-            mobileMenuOpen ? "translate-x-0" : "-translate-x-full"
-          } lg:translate-x-0
-          ${mobileMenuOpen ? "w-full" : "w-64"}
-          transition-all duration-300 ease-in-out flex flex-col border-r border-gray-200 shadow-lg`}
+        className={`fixed lg:static inset-y-0 left-0 z-40 ${darkTheme.sidebar}
+        transform ${state.mobileMenuOpen ? "translate-x-0" : "-translate-x-full"} lg:translate-x-0
+        ${state.mobileMenuOpen ? "w-full sm:w-80" : "w-64"}
+        transition-all duration-300 ease-in-out flex flex-col border-r shadow-2xl`}
       >
-        <div className="p-4 flex items-center justify-between border-b border-gray-200 h-16">
-          <a className="flex items-center" href="/dashboard">
-            <div className="bg-indigo-600 p-2 rounded-lg">
+        {/* Logo Header */}
+        <div className="p-4 flex items-center justify-between border-b border-slate-700/50 h-16">
+          <a className="flex items-center group" href="/dashboard">
+            <div
+              className={`${darkTheme.button} p-2 rounded-xl shadow-lg group-hover:scale-105 transition-transform`}
+            >
               <Image
                 src="/logo.png"
                 alt="Algoman Logo"
@@ -128,57 +147,60 @@ const DashboardLayout = ({ pageTitle, children }) => {
                 height={36}
               />
             </div>
-            <h1 className="text-xl font-bold text-gray-900 ml-3">Algoman</h1>
+            <h1 className="text-xl font-bold bg-gradient-to-r from-sky-400 to-cyan-400 bg-clip-text text-transparent ml-3">
+              Algoman
+            </h1>
           </a>
 
-          {/* Close button for mobile sidebar - Improved positioning */}
           <button
-            className="lg:hidden p-1.5 rounded-lg hover:bg-gray-100 text-gray-500 hover:text-gray-700"
-            onClick={() => setMobileMenuOpen(false)}
+            className="lg:hidden p-2 rounded-lg hover:bg-slate-700/50 text-slate-400 hover:text-slate-200 transition-colors"
+            onClick={() => updateState({ mobileMenuOpen: false })}
           >
             <X size={24} />
           </button>
         </div>
 
-        <nav className="mt-6 flex-1 px-3 space-y-1">
-          {sidebarNavItems.map((item) => (
+        {/* Navigation */}
+        <nav className="mt-6 flex-1 px-3 space-y-2">
+          {state.sidebarNavItems.map((item) => (
             <a
               key={item.label}
               href={item.path}
               onClick={(e) => handleNavClick(e, item.path)}
-              className={`group flex items-center px-3 py-3 rounded-lg transition-colors ease-in-out duration-150
-                ${
-                  activePath === item.path
-                    ? "bg-blue-50 text-blue-600 font-medium"
-                    : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
-                }`}
+              className={`group flex items-center px-4 py-3 rounded-xl transition-all duration-200 ${
+                state.activePath === item.path
+                  ? darkTheme.sidebarActive
+                  : `${darkTheme.textMuted} ${darkTheme.sidebarHover} hover:text-slate-200`
+              }`}
             >
               <div className="mr-3">
                 <item.icon
-                  className={`text-lg ${
-                    activePath === item.path
-                      ? "text-blue-500"
-                      : "text-gray-400 group-hover:text-gray-500"
+                  className={`text-lg transition-colors ${
+                    state.activePath === item.path
+                      ? "text-sky-400"
+                      : "text-slate-400 group-hover:text-slate-300"
                   }`}
-                  aria-hidden="true"
                 />
               </div>
-              <span className="text-sm">{item.label}</span>
+              <span className="text-sm font-medium">{item.label}</span>
             </a>
           ))}
         </nav>
 
-        <div className="p-4 border-t border-gray-200 mt-auto">
+        {/* User Info Footer */}
+        <div className="p-4 border-t border-slate-700/50 mt-auto">
           <div className="flex items-center">
-            <div className="w-10 h-10 rounded-full bg-gradient-to-r from-cyan-400 to-blue-500 flex items-center justify-center text-white">
-              <User size={20} />
+            <div
+              className={`w-12 h-12 rounded-xl ${darkTheme.button} flex items-center justify-center text-white shadow-lg`}
+            >
+              <User size={22} />
             </div>
-            <div className="ml-3 overflow-hidden">
-              <div className="text-sm font-medium text-gray-900 truncate">
-                {displayName}
+            <div className="ml-3 overflow-hidden flex-1">
+              <div className="text-sm font-semibold text-slate-200 truncate">
+                {state.displayName}
               </div>
-              <div className="text-xs text-gray-500 truncate">
-                {displayEmail}
+              <div className="text-xs text-slate-400 truncate">
+                {state.displayEmail}
               </div>
             </div>
           </div>
@@ -187,37 +209,47 @@ const DashboardLayout = ({ pageTitle, children }) => {
 
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col overflow-hidden">
-        <header className="bg-white border-b border-gray-200 shadow-sm">
+        {/* Header */}
+        <header className={`${darkTheme.header} border-b shadow-lg`}>
           <div className="flex items-center justify-between px-6 h-16">
             <div className="flex items-center">
-              {/* Mobile Menu Button in Header */}
               <button
-                className="lg:hidden mr-4 p-2 rounded-md bg-indigo-600 text-white"
-                onClick={() => setMobileMenuOpen(true)}
+                className={`lg:hidden mr-4 p-2.5 rounded-xl ${darkTheme.button} text-white shadow-lg hover:shadow-xl transition-all`}
+                onClick={() => updateState({ mobileMenuOpen: true })}
               >
-                <Menu size={24} />
+                <Menu size={20} />
               </button>
-              <h2 className="text-xl font-semibold text-gray-900 truncate max-w-[60vw]">
+              <h2 className="text-xl font-bold bg-gradient-to-r from-slate-100 to-slate-300 bg-clip-text text-transparent truncate max-w-[60vw]">
                 {pageTitle || "Dashboard"}
               </h2>
             </div>
+
+            {/* Profile Dropdown */}
             <div className="relative" ref={profileRef}>
               <button
-                onClick={() => setProfileOpen(!profileOpen)}
-                className="w-9 h-9 rounded-full bg-gradient-to-r from-cyan-400 to-blue-500 flex items-center justify-center text-white shadow-sm hover:opacity-90"
+                onClick={() => updateState({ profileOpen: !state.profileOpen })}
+                className={`w-10 h-10 rounded-xl ${darkTheme.button} flex items-center justify-center text-white shadow-lg hover:shadow-xl hover:scale-105 transition-all`}
               >
                 <User size={18} />
               </button>
-              {profileOpen && (
-                <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-xl py-1 z-20 border border-gray-200">
-                  <div className="px-4 py-3 text-sm text-gray-700 border-b border-gray-100">
-                    <p className="font-medium truncate">{displayEmail}</p>
+
+              {state.profileOpen && (
+                <div
+                  className={`absolute right-0 mt-3 w-64 ${darkTheme.card} backdrop-blur-sm rounded-xl shadow-2xl py-2 z-20 border animate-in slide-in-from-top-2 duration-200`}
+                >
+                  <div className="px-4 py-3 border-b border-slate-700/50">
+                    <p className="text-sm font-medium text-slate-200">
+                      {state.displayName}
+                    </p>
+                    <p className="text-xs text-slate-400 truncate">
+                      {state.displayEmail}
+                    </p>
                   </div>
                   <button
                     onClick={handleLogout}
-                    className="flex items-center w-full px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-100"
+                    className="flex items-center w-full px-4 py-3 text-sm text-slate-300 hover:bg-slate-700/50 hover:text-slate-100 transition-colors rounded-lg mx-1 mt-1"
                   >
-                    <LogOut size={16} className="mr-2.5 text-gray-500" />
+                    <LogOut size={16} className="mr-3 text-slate-400" />
                     Logout
                   </button>
                 </div>
@@ -226,9 +258,11 @@ const DashboardLayout = ({ pageTitle, children }) => {
           </div>
         </header>
 
-        {/* Page content */}
-        <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-100 p-4 sm:p-6">
-          <div className="max-w-7xl mx-auto">{children}</div>
+        {/* Page Content */}
+        <main
+          className={`flex-1 overflow-x-hidden overflow-y-auto ${darkTheme.background} p-4 sm:p-6`}
+        >
+          <div className="max-w-full mx-auto">{children}</div>
         </main>
       </div>
     </div>
