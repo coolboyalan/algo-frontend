@@ -683,7 +683,7 @@ const TableContentManager = ({
 
                 {/* Date Range */}
                 <div
-                  className={`${darkTheme.secondary} flex items-center space-x-2 rounded-lg border px-3 py-2 text-sm transition-colors`}
+                  className={`${darkTheme.secondary} flex items-center space-x-2 rounded-lg border px-3 py-2 my-2 text-sm transition-colors`}
                 >
                   <CalendarDays size={16} className="text-slate-400" />
                   <input
