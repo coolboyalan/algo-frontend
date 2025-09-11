@@ -60,6 +60,28 @@ export default async function BrokerKeyDashboardPage() {
       searchable: false,
     },
     {
+      key: "profitLimit",
+      label: "Profit Limit",
+      type: "number",
+      sortable: true,
+      searchable: false,
+    },
+    {
+      key: "lossLimit",
+      label: "Loss Limit",
+      type: "number",
+      sortable: true,
+      searchable: false,
+    },
+    {
+      key: "usableFund",
+      label: "Usable Fund",
+      type: "number",
+      sortable: true,
+      searchable: false,
+    },
+
+    {
       key: "apiSecret",
       label: "API Secret",
       type: "text",
@@ -129,6 +151,27 @@ export default async function BrokerKeyDashboardPage() {
         { value: 5, label: "5 Minutes" },
         { value: 3, label: "3 Minutes" },
       ],
+    },
+    {
+      key: "profitLimit",
+      label: "Profit Limit",
+      type: "number",
+      required: true,
+      placeholder: "Profit Limit",
+    },
+    {
+      key: "lossLimit",
+      label: "Loss Limit",
+      type: "number",
+      required: true,
+      placeholder: "Loss Limit",
+    },
+    {
+      key: "usableFund",
+      label: "Usable Fund",
+      type: "number",
+      required: true,
+      placeholder: "Profit Limit",
     },
   ];
 

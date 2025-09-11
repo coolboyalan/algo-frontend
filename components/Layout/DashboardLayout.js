@@ -63,6 +63,7 @@ const DashboardLayout = ({ pageTitle, children }) => {
         { label: "Dashboard", icon: Home, path: "/dashboard" },
         { label: "Asset", icon: IndianRupee, path: "/assets" },
         { label: "Daily Asset", icon: Notebook, path: "/daily-asset" },
+        { label: "Option Buffer", icon: Notebook, path: "/option-buffer" },
         { label: "Trades", icon: ArrowRightLeft, path: "/trades" },
         { label: "Broker Keys", icon: BarChart2, path: "/brokerKeys/admin" },
         { label: "Brokers", icon: Banknote, path: "/brokers" },
