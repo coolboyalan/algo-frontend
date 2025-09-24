@@ -1,14 +1,13 @@
 "use client";
 import { useState, useEffect } from "react";
-import { Save } from "lucide-react"; // Ensure lucide-react is installed
+import { Save } from "lucide-react";
 
 const EditItemForm = ({
   item,
   formFields,
   onSubmit,
   onCancel,
-  // itemKeyField, // Passed but not directly used in this component's form field logic
-  dynamicSelectOptions = {}, // To populate select_dynamic fields
+  dynamicSelectOptions = {},
 }) => {
   const [formData, setFormData] = useState({});
 
@@ -33,11 +32,9 @@ const EditItemForm = ({
             value === undefined ||
             typeof value === "object"
           ) {
-            // If it's an object (e.g. item.user = {id:1, name:'Test'}), and field.key is 'user', this won't work for select.
-            // Assuming if field.key is 'userId', item.userId already holds the ID.
             initialData[field.key] = "";
           } else {
-            initialData[field.key] = String(value); // Ensure it's a string for <select> value
+            initialData[field.key] = String(value);
           }
         }
       });
@@ -56,144 +53,159 @@ const EditItemForm = ({
 
   if (!formFields || formFields.length === 0) {
     return (
-      <p className="text-gray-600">Form fields not configured for this item.</p>
+      <p className="text-slate-400">
+        Form fields not configured for this item.
+      </p>
     );
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6 p-1">
-      {" "}
-      {/* Increased spacing and padding */}
-      {formFields.map((field) => (
-        <div key={field.key}>
-          <label
-            htmlFor={field.key}
-            className="block text-sm font-medium text-gray-800 mb-1.5" /* Slightly bolder label */
-          >
-            {field.label}{" "}
-            {field.required && <span className="text-red-500">*</span>}
-          </label>
-          {field.type === "select_dynamic" ? (
-            (() => {
-              const optionsList =
-                dynamicSelectOptions[field.optionsSourceKey] || [];
-              return (
+    <div className="w-full">
+      <form onSubmit={handleSubmit} className="space-y-6">
+        {/* Form Fields Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {formFields.map((field) => (
+            <div
+              key={field.key}
+              className={field.fullWidth ? "md:col-span-2" : ""}
+            >
+              <label
+                htmlFor={field.key}
+                className="block text-sm font-medium text-slate-200 mb-2"
+              >
+                {field.label}
+                {field.required && <span className="text-red-400 ml-1">*</span>}
+              </label>
+
+              {field.type === "select_dynamic" ? (
+                (() => {
+                  const optionsList =
+                    dynamicSelectOptions[field.optionsSourceKey] || [];
+                  return (
+                    <select
+                      id={field.key}
+                      name={field.key}
+                      value={formData[field.key] || ""}
+                      onChange={(e) => handleChange(field.key, e.target.value)}
+                      className="w-full bg-slate-700/50 border border-slate-600 rounded-lg px-3 py-2.5 text-sm text-slate-100 placeholder-slate-400 focus:ring-2 focus:ring-sky-500 focus:border-sky-500 disabled:bg-slate-600/50 disabled:text-slate-400 transition-colors"
+                      required={field.required}
+                      disabled={field.disabled}
+                    >
+                      <option value="">
+                        {field.placeholder || `Select ${field.label}...`}
+                      </option>
+                      {optionsList.map((opt) => (
+                        <option
+                          key={opt[field.optionValueKey]}
+                          value={opt[field.optionValueKey]}
+                        >
+                          {opt[field.optionLabelKey]}
+                        </option>
+                      ))}
+                    </select>
+                  );
+                })()
+              ) : field.type === "select" ? (
                 <select
                   id={field.key}
                   name={field.key}
                   value={formData[field.key] || ""}
                   onChange={(e) => handleChange(field.key, e.target.value)}
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-1 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:text-gray-500"
+                  className="w-full bg-slate-700/50 border border-slate-600 rounded-lg px-3 py-2.5 text-sm text-slate-100 placeholder-slate-400 focus:ring-2 focus:ring-sky-500 focus:border-sky-500 disabled:bg-slate-600/50 disabled:text-slate-400 transition-colors"
                   required={field.required}
                   disabled={field.disabled}
                 >
                   <option value="">
                     {field.placeholder || `Select ${field.label}...`}
                   </option>
-                  {optionsList.map((opt) => (
-                    <option
-                      key={opt[field.optionValueKey]}
-                      value={opt[field.optionValueKey]}
-                    >
-                      {opt[field.optionLabelKey]}
+                  {field.options?.map((opt) => (
+                    <option key={opt.value} value={opt.value}>
+                      {opt.label}
                     </option>
                   ))}
                 </select>
-              );
-            })()
-          ) : field.type === "select" ? (
-            <select
-              id={field.key}
-              name={field.key}
-              value={formData[field.key] || ""}
-              onChange={(e) => handleChange(field.key, e.target.value)}
-              className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-1 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:text-gray-500"
-              required={field.required}
-              disabled={field.disabled}
-            >
-              <option value="">
-                {field.placeholder || `Select ${field.label}...`}
-              </option>
-              {field.options?.map((opt) => (
-                <option key={opt.value} value={opt.value}>
-                  {opt.label}
-                </option>
-              ))}
-            </select>
-          ) : field.type === "textarea" ? (
-            <textarea
-              id={field.key}
-              name={field.key}
-              value={formData[field.key] || ""}
-              onChange={(e) => handleChange(field.key, e.target.value)}
-              rows={field.rows || 3}
-              className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-1 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:text-gray-500"
-              required={field.required}
-              disabled={field.disabled}
-              placeholder={field.placeholder}
-            />
-          ) : field.type === "date" ? (
-            <input
-              type="date"
-              id={field.key}
-              name={field.key}
-              value={
-                formData[field.key]
-                  ? String(formData[field.key]).split("T")[0]
-                  : ""
-              } // Format for date input
-              onChange={(e) => handleChange(field.key, e.target.value)}
-              className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-1 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:text-gray-500"
-              required={field.required}
-              disabled={field.disabled}
-            />
-          ) : field.type === "password" ? (
-            <input
-              type="password"
-              id={field.key}
-              name={field.key}
-              value={formData[field.key] || ""}
-              onChange={(e) => handleChange(field.key, e.target.value)}
-              className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-1 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:text-gray-500"
-              required={field.required}
-              disabled={field.disabled}
-              placeholder={field.placeholder}
-            />
-          ) : (
-            <input
-              type={field.type || "text"}
-              id={field.key}
-              name={field.key}
-              value={formData[field.key] || ""}
-              onChange={(e) => handleChange(field.key, e.target.value)}
-              className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-1 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:text-gray-500"
-              required={field.required}
-              readOnly={field.readOnly || field.disabled} // readOnly can also be used
-              disabled={field.disabled}
-              placeholder={field.placeholder}
-            />
-          )}
-          {field.description && (
-            <p className="mt-1.5 text-xs text-gray-500">{field.description}</p>
-          )}
+              ) : field.type === "textarea" ? (
+                <textarea
+                  id={field.key}
+                  name={field.key}
+                  value={formData[field.key] || ""}
+                  onChange={(e) => handleChange(field.key, e.target.value)}
+                  rows={field.rows || 4}
+                  className="w-full bg-slate-700/50 border border-slate-600 rounded-lg px-3 py-2.5 text-sm text-slate-100 placeholder-slate-400 focus:ring-2 focus:ring-sky-500 focus:border-sky-500 disabled:bg-slate-600/50 disabled:text-slate-400 transition-colors resize-vertical"
+                  required={field.required}
+                  disabled={field.disabled}
+                  placeholder={field.placeholder}
+                />
+              ) : field.type === "date" ? (
+                <input
+                  type="date"
+                  id={field.key}
+                  name={field.key}
+                  value={
+                    formData[field.key]
+                      ? String(formData[field.key]).split("T")[0]
+                      : ""
+                  }
+                  onChange={(e) => handleChange(field.key, e.target.value)}
+                  className="w-full bg-slate-700/50 border border-slate-600 rounded-lg px-3 py-2.5 text-sm text-slate-100 focus:ring-2 focus:ring-sky-500 focus:border-sky-500 disabled:bg-slate-600/50 disabled:text-slate-400 transition-colors"
+                  required={field.required}
+                  disabled={field.disabled}
+                />
+              ) : field.type === "password" ? (
+                <input
+                  type="password"
+                  id={field.key}
+                  name={field.key}
+                  value={formData[field.key] || ""}
+                  onChange={(e) => handleChange(field.key, e.target.value)}
+                  className="w-full bg-slate-700/50 border border-slate-600 rounded-lg px-3 py-2.5 text-sm text-slate-100 placeholder-slate-400 focus:ring-2 focus:ring-sky-500 focus:border-sky-500 disabled:bg-slate-600/50 disabled:text-slate-400 transition-colors"
+                  required={field.required}
+                  disabled={field.disabled}
+                  placeholder={field.placeholder}
+                />
+              ) : (
+                <input
+                  type={field.type || "text"}
+                  id={field.key}
+                  name={field.key}
+                  value={formData[field.key] || ""}
+                  onChange={(e) => handleChange(field.key, e.target.value)}
+                  className="w-full bg-slate-700/50 border border-slate-600 rounded-lg px-3 py-2.5 text-sm text-slate-100 placeholder-slate-400 focus:ring-2 focus:ring-sky-500 focus:border-sky-500 disabled:bg-slate-600/50 disabled:text-slate-400 transition-colors"
+                  required={field.required}
+                  readOnly={field.readOnly || field.disabled}
+                  disabled={field.disabled}
+                  placeholder={field.placeholder}
+                />
+              )}
+
+              {field.description && (
+                <p className="mt-2 text-xs text-slate-400">
+                  {field.description}
+                </p>
+              )}
+            </div>
+          ))}
         </div>
-      ))}
-      <div className="flex justify-end space-x-3 pt-5">
-        <button
-          type="button"
-          onClick={onCancel}
-          className="px-5 py-2.5 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-gray-400"
-        >
-          Cancel
-        </button>
-        <button
-          type="submit"
-          className="px-5 py-2.5 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md transition-colors flex items-center focus:outline-none focus:ring-2 focus:ring-blue-400"
-        >
-          <Save size={16} className="mr-2" /> Save Changes
-        </button>
-      </div>
-    </form>
+
+        {/* Form Actions */}
+        <div className="flex justify-end space-x-3 pt-6 border-t border-slate-700/50">
+          <button
+            type="button"
+            onClick={onCancel}
+            className="px-6 py-2.5 text-sm font-medium text-slate-300 bg-slate-700/50 hover:bg-slate-600/50 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-slate-500"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            className="px-6 py-2.5 text-sm font-medium text-white bg-sky-600 hover:bg-sky-700 rounded-lg transition-colors flex items-center focus:outline-none focus:ring-2 focus:ring-sky-500"
+          >
+            <Save size={16} className="mr-2" />
+            Save Changes
+          </button>
+        </div>
+      </form>
+    </div>
   );
 };
 

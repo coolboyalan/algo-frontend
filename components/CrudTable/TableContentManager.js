@@ -818,6 +818,7 @@ const TableContentManager = ({
               </div>
             )}
           </div>
+
           {/* Notification */}
           {state.notification.message && (
             <div
@@ -840,6 +841,7 @@ const TableContentManager = ({
               </button>
             </div>
           )}
+
           {/* Table */}
           <div className="overflow-x-auto">
             <table className={`min-w-full divide-y ${darkTheme.table}`}>
@@ -982,6 +984,7 @@ const TableContentManager = ({
               </tbody>
             </table>
           </div>
+
           {/* Pagination */}
           {totalPages > 0 && (
             <div
@@ -1080,6 +1083,7 @@ const TableContentManager = ({
               )}
             </div>
           )}
+
           {/* Modals */}
           <Modal
             isOpen={state.isViewModalOpen}
@@ -1106,46 +1110,45 @@ const TableContentManager = ({
               </div>
             )}
           </Modal>
-          {/* Edit Modal - Updated with Scroll Fix */}
+
+          {/* Edit Modal - UPDATED - Remove scrolling container */}
           <Modal
             isOpen={state.isEditModalOpen}
             onClose={() => updateState({ isEditModalOpen: false })}
             title={`Edit ${pageTitle.replace("Management", "").trim()}`}
-            size="lg"
+            size="xl" // Changed to xl for more width
           >
             {state.selectedItem && formFields.length > 0 && (
-              <div className="max-h-[60vh] overflow-y-auto">
-                <EditItemForm
-                  item={state.selectedItem}
-                  formFields={formFields}
-                  onSubmit={handleSaveEdit}
-                  onCancel={() => updateState({ isEditModalOpen: false })}
-                  itemKeyField={itemKeyField}
-                  dynamicSelectOptions={dynamicSelectDataSources}
-                />
-              </div>
+              <EditItemForm
+                item={state.selectedItem}
+                formFields={formFields}
+                onSubmit={handleSaveEdit}
+                onCancel={() => updateState({ isEditModalOpen: false })}
+                itemKeyField={itemKeyField}
+                dynamicSelectOptions={dynamicSelectDataSources}
+              />
             )}
           </Modal>
-          {/* Create Modal - Similar Fix */}
+
+          {/* Create Modal - UPDATED - Remove scrolling container */}
           <Modal
             isOpen={state.isCreateModalOpen}
             onClose={() => updateState({ isCreateModalOpen: false })}
             title={`Create New ${pageTitle.replace("Management", "").trim()}`}
-            size="lg"
+            size="xl" // Changed to xl for more width
           >
             {formFields.length > 0 && (
-              <div className="max-h-[60vh] overflow-y-auto">
-                <EditItemForm
-                  item={null}
-                  formFields={formFields}
-                  onSubmit={handleCreateSubmit}
-                  onCancel={() => updateState({ isCreateModalOpen: false })}
-                  itemKeyField={itemKeyField}
-                  dynamicSelectOptions={dynamicSelectDataSources}
-                />
-              </div>
+              <EditItemForm
+                item={null}
+                formFields={formFields}
+                onSubmit={handleCreateSubmit}
+                onCancel={() => updateState({ isCreateModalOpen: false })}
+                itemKeyField={itemKeyField}
+                dynamicSelectOptions={dynamicSelectDataSources}
+              />
             )}
-          </Modal>{" "}
+          </Modal>
+
           <Modal
             isOpen={state.isDeleteModalOpen}
             onClose={() => updateState({ isDeleteModalOpen: false })}
