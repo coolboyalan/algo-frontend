@@ -80,7 +80,13 @@ export default async function BrokerKeyDashboardPage() {
       sortable: true,
       searchable: false,
     },
-
+    {
+      key: "type",
+      label: "Account Type",
+      type: "text",
+      sortable: true,
+      searchable: false,
+    },
     {
       key: "apiSecret",
       label: "API Secret",
@@ -150,6 +156,17 @@ export default async function BrokerKeyDashboardPage() {
       options: [
         { value: 5, label: "5 Minutes" },
         { value: 3, label: "3 Minutes" },
+      ],
+    },
+    {
+      key: "type",
+      label: "Account Type",
+      type: "select",
+      required: true,
+      defaultValue: "buying",
+      options: [
+        { value: "buying", label: "Buying" },
+        { value: "selling", label: "Selling" },
       ],
     },
     {
