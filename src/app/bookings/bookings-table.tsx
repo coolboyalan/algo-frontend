@@ -207,9 +207,6 @@ export function BookingsTable({ initialData, fetchData }: BookingsTableProps) {
       cell: ({ row }) => {
         return (
           <div className="flex items-center gap-2">
-            <Button variant="ghost" size="icon" title="View Details">
-              <Eye className="h-4 w-4" />
-            </Button>
             <Button variant="ghost" size="icon" title="Edit Booking">
               <Edit className="h-4 w-4" />
             </Button>

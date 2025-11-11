@@ -16,7 +16,6 @@ import {
   DollarSign,
   PlaneTakeoff,
   PlaneLanding,
-  Pencil,
   CheckCircle2,
   XCircle,
   AlertCircle
@@ -210,11 +209,8 @@ const [selectedFlights, setSelectedFlights] = useState<Flight[]>([]);
       cell: ({ row }) => {
         return (
           <div className="flex items-center gap-2">
-            <Button variant="ghost" size="icon" title="View Details">
-              <Eye className="h-4 w-4" />
-            </Button>
             <Button variant="ghost" size="icon" title="Edit Flight">
-              <Pencil className="h-4 w-4" />
+              <Edit className="h-4 w-4" />
             </Button>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -229,7 +225,7 @@ const [selectedFlights, setSelectedFlights] = useState<Flight[]>([]);
                   View Details
                 </DropdownMenuItem>
                 <DropdownMenuItem>
-                  <Pencil className="mr-2 h-4 w-4" />
+                  <Edit className="mr-2 h-4 w-4" />
                   Edit Flight
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useTransition, useEffect, useRef } from 'react';
+import { useState, useTransition, useEffect, useRef } from "react";
 import {
   useReactTable,
   getCoreRowModel,
@@ -8,7 +8,7 @@ import {
   ColumnDef,
   SortingState,
   flexRender,
-} from '@tanstack/react-table';
+} from "@tanstack/react-table";
 import {
   Table,
   TableBody,
@@ -16,21 +16,17 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+} from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+} from "@/components/ui/select";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -38,7 +34,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+} from "@/components/ui/dropdown-menu";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   ChevronLeft,
@@ -54,15 +50,17 @@ import {
   Download,
   FileText,
   FileSpreadsheet,
-  Printer
-} from 'lucide-react';
-import { TableParams, TableResponse, TableFilter } from '@/app/actions/table-data';
-import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
-import { cn } from '@/lib/utils';
-import * as XLSX from 'xlsx';
-import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
+  Printer,
+  Eye,
+} from "lucide-react";
+import { TableParams, TableResponse, TableFilter } from "@/app/actions/table-data";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import { cn } from "@/lib/utils";
+import * as XLSX from "xlsx";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
+import { RowViewerDialog, RowViewerFieldConfig } from "./row-viewer-dialog";
 
 interface DynamicServerTableProps<T> {
   initialData: TableResponse<T>;
@@ -74,11 +72,11 @@ interface DynamicServerTableProps<T> {
   filters?: {
     field: string;
     label: string;
-    type: 'select' | 'multiselect';
+    type: "select" | "multiselect";
     options?: { label: string; value: string }[];
   }[];
   defaultSortBy?: string;
-  defaultSortOrder?: 'asc' | 'desc';
+  defaultSortOrder?: "asc" | "desc";
   pageSize?: number;
   pageSizeOptions?: number[];
   onRowClick?: (row: T) => void;
@@ -96,9 +94,18 @@ interface DynamicServerTableProps<T> {
     label: string;
     icon?: React.ReactNode;
     onClick: (selectedRows: T[]) => void;
-    variant?: 'default' | 'destructive' | 'outline' | 'secondary' | 'ghost' | 'link';
+    variant?:
+      | "default"
+      | "destructive"
+      | "outline"
+      | "secondary"
+      | "ghost"
+      | "link";
   }[];
   rowIdField?: string;
+  viewerTitle?: string;
+  viewerSubtitle?: string;
+  viewerFieldConfig?: Record<string, RowViewerFieldConfig>;
 }
 
 export function DynamicServerTable<T extends Record<string, any>>({
@@ -106,42 +113,53 @@ export function DynamicServerTable<T extends Record<string, any>>({
   columns,
   fetchData,
   searchable = true,
-  searchPlaceholder = 'Search...',
+  searchPlaceholder = "Search...",
   searchFields = [],
   filters = [],
   defaultSortBy,
-  defaultSortOrder = 'asc',
+  defaultSortOrder = "asc",
   pageSize = 10,
   pageSizeOptions = [10, 25, 50, 100],
   onRowClick,
   exportable = false,
-  exportFileName = 'data',
+  exportFileName = "data",
   exportConfig = { csv: true, excel: true, pdf: true, print: true },
   selectable = false,
   onSelectionChange,
   bulkActions = [],
-  rowIdField = 'id',
+  rowIdField = "id",
+  viewerTitle = "Details",
+  viewerSubtitle,
+  viewerFieldConfig = {},
 }: DynamicServerTableProps<T>) {
   const [data, setData] = useState<T[]>(initialData.data);
   const [pagination, setPagination] = useState(initialData.pagination);
-  const [searchInput, setSearchInput] = useState('');
-  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [searchInput, setSearchInput] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [activeFilters, setActiveFilters] = useState<TableFilter[]>([]);
   const [sorting, setSorting] = useState<SortingState>(
-    defaultSortBy ? [{ id: defaultSortBy, desc: defaultSortOrder === 'desc' }] : []
+    defaultSortBy ? [{ id: defaultSortBy, desc: defaultSortOrder === "desc" }] : []
   );
   const [currentPage, setCurrentPage] = useState(1);
   const [currentPageSize, setCurrentPageSize] = useState(pageSize);
   const [isPending, startTransition] = useTransition();
   const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set());
 
-  const searchTimeoutRef = useRef<NodeJS.Timeout>();
+  // Row viewer
+  const [viewerOpen, setViewerOpen] = useState(false);
+  const [viewerData, setViewerData] = useState<T | null>(null);
+
+  const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const isFirstRender = useRef(true);
   const hasSearchChanged = useRef(false);
   const hasFiltersChanged = useRef(false);
   const hasSortingChanged = useRef(false);
 
-  // Selection handlers
+  const handleViewRow = (row: T) => {
+    setViewerData(row);
+    setViewerOpen(true);
+  };
+
   const toggleRowSelection = (rowId: string) => {
     const newSelection = new Set(selectedRows);
     if (newSelection.has(rowId)) {
@@ -152,7 +170,7 @@ export function DynamicServerTable<T extends Record<string, any>>({
     setSelectedRows(newSelection);
 
     if (onSelectionChange) {
-      const selectedData = data.filter(row => newSelection.has(String(row[rowIdField])));
+      const selectedData = data.filter((row) => newSelection.has(String(row[rowIdField])) );
       onSelectionChange(selectedData);
     }
   };
@@ -162,7 +180,7 @@ export function DynamicServerTable<T extends Record<string, any>>({
       setSelectedRows(new Set());
       if (onSelectionChange) onSelectionChange([]);
     } else {
-      const allIds = new Set(data.map(row => String(row[rowIdField])));
+      const allIds = new Set(data.map((row) => String(row[rowIdField])));
       setSelectedRows(allIds);
       if (onSelectionChange) onSelectionChange(data);
     }
@@ -174,16 +192,15 @@ export function DynamicServerTable<T extends Record<string, any>>({
   };
 
   const getSelectedData = (): T[] => {
-    return data.filter(row => selectedRows.has(String(row[rowIdField])));
+    return data.filter((row) => selectedRows.has(String(row[rowIdField])));
   };
 
-  // Export helper
   const getExportData = (selectedOnly: boolean = false): any[] => {
     const exportSource = selectedOnly ? getSelectedData() : data;
-    return exportSource.map(row => {
+    return exportSource.map((row) => {
       const exportRow: any = {};
-      columns.forEach(col => {
-        if (col.accessorKey && typeof col.accessorKey === 'string') {
+      columns.forEach((col) => {
+        if (col.accessorKey && typeof col.accessorKey === "string") {
           const header = col.header as string;
           exportRow[header] = row[col.accessorKey];
         }
@@ -195,29 +212,33 @@ export function DynamicServerTable<T extends Record<string, any>>({
   const exportToCSV = (selectedOnly: boolean = false) => {
     const exportData = getExportData(selectedOnly);
     if (exportData.length === 0) {
-      alert(selectedOnly ? 'No rows selected' : 'No data to export');
+      alert(selectedOnly ? "No rows selected" : "No data to export");
       return;
     }
 
     const headers = Object.keys(exportData[0]);
 
     const csv = [
-      headers.join(','),
-      ...exportData.map(row =>
-        headers.map(header => {
-          const value = row[header];
-          return typeof value === 'string' && value.includes(',')
-            ? `"${value}"`
-            : value;
-        }).join(',')
-      )
-    ].join('\n');
+      headers.join(","),
+      ...exportData.map((row) =>
+        headers
+          .map((header) => {
+            const value = row[header];
+            return typeof value === "string" && value.includes(",")
+              ? `"${value}"`
+              : value;
+          })
+          .join(",")
+      ),
+    ].join("\n");
 
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
+    const link = document.createElement("a");
     link.href = url;
-    link.download = `${exportFileName}-${selectedOnly ? 'selected-' : ''}${new Date().toISOString().split('T')[0]}.csv`;
+    link.download = `${exportFileName}-${selectedOnly ? "selected-" : ""}${new Date()
+      .toISOString()
+      .split("T")[0]}.csv`;
     link.click();
     URL.revokeObjectURL(url);
   };
@@ -225,43 +246,56 @@ export function DynamicServerTable<T extends Record<string, any>>({
   const exportToExcel = (selectedOnly: boolean = false) => {
     const exportData = getExportData(selectedOnly);
     if (exportData.length === 0) {
-      alert(selectedOnly ? 'No rows selected' : 'No data to export');
+      alert(selectedOnly ? "No rows selected" : "No data to export");
       return;
     }
 
     const worksheet = XLSX.utils.json_to_sheet(exportData);
 
-    const colWidths = Object.keys(exportData[0]).map(key => ({
+    const colWidths = Object.keys(exportData[0]).map((key) => ({
       wch: Math.max(
         key.length,
-        ...exportData.map(row => String(row[key] || '').length)
-      ) + 2
+        ...exportData.map((row) => String(row[key] || "").length)
+      ) + 2,
     }));
-    worksheet['!cols'] = colWidths;
+    worksheet["!cols"] = colWidths;
 
     const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'Data');
-    XLSX.writeFile(workbook, `${exportFileName}-${selectedOnly ? 'selected-' : ''}${new Date().toISOString().split('T')[0]}.xlsx`);
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Data");
+    XLSX.writeFile(
+      workbook,
+      `${exportFileName}-${selectedOnly ? "selected-" : ""}${new Date()
+        .toISOString()
+        .split("T")[0]}.xlsx`
+    );
   };
 
   const exportToPDF = (selectedOnly: boolean = false) => {
     const exportData = getExportData(selectedOnly);
     if (exportData.length === 0) {
-      alert(selectedOnly ? 'No rows selected' : 'No data to export');
+      alert(selectedOnly ? "No rows selected" : "No data to export");
       return;
     }
 
-    const doc = new jsPDF('landscape');
+    const doc = new jsPDF("landscape");
 
     doc.setFontSize(18);
-    doc.text(`${exportFileName.charAt(0).toUpperCase() + exportFileName.slice(1)} Report`, 14, 20);
+    doc.text(
+      `${exportFileName.charAt(0).toUpperCase() + exportFileName.slice(1)} Report`,
+      14,
+      20
+    );
 
     doc.setFontSize(10);
     doc.text(`Generated: ${new Date().toLocaleString()}`, 14, 28);
-    doc.text(`Total Records: ${exportData.length}${selectedOnly ? ' (selected)' : ''}`, 14, 34);
+    doc.text(
+      `Total Records: ${exportData.length}${selectedOnly ? " (selected)" : ""}`,
+      14,
+      34
+    );
 
     const headers = Object.keys(exportData[0]);
-    const body = exportData.map(row => headers.map(h => row[h]));
+    const body = exportData.map((row) => headers.map((h) => row[h]));
 
     autoTable(doc, {
       startY: 40,
@@ -280,23 +314,27 @@ export function DynamicServerTable<T extends Record<string, any>>({
         `Page ${i} of ${pageCount}`,
         doc.internal.pageSize.getWidth() / 2,
         doc.internal.pageSize.getHeight() - 10,
-        { align: 'center' }
+        { align: "center" }
       );
     }
 
-    doc.save(`${exportFileName}-${selectedOnly ? 'selected-' : ''}${new Date().toISOString().split('T')[0]}.pdf`);
+    doc.save(
+      `${exportFileName}-${selectedOnly ? "selected-" : ""}${new Date()
+        .toISOString()
+        .split("T")[0]}.pdf`
+    );
   };
 
   const handlePrint = (selectedOnly: boolean = false) => {
     const exportData = getExportData(selectedOnly);
     if (exportData.length === 0) {
-      alert(selectedOnly ? 'No rows selected' : 'No data to print');
+      alert(selectedOnly ? "No rows selected" : "No data to print");
       return;
     }
 
     const headers = Object.keys(exportData[0]);
 
-    const printWindow = window.open('', '_blank');
+    const printWindow = window.open("", "_blank");
     if (!printWindow) return;
 
     const printContent = `
@@ -319,20 +357,38 @@ export function DynamicServerTable<T extends Record<string, any>>({
           <h1>${exportFileName.charAt(0).toUpperCase() + exportFileName.slice(1)} Report</h1>
           <div class="meta">
             <div>Generated: ${new Date().toLocaleString()}</div>
-            <div>Total Records: ${exportData.length}${selectedOnly ? ' (selected)' : ''}</div>
+            <div>Total Records: ${
+              exportData.length + (selectedOnly ? " (selected)" : "")
+            }</div>
           </div>
           <table>
             <thead>
-              <tr>${headers.map(h => `<th>${h}</th>`).join('')}</tr>
+              <tr>${headers.map((h) => `<th>${h}</th>`).join("")}</tr>
             </thead>
             <tbody>
-              ${exportData.map(row => `
-                <tr>${headers.map(h => `<td>${row[h] !== null && row[h] !== undefined ? row[h] : ''}</td>`).join('')}</tr>
-              `).join('')}
+              ${exportData
+                .map(
+                  (row) =>
+                    `<tr>${headers
+                      .map((h) => `<td>${row[h] !== null && row[h] !== undefined ? row[h] : ""}</td>`)
+                      .join("")}</tr>`
+                )
+                .join("")}
             </tbody>
           </table>
           <br>
-          <button onclick="window.print()" style="padding: 10px 20px; background: #3b82f6; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 14px;">
+          <button
+            onclick="window.print()"
+            style="
+              padding: 10px 20px;
+              background: #3b82f6;
+              color: white;
+              border: none;
+              border-radius: 5px;
+              cursor: pointer;
+              font-size: 14px;
+            "
+          >
             Print
           </button>
         </body>
@@ -350,7 +406,7 @@ export function DynamicServerTable<T extends Record<string, any>>({
           cursor: cursor || undefined,
           limit: currentPageSize,
           sortBy: sorting[0]?.id || defaultSortBy,
-          sortOrder: sorting[0]?.desc ? 'desc' : defaultSortOrder,
+          sortOrder: sorting[0]?.desc ? "desc" : defaultSortOrder,
           searchQuery: debouncedSearch || undefined,
           searchFields: searchFields.length > 0 ? searchFields : undefined,
           filters: activeFilters.length > 0 ? activeFilters : undefined,
@@ -361,7 +417,7 @@ export function DynamicServerTable<T extends Record<string, any>>({
         setPagination(result.pagination);
         if (pageNum !== undefined) setCurrentPage(pageNum);
       } catch (error) {
-        console.error('Error fetching data:', error);
+        console.error("Error fetching data:", error);
       }
     });
   };
@@ -410,21 +466,18 @@ export function DynamicServerTable<T extends Record<string, any>>({
     }
   }, [sorting]);
 
-  // UPDATED: Use backend nextCursor (industry standard)
   const handleNextPage = () => {
     if (!pagination.hasNextPage || !pagination.nextCursor) return;
     clearSelection();
     performFetch(pagination.nextCursor, currentPage + 1);
   };
 
-  // UPDATED: Use backend previousCursor (industry standard)
   const handlePrevPage = () => {
     if (!pagination.hasPreviousPage || !pagination.previousCursor) return;
     clearSelection();
     performFetch(pagination.previousCursor, currentPage - 1);
   };
 
-  // UPDATED: Just fetch first page
   const handleFirstPage = () => {
     if (currentPage === 1) return;
     clearSelection();
@@ -441,7 +494,7 @@ export function DynamicServerTable<T extends Record<string, any>>({
         const params: TableParams = {
           limit: newSize,
           sortBy: sorting[0]?.id || defaultSortBy,
-          sortOrder: sorting[0]?.desc ? 'desc' : defaultSortOrder,
+          sortOrder: sorting[0]?.desc ? "desc" : defaultSortOrder,
           searchQuery: debouncedSearch || undefined,
           searchFields: searchFields.length > 0 ? searchFields : undefined,
           filters: activeFilters.length > 0 ? activeFilters : undefined,
@@ -451,41 +504,41 @@ export function DynamicServerTable<T extends Record<string, any>>({
         setPagination(result.pagination);
         setCurrentPage(1);
       } catch (error) {
-        console.error('Error fetching data:', error);
+        console.error("Error fetching data:", error);
       }
     });
   };
 
   const handleFilterChange = (field: string, value: string) => {
-    const newFilters = activeFilters.filter(f => f.field !== field);
-    if (value && value !== 'all') {
-      newFilters.push({ field, operator: 'equals', value });
+    const newFilters = activeFilters.filter((f) => f.field !== field);
+    if (value && value !== "all") {
+      newFilters.push({ field, operator: "equals", value });
     }
     hasFiltersChanged.current = true;
     setActiveFilters(newFilters);
   };
 
   const handleMultiSelectChange = (field: string, value: string, checked: boolean) => {
-    const currentFieldFilters = activeFilters.filter(f => f.field === field);
-    const otherFilters = activeFilters.filter(f => f.field !== field);
+    const currentFieldFilters = activeFilters.filter((f) => f.field === field);
+    const otherFilters = activeFilters.filter((f) => f.field !== field);
     hasFiltersChanged.current = true;
     if (checked) {
-      setActiveFilters([...otherFilters, ...currentFieldFilters, { field, operator: 'equals', value }]);
+      setActiveFilters([...otherFilters, ...currentFieldFilters, { field, operator: "equals", value }]);
     } else {
-      setActiveFilters([...otherFilters, ...currentFieldFilters.filter(f => f.value !== value)]);
+      setActiveFilters([...otherFilters, ...currentFieldFilters.filter((f) => f.value !== value)]);
     }
   };
 
   const getSelectedValues = (field: string): string[] => {
-    return activeFilters.filter(f => f.field === field).map(f => f.value);
+    return activeFilters.filter((f) => f.field === field).map((f) => f.value);
   };
 
   const removeFilter = (field: string, value?: string) => {
     hasFiltersChanged.current = true;
     if (value) {
-      setActiveFilters(activeFilters.filter(f => !(f.field === field && f.value === value)));
+      setActiveFilters(activeFilters.filter((f) => !(f.field === field && f.value === value)));
     } else {
-      setActiveFilters(activeFilters.filter(f => f.field !== field));
+      setActiveFilters(activeFilters.filter((f) => f.field !== field));
     }
   };
 
@@ -502,11 +555,14 @@ export function DynamicServerTable<T extends Record<string, any>>({
   const tableColumns = selectable
     ? [
         {
-          id: 'select',
+          id: "select",
           header: () => (
             <Checkbox
               checked={selectedRows.size === data.length && data.length > 0}
-              onCheckedChange={toggleAllRows}
+              onCheckedChange={() => {
+                if (selectedRows.size === data.length) setSelectedRows(new Set());
+                else setSelectedRows(new Set(data.map((row) => String(row[rowIdField]))));
+              }}
               aria-label="Select all"
               className="translate-y-[2px]"
             />
@@ -514,7 +570,14 @@ export function DynamicServerTable<T extends Record<string, any>>({
           cell: ({ row }: any) => (
             <Checkbox
               checked={selectedRows.has(String(row.original[rowIdField]))}
-              onCheckedChange={() => toggleRowSelection(String(row.original[rowIdField]))}
+              onCheckedChange={() =>
+                setSelectedRows((prev) => {
+                  const newSet = new Set(prev);
+                  const id = String(row.original[rowIdField]);
+                  newSet.has(id) ? newSet.delete(id) : newSet.add(id);
+                  return newSet;
+                })
+              }
               aria-label="Select row"
               className="translate-y-[2px]"
               onClick={(e) => e.stopPropagation()}
@@ -527,9 +590,34 @@ export function DynamicServerTable<T extends Record<string, any>>({
       ]
     : columns;
 
+  // Inject view button in actions column
+  const finalColumns: ColumnDef<T>[] = tableColumns.map((col) =>
+    col.id === "actions"
+      ? {
+          ...col,
+          cell: (ctx) => (
+            <div className="flex items-center gap-2">
+              <Button
+                variant="ghost"
+                size="icon"
+                title="View Details"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleViewRow(ctx.row.original);
+                }}
+              >
+                <Eye className="h-4 w-4" />
+              </Button>
+              {col.cell ? col.cell(ctx) : null}
+            </div>
+          ),
+        }
+      : col
+  );
+
   const table = useReactTable({
     data,
-    columns: tableColumns as ColumnDef<T>[],
+    columns: finalColumns,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
     manualSorting: true,
@@ -543,6 +631,7 @@ export function DynamicServerTable<T extends Record<string, any>>({
 
   return (
     <div className="space-y-4">
+      {/* Search and export bar */}
       <div className="flex flex-col gap-4">
         <div className="flex items-center gap-4">
           {searchable && (
@@ -555,7 +644,7 @@ export function DynamicServerTable<T extends Record<string, any>>({
                 className="pl-10 pr-10"
               />
               {searchInput && (
-                <Button variant="ghost" size="icon" className="absolute right-1 top-1/2 transform -translate-y-1/2 h-6 w-6" onClick={() => setSearchInput('')}>
+                <Button variant="ghost" size="icon" className="absolute right-1 top-1/2 transform -translate-y-1/2 h-6 w-6" onClick={() => setSearchInput("")}>
                   <X className="h-4 w-4" />
                 </Button>
               )}
@@ -628,13 +717,24 @@ export function DynamicServerTable<T extends Record<string, any>>({
                 const selectedValues = getSelectedValues(filter.field);
                 const hasSelection = selectedValues.length > 0;
 
-                if (filter.type === 'multiselect') {
+                if (filter.type === "multiselect") {
                   return (
                     <Popover key={filter.field}>
                       <PopoverTrigger asChild>
-                        <Button variant="outline" size="sm" className={cn("h-9 gap-2", hasSelection && "border-primary bg-primary/5")}>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className={cn(
+                            "h-9 gap-2",
+                            hasSelection && "border-primary bg-primary/5"
+                          )}
+                        >
                           <span>{filter.label}</span>
-                          {hasSelection && <Badge variant="secondary" className="h-5 px-1.5 rounded-full">{selectedValues.length}</Badge>}
+                          {hasSelection && (
+                            <Badge variant="secondary" className="h-5 px-1.5 rounded-full">
+                              {selectedValues.length}
+                            </Badge>
+                          )}
                           <ChevronDown className="h-3 w-3 opacity-50" />
                         </Button>
                       </PopoverTrigger>
@@ -643,8 +743,27 @@ export function DynamicServerTable<T extends Record<string, any>>({
                           {filter.options?.map((option) => {
                             const isChecked = selectedValues.includes(option.value);
                             return (
-                              <div key={option.value} className="flex items-center gap-2 p-2 hover:bg-muted rounded-sm cursor-pointer" onClick={() => handleMultiSelectChange(filter.field, option.value, !isChecked)}>
-                                <Checkbox checked={isChecked} onCheckedChange={(checked) => handleMultiSelectChange(filter.field, option.value, checked as boolean)} />
+                              <div
+                                key={option.value}
+                                className="flex items-center gap-2 p-2 hover:bg-muted rounded-sm cursor-pointer"
+                                onClick={() =>
+                                  handleMultiSelectChange(
+                                    filter.field,
+                                    option.value,
+                                    !isChecked
+                                  )
+                                }
+                              >
+                                <Checkbox
+                                  checked={isChecked}
+                                  onCheckedChange={(checked) =>
+                                    handleMultiSelectChange(
+                                      filter.field,
+                                      option.value,
+                                      checked as boolean
+                                    )
+                                  }
+                                />
                                 <span className="text-sm">{option.label}</span>
                               </div>
                             );
@@ -655,14 +774,20 @@ export function DynamicServerTable<T extends Record<string, any>>({
                   );
                 } else {
                   return (
-                    <Select key={filter.field} value={activeFilters.find(f => f.field === filter.field)?.value || 'all'} onValueChange={(value) => handleFilterChange(filter.field, value)}>
+                    <Select
+                      key={filter.field}
+                      value={activeFilters.find((f) => f.field === filter.field)?.value || "all"}
+                      onValueChange={(value) => handleFilterChange(filter.field, value)}
+                    >
                       <SelectTrigger className="h-9 w-[140px] sm:w-[160px]">
                         <SelectValue placeholder={filter.label} />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="all">All {filter.label}</SelectItem>
                         {filter.options?.map((option) => (
-                          <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+                          <SelectItem key={option.value} value={option.value}>
+                            {option.label}
+                          </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
@@ -675,22 +800,34 @@ export function DynamicServerTable<T extends Record<string, any>>({
 
         {activeFilters.length > 0 && (
           <div className="flex items-start gap-2 flex-wrap p-3 bg-muted/30 rounded-lg border border-dashed">
-            <span className="text-sm font-medium text-muted-foreground whitespace-nowrap mt-0.5">Active:</span>
+            <span className="text-sm font-medium text-muted-foreground whitespace-nowrap mt-0.5">
+              Active:
+            </span>
             <div className="flex flex-wrap gap-2 flex-1">
-              {Object.entries(activeFilters.reduce((acc, filter) => {
+              {Object.entries(
+                activeFilters.reduce((acc, filter) => {
                   if (!acc[filter.field]) acc[filter.field] = [];
                   acc[filter.field].push(filter.value);
                   return acc;
                 }, {} as Record<string, string[]>)
               ).map(([field, values]) => {
-                const filterConfig = filters.find(f => f.field === field);
+                const filterConfig = filters.find((f) => f.field === field);
                 if (values.length === 1) {
-                  const option = filterConfig?.options?.find(o => o.value === values[0]);
+                  const option = filterConfig?.options?.find((o) => o.value === values[0]);
                   return (
-                    <Badge key={`${field}-${values[0]}`} variant="secondary" className="gap-1 pl-2 pr-1">
+                    <Badge
+                      key={`${field}-${values[0]}`}
+                      variant="secondary"
+                      className="gap-1 pl-2 pr-1"
+                    >
                       <span className="font-medium">{filterConfig?.label}:</span>
                       <span>{option?.label || values[0]}</span>
-                      <Button variant="ghost" size="icon" className="h-4 w-4 p-0 hover:bg-transparent ml-1" onClick={() => removeFilter(field, values[0])}>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-4 w-4 p-0 hover:bg-transparent ml-1"
+                        onClick={() => removeFilter(field, values[0])}
+                      >
                         <X className="h-3 w-3" />
                       </Button>
                     </Badge>
@@ -700,7 +837,12 @@ export function DynamicServerTable<T extends Record<string, any>>({
                     <Badge key={field} variant="secondary" className="gap-1 pl-2 pr-1">
                       <span className="font-medium">{filterConfig?.label}:</span>
                       <span>{values.length} selected</span>
-                      <Button variant="ghost" size="icon" className="h-4 w-4 p-0 hover:bg-transparent ml-1" onClick={() => removeFilter(field)}>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-4 w-4 p-0 hover:bg-transparent ml-1"
+                        onClick={() => removeFilter(field)}
+                      >
                         <X className="h-3 w-3" />
                       </Button>
                     </Badge>
@@ -709,7 +851,9 @@ export function DynamicServerTable<T extends Record<string, any>>({
               })}
             </div>
             <Separator orientation="vertical" className="h-5" />
-            <Button variant="ghost" size="sm" onClick={clearAllFilters} className="h-6 text-xs whitespace-nowrap">Clear all</Button>
+            <Button variant="ghost" size="sm" onClick={clearAllFilters} className="h-6 text-xs whitespace-nowrap">
+              Clear all
+            </Button>
           </div>
         )}
       </div>
@@ -719,7 +863,7 @@ export function DynamicServerTable<T extends Record<string, any>>({
           <div className="flex items-center gap-3">
             <Checkbox checked={true} className="pointer-events-none" />
             <span className="font-medium">
-              {selectedRows.size} {selectedRows.size === 1 ? 'row' : 'rows'} selected
+              {selectedRows.size} {selectedRows.size === 1 ? "row" : "rows"} selected
             </span>
           </div>
           <div className="flex items-center gap-2">
@@ -759,7 +903,7 @@ export function DynamicServerTable<T extends Record<string, any>>({
             {bulkActions.map((action, index) => (
               <Button
                 key={index}
-                variant={action.variant || 'outline'}
+                variant={action.variant || "outline"}
                 size="sm"
                 onClick={() => {
                   action.onClick(getSelectedData());
@@ -787,7 +931,14 @@ export function DynamicServerTable<T extends Record<string, any>>({
                 {headerGroup.headers.map((header) => (
                   <TableHead key={header.id}>
                     {header.isPlaceholder ? null : (
-                      <div className={header.column.getCanSort() ? 'flex items-center gap-2 cursor-pointer select-none hover:text-foreground' : ''} onClick={header.column.getToggleSortingHandler()}>
+                      <div
+                        className={
+                          header.column.getCanSort()
+                            ? "flex items-center gap-2 cursor-pointer select-none hover:text-foreground"
+                            : ""
+                        }
+                        onClick={header.column.getToggleSortingHandler()}
+                      >
                         {flexRender(header.column.columnDef.header, header.getContext())}
                         {header.column.getCanSort() && <ArrowUpDown className="h-4 w-4" />}
                       </div>
@@ -800,7 +951,7 @@ export function DynamicServerTable<T extends Record<string, any>>({
           <TableBody>
             {isPending ? (
               <TableRow>
-                <TableCell colSpan={tableColumns.length} className="h-24 text-center">
+                <TableCell colSpan={finalColumns.length} className="h-24 text-center">
                   <div className="flex flex-col items-center justify-center gap-2">
                     <Loader2 className="h-6 w-6 animate-spin text-primary" />
                     <span className="text-sm text-muted-foreground">Loading...</span>
@@ -811,9 +962,9 @@ export function DynamicServerTable<T extends Record<string, any>>({
               table.getRowModel().rows.map((row) => (
                 <TableRow
                   key={row.id}
-                  data-state={row.getIsSelected() && 'selected'}
+                  data-state={row.getIsSelected() && "selected"}
                   onClick={() => onRowClick?.(row.original)}
-                  className={onRowClick ? 'cursor-pointer' : ''}
+                  className={onRowClick ? "cursor-pointer" : ""}
                 >
                   {row.getVisibleCells().map((cell) => (
                     <TableCell key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</TableCell>
@@ -822,11 +973,13 @@ export function DynamicServerTable<T extends Record<string, any>>({
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={tableColumns.length} className="h-24 text-center">
+                <TableCell colSpan={finalColumns.length} className="h-24 text-center">
                   <div className="flex flex-col items-center justify-center gap-2">
                     <Search className="h-8 w-8 text-muted-foreground" />
                     <span className="text-sm font-medium">No results found</span>
-                    <span className="text-xs text-muted-foreground">Try adjusting your search or filters</span>
+                    <span className="text-xs text-muted-foreground">
+                      Try adjusting your search or filters
+                    </span>
                   </div>
                 </TableCell>
               </TableRow>
@@ -840,9 +993,10 @@ export function DynamicServerTable<T extends Record<string, any>>({
           <div className="text-sm text-muted-foreground">
             {pagination.totalCount !== undefined && pagination.totalCount > 0 ? (
               <span>
-                Showing <span className="font-medium text-foreground">{startRecord}</span> to{' '}
-                <span className="font-medium text-foreground">{endRecord}</span> of{' '}
-                <span className="font-medium text-foreground">{pagination.totalCount}</span> results
+                Showing <span className="font-medium text-foreground">{startRecord}</span> to{" "}
+                <span className="font-medium text-foreground">{endRecord}</span> of{" "}
+                <span className="font-medium text-foreground">{pagination.totalCount}</span>{" "}
+                results
               </span>
             ) : (
               <span>No results</span>
@@ -851,10 +1005,7 @@ export function DynamicServerTable<T extends Record<string, any>>({
 
           <div className="flex items-center gap-2">
             <span className="text-sm text-muted-foreground whitespace-nowrap">Rows per page:</span>
-            <Select
-              value={currentPageSize.toString()}
-              onValueChange={(value) => handlePageSizeChange(parseInt(value))}
-            >
+            <Select value={currentPageSize.toString()} onValueChange={(value) => handlePageSizeChange(parseInt(value))}>
               <SelectTrigger className="h-8 w-[70px]">
                 <SelectValue />
               </SelectTrigger>
@@ -909,6 +1060,15 @@ export function DynamicServerTable<T extends Record<string, any>>({
           </Button>
         </div>
       </div>
+
+      <RowViewerDialog
+        open={viewerOpen}
+        onOpenChange={setViewerOpen}
+        data={viewerData}
+        title={viewerTitle}
+        subtitle={viewerSubtitle}
+        fieldConfig={viewerFieldConfig}
+      />
     </div>
   );
 }
