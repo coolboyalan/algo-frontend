@@ -1,10 +1,23 @@
 'use client';
 
+import { useState } from 'react';
 import { DynamicServerTable } from '@/components/table/dynamic-server-table';
 import { ColumnDef } from '@tanstack/react-table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Eye, Edit, Trash2, MoreHorizontal, Calendar, User, Plane, DollarSign } from 'lucide-react';
+import {
+  Eye,
+  Edit,
+  Trash2,
+  MoreHorizontal,
+  Calendar,
+  User,
+  Plane,
+  DollarSign,
+  Mail,
+  Phone,
+  CheckCircle
+} from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -37,8 +50,38 @@ interface BookingsTableProps {
 }
 
 export function BookingsTable({ initialData, fetchData }: BookingsTableProps) {
+  const [selectedBookings, setSelectedBookings] = useState<Booking[]>([]);
+
+  // Bulk action handlers
+  const handleBulkDelete = async (bookings: Booking[]) => {
+    if (confirm(`Delete ${bookings.length} booking(s)?`)) {
+      console.log('Deleting:', bookings);
+      // Add your delete API call here
+      // await deleteBookings(bookings.map(b => b.id));
+      alert(`Deleted ${bookings.length} bookings`);
+    }
+  };
+
+  const handleBulkEmail = async (bookings: Booking[]) => {
+    console.log('Sending emails to:', bookings);
+    alert(`Sending confirmation emails to ${bookings.length} passengers`);
+  };
+
+  const handleBulkConfirm = async (bookings: Booking[]) => {
+    console.log('Confirming:', bookings);
+    alert(`Confirmed ${bookings.length} bookings`);
+  };
+
   const columns: ColumnDef<Booking>[] = [
     {
+      accessorKey: 'id',
+      header: 'ID',
+      enableSorting: true,
+      cell: ({ row }) => (
+        <div className="font-semibold">{row.original.id}</div>
+      ),
+    },
+	  {
       accessorKey: 'bookingId',
       header: 'Booking ID',
       enableSorting: true,
@@ -58,8 +101,14 @@ export function BookingsTable({ initialData, fetchData }: BookingsTableProps) {
               <User className="h-4 w-4 text-muted-foreground" />
               {booking.passengerName}
             </div>
-            <div className="text-sm text-muted-foreground">{booking.email}</div>
-            <div className="text-xs text-muted-foreground">{booking.phone}</div>
+            <div className="text-sm text-muted-foreground flex items-center gap-1">
+              <Mail className="h-3 w-3" />
+              {booking.email}
+            </div>
+            <div className="text-xs text-muted-foreground flex items-center gap-1">
+              <Phone className="h-3 w-3" />
+              {booking.phone}
+            </div>
           </div>
         );
       },
@@ -76,7 +125,10 @@ export function BookingsTable({ initialData, fetchData }: BookingsTableProps) {
               {booking.flightNumber}
             </div>
             <div className="text-sm text-muted-foreground">{booking.route}</div>
-            <div className="text-xs text-muted-foreground">{booking.departureDate}</div>
+            <div className="text-xs text-muted-foreground flex items-center gap-1">
+              <Calendar className="h-3 w-3" />
+              {booking.departureDate}
+            </div>
           </div>
         );
       },
@@ -146,20 +198,6 @@ export function BookingsTable({ initialData, fetchData }: BookingsTableProps) {
           >
             {status.charAt(0).toUpperCase() + status.slice(1)}
           </Badge>
-        );
-      },
-    },
-    {
-      accessorKey: 'createdAt',
-      header: 'Booking Date',
-      enableSorting: true,
-      cell: ({ row }) => {
-        const date = new Date(row.original.createdAt);
-        return (
-          <div className="flex items-center gap-2">
-            <Calendar className="h-4 w-4 text-muted-foreground" />
-            <span className="text-sm">{date.toLocaleDateString('en-IN')}</span>
-          </div>
         );
       },
     },
@@ -251,7 +289,38 @@ export function BookingsTable({ initialData, fetchData }: BookingsTableProps) {
       defaultSortBy="createdAt"
       defaultSortOrder="desc"
       pageSize={10}
-      onRowClick={(row) => console.log('Booking clicked:', row)}
+      pageSizeOptions={[10, 25, 50, 100]}
+      exportable={true}
+      exportFileName="bookings"
+      exportConfig={{
+        csv: true,
+        excel: true,
+        pdf: true,
+        print: true,
+      }}
+      selectable={true}
+      rowIdField="id"
+      onSelectionChange={setSelectedBookings}
+      bulkActions={[
+        {
+          label: 'Confirm',
+          icon: <CheckCircle className="h-4 w-4" />,
+          onClick: handleBulkConfirm,
+          variant: 'default',
+        },
+        {
+          label: 'Send Email',
+          icon: <Mail className="h-4 w-4" />,
+          onClick: handleBulkEmail,
+          variant: 'outline',
+        },
+        {
+          label: 'Delete',
+          icon: <Trash2 className="h-4 w-4" />,
+          onClick: handleBulkDelete,
+          variant: 'destructive',
+        },
+      ]}
     />
   );
 }

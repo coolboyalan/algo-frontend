@@ -1,7 +1,7 @@
 import { fetchTableData, TableParams } from '@/app/actions/table-data';
 import { BookingsTable } from './bookings-table';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Ticket, CheckCircle2, Clock, XCircle, TrendingUp, DollarSign } from 'lucide-react';
+import { Ticket, CheckCircle2, Clock, XCircle, DollarSign } from 'lucide-react';
 
 type Booking = {
   id: string;
@@ -19,25 +19,23 @@ type Booking = {
   createdAt: string;
 };
 
-// Sample record for auto-seeding
 const sampleBooking: Booking = {
   id: '1',
   bookingId: 'BK-12345',
   passengerName: 'John Doe',
-  email: 'john@email.com',
+  email: 'john.doe@email.com',
   phone: '+91-98765-43210',
   flightNumber: 'FO-101',
-  route: 'BOM → DEL',
+  route: 'Mumbai (BOM) → Delhi (DEL)',
   departureDate: '2025-01-15',
   seatClass: 'Economy',
   amount: 4500,
   paymentStatus: 'paid',
   status: 'confirmed',
-  createdAt: '2025-01-10T10:30:00Z',
+  createdAt: new Date().toISOString(),
 };
 
 export default async function BookingsPage() {
-  // Fetch initial data with auto-seeding
   const initialData = await fetchTableData<Booking>(
     '/api/bookings',
     {
@@ -45,10 +43,9 @@ export default async function BookingsPage() {
       sortBy: 'createdAt',
       sortOrder: 'desc',
     },
-    sampleBooking // ← Auto-seed if collection doesn't exist
+    sampleBooking
   );
 
-  // Server action for client-side fetching
   async function fetchBookings(params: TableParams) {
     'use server';
     return fetchTableData<Booking>('/api/bookings', params);
@@ -68,11 +65,11 @@ export default async function BookingsPage() {
       <div className="space-y-6">
         {/* Header */}
         <div className="pt-6">
-          <h1 className="text-3xl font-bold text-heading flex items-center gap-3">
+          <h1 className="text-3xl font-bold flex items-center gap-3">
             <Ticket className="h-8 w-8 text-primary" />
             Bookings Management
           </h1>
-          <p className="text-subheading mt-2">
+          <p className="text-muted-foreground mt-2">
             View and manage all flight bookings and reservations
           </p>
         </div>
@@ -126,16 +123,18 @@ export default async function BookingsPage() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Revenue</CardTitle>
-              <DollarSign className="h-4 w-4 text-muted-foreground" />
+              <DollarSign className="h-4 w-4 text-green-600" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">₹{totalRevenue.toLocaleString('en-IN')}</div>
-              <p className="text-xs text-muted-foreground">Total collected</p>
+              <div className="text-2xl font-bold text-green-600">
+                ₹{totalRevenue.toLocaleString('en-IN')}
+              </div>
+              <p className="text-xs text-muted-foreground">Total paid amount</p>
             </CardContent>
           </Card>
         </div>
 
-        {/* Table Component */}
+        {/* Table */}
         <BookingsTable initialData={initialData} fetchData={fetchBookings} />
       </div>
     </div>

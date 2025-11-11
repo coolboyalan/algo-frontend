@@ -4,6 +4,7 @@ import { DynamicServerTable } from '@/components/table/dynamic-server-table';
 import { ColumnDef } from '@tanstack/react-table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { useState } from 'react';
 import {
   Eye,
   Edit,
@@ -54,6 +55,19 @@ interface FlightsTableProps {
 }
 
 export function FlightsTable({ initialData, fetchData }: FlightsTableProps) {
+const [selectedFlights, setSelectedFlights] = useState<Flight[]>([]);
+
+  // Bulk action handlers
+  const handleBulkDelete = async (bookings: Flight[]) => {
+    if (confirm(`Delete ${bookings.length} booking(s)?`)) {
+      console.log('Deleting:', bookings);
+      // Add your delete API call here
+      // await deleteFlights(bookings.map(b => b.id));
+      alert(`Deleted ${bookings.length} bookings`);
+    }
+  };
+
+
   const columns: ColumnDef<Flight>[] = [
     {
       accessorKey: 'flightNumber',
@@ -219,7 +233,7 @@ export function FlightsTable({ initialData, fetchData }: FlightsTableProps) {
                   Edit Flight
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem>View Bookings</DropdownMenuItem>
+                <DropdownMenuItem>View Flights</DropdownMenuItem>
                 <DropdownMenuItem>Update Pricing</DropdownMenuItem>
                 <DropdownMenuItem>Duplicate Flight</DropdownMenuItem>
                 <DropdownMenuSeparator />
@@ -284,6 +298,26 @@ export function FlightsTable({ initialData, fetchData }: FlightsTableProps) {
       defaultSortOrder="asc"
       pageSize={10}
       onRowClick={(row) => console.log('Flight clicked:', row)}
+	  pageSizeOptions={[10, 25, 50, 100]}
+      exportable={true}
+      exportFileName="bookings"
+      exportConfig={{
+        csv: true,
+        excel: true,
+        pdf: true,
+        print: true,
+      }}
+      selectable={true}
+      rowIdField="id"
+      onSelectionChange={setSelectedFlights}
+      bulkActions={[
+        {
+          label: 'Delete',
+          icon: <Trash2 className="h-4 w-4" />,
+          onClick: handleBulkDelete,
+          variant: 'destructive',
+        },
+      ]}
     />
   );
 }

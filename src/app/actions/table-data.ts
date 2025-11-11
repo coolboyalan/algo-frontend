@@ -18,14 +18,18 @@ export interface TableParams {
   filters?: TableFilter[];
 }
 
+// UPDATED: Industry standard pagination interface
+export interface TablePagination {
+  hasNextPage: boolean;        // Changed from hasMore
+  hasPreviousPage: boolean;    // New field
+  nextCursor: string | null;
+  previousCursor: string | null;  // Changed from prevCursor
+  totalCount?: number;
+}
+
 export interface TableResponse<T> {
   data: T[];
-  pagination: {
-    hasMore: boolean;
-    nextCursor: string | null;
-    prevCursor: string | null;
-    totalCount?: number;
-  };
+  pagination: TablePagination;
 }
 
 /**
@@ -75,11 +79,12 @@ async function ensureCollectionExists<T>(
 
 /**
  * Generic server-side table data fetcher with auto-seeding
+ * Now supports industry-standard cursor pagination
  */
 export async function fetchTableData<T>(
   endpoint: string,
   params: TableParams,
-  sampleRecord?: T  // ← NEW: Optional sample record for auto-seeding
+  sampleRecord?: T
 ): Promise<TableResponse<T>> {
   try {
     // Auto-seed if sample record provided
@@ -114,7 +119,6 @@ export async function fetchTableData<T>(
       queryParams.append(`filters[${idx}][value]`, String(filter.value));
     });
 
-    // Use NEXT_PUBLIC_API_BASE_URL or default to localhost
     const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:4000';
     const response = await fetch(
       `${baseUrl}${endpoint}?${queryParams}`,
@@ -129,12 +133,14 @@ export async function fetchTableData<T>(
 
     const result = await response.json();
 
+    // UPDATED: Map backend response to industry-standard interface
     return {
       data: result.data,
       pagination: {
-        hasMore: result.pagination.hasMore,
+        hasNextPage: result.pagination.hasNextPage,           // Industry standard
+        hasPreviousPage: result.pagination.hasPreviousPage,   // Industry standard
         nextCursor: result.pagination.nextCursor,
-        prevCursor: result.pagination.prevCursor,
+        previousCursor: result.pagination.previousCursor,     // Industry standard
         totalCount: result.pagination.totalCount,
       },
     };
