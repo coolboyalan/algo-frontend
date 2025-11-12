@@ -330,7 +330,6 @@ const TableContentManager = ({
       const result = await makeApiCall(
         `${apiEndpoint}/${state.selectedItem[itemKeyField]}`,
         "PUT",
-        editedItem,
       );
       updateState({
         notification: {

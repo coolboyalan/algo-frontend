@@ -18,18 +18,32 @@ export default function EditItemForm({
     formFields?.forEach((field) => {
       let value = item?.[field.key] ?? field.defaultValue ?? "";
 
-      if (field.type === "select" || field.type === "select_dynamic") {
+      // Handle percentage conversion for display
+      if (field.isPercentage && field.baseField && item?.[field.baseField]) {
+        const baseValue = item[field.baseField];
+        const percentageValue = item[field.key] || 0;
+        // Convert percentage to absolute value: (percentage * baseValue) / 100
+        value = Math.round((percentageValue * baseValue) / 100);
+      } else if (field.type === "select" || field.type === "select_dynamic") {
         value = value == null ? "" : String(value);
-      }
-      if (field.type === "date" && value) {
+      } else if (field.type === "date" && value) {
         try {
           value = new Date(value).toISOString().split("T")[0];
         } catch {
           value = "";
         }
       }
+
       initialData[field.key] = value;
     });
+
+    // Also store base field values for percentage calculations
+    formFields?.forEach((field) => {
+      if (field.baseField && item?.[field.baseField]) {
+        initialData[field.baseField] = item[field.baseField];
+      }
+    });
+
     setFormData(initialData);
     setError(null);
   }, [item, formFields]);
@@ -45,21 +59,36 @@ export default function EditItemForm({
     setIsSubmitting(true);
 
     const processedData = { ...formData };
+
     formFields?.forEach((field) => {
-      if (
+      // Handle percentage conversion for submission
+      if (field.isPercentage && field.baseField && formData[field.baseField]) {
+        const baseValue = formData[field.baseField];
+        const absoluteValue = processedData[field.key] || 0;
+        // Convert absolute value to percentage: (absoluteValue / baseValue) * 100
+        processedData[field.key] = Math.round(
+          (absoluteValue / baseValue) * 100,
+        );
+      } else if (
         field.type === "select" &&
         ["true", "false"].includes(processedData[field.key])
       ) {
         if (field.options?.some((opt) => typeof opt.value === "boolean")) {
           processedData[field.key] = processedData[field.key] === "true";
         }
-      }
-      if (
+      } else if (
         field.type === "number" &&
         processedData[field.key] &&
         !isNaN(processedData[field.key])
       ) {
         processedData[field.key] = Number(processedData[field.key]);
+      }
+    });
+
+    // Remove base fields from submission (they're read-only reference values)
+    formFields?.forEach((field) => {
+      if (field.baseField) {
+        delete processedData[field.baseField];
       }
     });
 
@@ -75,11 +104,32 @@ export default function EditItemForm({
     }
   };
 
+  // Helper function to check if field should be shown based on conditions
+  const shouldShowField = (field) => {
+    if (!field.showWhen) return true;
+
+    const { field: conditionField, equals } = field.showWhen;
+
+    // Check formData first, then fallback to item
+    const currentValue =
+      formData[conditionField] !== undefined
+        ? formData[conditionField]
+        : item?.[conditionField];
+
+    return currentValue === equals;
+  };
+
   if (!formFields?.length) {
     return <p className="text-slate-400">No form fields configured.</p>;
   }
 
   const renderField = (field) => {
+    // Get max value for percentage fields
+    const maxValue =
+      field.isPercentage && field.baseField
+        ? formData[field.baseField]
+        : undefined;
+
     const baseProps = {
       id: `field-${field.key}`,
       value: formData[field.key] || "",
@@ -88,6 +138,12 @@ export default function EditItemForm({
       className:
         "w-full px-4 py-3 bg-slate-700/50 border border-slate-600/50 rounded-xl text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-colors",
     };
+
+    // Add max attribute for percentage fields
+    if (field.type === "number" && maxValue !== undefined) {
+      baseProps.max = maxValue;
+      baseProps.min = 0;
+    }
 
     switch (field.type) {
       case "select_dynamic":
@@ -155,21 +211,37 @@ export default function EditItemForm({
         </div>
       )}
 
-      {formFields.map((field) => (
-        <div key={field.key}>
-          <label
-            htmlFor={`field-${field.key}`}
-            className="block text-sm font-medium text-slate-300 mb-2"
-          >
-            {field.label}{" "}
-            {field.required && <span className="text-red-400">*</span>}
-          </label>
-          {renderField(field)}
-          {field.helpText && (
-            <p className="mt-1.5 text-xs text-slate-400">{field.helpText}</p>
-          )}
-        </div>
-      ))}
+      {formFields.map((field) => {
+        // Skip fields that don't meet their condition
+        if (!shouldShowField(field)) {
+          return null;
+        }
+
+        // Get balance info for percentage fields
+        const balanceInfo =
+          field.isPercentage && field.baseField && formData[field.baseField]
+            ? `(Max: ₹${formData[field.baseField].toLocaleString("en-IN")})`
+            : "";
+
+        return (
+          <div key={field.key}>
+            <label
+              htmlFor={`field-${field.key}`}
+              className="block text-sm font-medium text-slate-300 mb-2"
+            >
+              {field.label}{" "}
+              {balanceInfo && (
+                <span className="text-sky-400 font-normal">{balanceInfo}</span>
+              )}
+              {field.required && <span className="text-red-400"> *</span>}
+            </label>
+            {renderField(field)}
+            {field.helpText && (
+              <p className="mt-1.5 text-xs text-slate-400">{field.helpText}</p>
+            )}
+          </div>
+        );
+      })}
 
       <div className="flex justify-end space-x-3 pt-4">
         <button

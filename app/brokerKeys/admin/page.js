@@ -1,4 +1,4 @@
-// app/broker-keys/page.js (Server Component) - SIMPLIFIED
+// app/broker-keys/page.js (Server Component)
 import TableContentManager from "@/components/CrudTable/TableContentManager";
 import { Cross } from "lucide-react";
 
@@ -33,7 +33,6 @@ async function getAllBrokers() {
 export default async function BrokerKeyDashboardPage() {
   const allBrokersData = await getAllBrokers();
 
-  // Simple columns without render functions
   const brokerKeyColumns = [
     {
       key: "id",
@@ -69,6 +68,13 @@ export default async function BrokerKeyDashboardPage() {
     {
       key: "lossLimit",
       label: "Loss Limit",
+      type: "number",
+      sortable: true,
+      searchable: false,
+    },
+    {
+      key: "balance",
+      label: "Account Balance",
       type: "number",
       sortable: true,
       searchable: false,
@@ -185,10 +191,20 @@ export default async function BrokerKeyDashboardPage() {
     },
     {
       key: "usableFund",
-      label: "Usable Fund",
+      label: "Usable Fund Amount",
       type: "number",
       required: true,
-      placeholder: "Profit Limit",
+      placeholder: "Enter amount to use for trading",
+      // Mark this field as percentage-based
+      isPercentage: true,
+      baseField: "balance", // The field that contains the base value (1000 in your example)
+      // Conditional visibility
+      showWhen: {
+        field: "status",
+        equals: true,
+      },
+      helpText:
+        "Enter the absolute amount you want to use. It will be saved as a percentage of your balance.",
     },
   ];
 
