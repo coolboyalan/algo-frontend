@@ -8,6 +8,7 @@ import {
   ColumnDef,
   SortingState,
   flexRender,
+  VisibilityState,
 } from "@tanstack/react-table";
 import {
   Table,
@@ -52,15 +53,154 @@ import {
   FileSpreadsheet,
   Printer,
   Eye,
+  Settings2,
+  MoreVertical,
 } from "lucide-react";
 import { TableParams, TableResponse, TableFilter } from "@/app/actions/table-data";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
-import { RowViewerDialog, RowViewerFieldConfig } from "./row-viewer-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Calendar, Clock, Hash, Mail, Phone, User, DollarSign } from "lucide-react";
+
+export interface RowViewerFieldConfig {
+  label?: string;
+  icon?: React.ReactNode;
+  format?: (value: any) => React.ReactNode;
+  hidden?: boolean;
+}
+
+interface RowViewerDialogProps<T> {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  data: T | null;
+  title?: string;
+  subtitle?: string;
+  fieldConfig?: Record<string, RowViewerFieldConfig>;
+}
+
+function RowViewerDialog<T extends Record<string, any>>({
+  open,
+  onOpenChange,
+  data,
+  title = "Details",
+  subtitle,
+  fieldConfig = {},
+}: RowViewerDialogProps<T>) {
+  if (!data) return null;
+
+  const formatFieldName = (key: string): string =>
+    key.replace(/([A-Z])/g, " $1").replace(/^./, (str) => str.toUpperCase()).trim();
+
+  const getFieldIcon = (key: string): React.ReactNode => {
+    if (fieldConfig[key]?.icon) return fieldConfig[key].icon;
+    const lowerKey = key.toLowerCase();
+    if (lowerKey.includes("email")) return <Mail className="h-4 w-4" />;
+    if (lowerKey.includes("phone")) return <Phone className="h-4 w-4" />;
+    if (lowerKey.includes("name")) return <User className="h-4 w-4" />;
+    if (lowerKey.includes("date")) return <Calendar className="h-4 w-4" />;
+    if (lowerKey.includes("time") || lowerKey.includes("at")) return <Clock className="h-4 w-4" />;
+    if (lowerKey.includes("id") || lowerKey.includes("number")) return <Hash className="h-4 w-4" />;
+    if (lowerKey.includes("amount") || lowerKey.includes("price")) return <DollarSign className="h-4 w-4" />;
+    return null;
+  };
+
+  const formatValue = (key: string, value: any): React.ReactNode => {
+    if (fieldConfig[key]?.format) return fieldConfig[key].format!(value);
+    if (value === null || value === undefined)
+      return <span className="text-muted-foreground italic">Not set</span>;
+    if (typeof value === "boolean")
+      return value ? <Badge variant="default">Yes</Badge> : <Badge variant="secondary">No</Badge>;
+    if (key.toLowerCase().includes("date") || key.toLowerCase().includes("at")) {
+      try {
+        const date = new Date(value);
+        if (!isNaN(date.getTime())) {
+          return date.toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" });
+        }
+      } catch {}
+    }
+    if (key.toLowerCase().includes("status") || key.toLowerCase().includes("state")) {
+      const statusColors: Record<string, string> = {
+        confirmed: "default",
+        completed: "default",
+        active: "default",
+        success: "default",
+        paid: "default",
+        pending: "secondary",
+        processing: "secondary",
+        cancelled: "destructive",
+        failed: "destructive",
+        rejected: "destructive",
+      };
+      const variant = statusColors[String(value).toLowerCase()] || "outline";
+      return <Badge variant={variant as any}>{String(value)}</Badge>;
+    }
+    if (Array.isArray(value)) {
+      return (
+        <div className="flex flex-wrap gap-1">
+          {value.map((item, idx) => (
+            <Badge key={idx} variant="outline">
+              {String(item)}
+            </Badge>
+          ))}
+        </div>
+      );
+    }
+    if (typeof value === "object")
+      return <code className="text-xs bg-muted p-1 rounded">{JSON.stringify(value)}</code>;
+    return String(value);
+  };
+
+  const fields = Object.keys(data).filter((key) => !fieldConfig[key]?.hidden);
+  const primaryId =
+    fields.find((key) => key.toLowerCase().includes("id") || key.toLowerCase().includes("number")) ||
+    fields[0];
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-2xl max-h-[90vh]">
+        <DialogHeader>
+          <DialogTitle className="text-2xl flex items-center gap-2">
+            {title}
+            {primaryId && <Badge variant="outline" className="font-mono">{data[primaryId]}</Badge>}
+          </DialogTitle>
+          {subtitle && <DialogDescription>{subtitle}</DialogDescription>}
+        </DialogHeader>
+        <Separator />
+        <ScrollArea className="max-h-[60vh] pr-4">
+          <div className="space-y-6">
+            {fields.map((key) => {
+              const config = fieldConfig[key] || {};
+              const label = config.label || formatFieldName(key);
+              const icon = getFieldIcon(key);
+              const value = formatValue(key, data[key]);
+              return (
+                <div key={key} className="space-y-2">
+                  <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+                    {icon}
+                    <span>{label}</span>
+                  </div>
+                  <div className="text-base pl-6">{value}</div>
+                </div>
+              );
+            })}
+          </div>
+        </ScrollArea>
+      </DialogContent>
+    </Dialog>
+  );
+}
 
 interface DynamicServerTableProps<T> {
   initialData: TableResponse<T>;
@@ -106,6 +246,7 @@ interface DynamicServerTableProps<T> {
   viewerTitle?: string;
   viewerSubtitle?: string;
   viewerFieldConfig?: Record<string, RowViewerFieldConfig>;
+  tableKey?: string;
 }
 
 export function DynamicServerTable<T extends Record<string, any>>({
@@ -131,6 +272,7 @@ export function DynamicServerTable<T extends Record<string, any>>({
   viewerTitle = "Details",
   viewerSubtitle,
   viewerFieldConfig = {},
+  tableKey = "default-table",
 }: DynamicServerTableProps<T>) {
   const [data, setData] = useState<T[]>(initialData.data);
   const [pagination, setPagination] = useState(initialData.pagination);
@@ -144,8 +286,8 @@ export function DynamicServerTable<T extends Record<string, any>>({
   const [currentPageSize, setCurrentPageSize] = useState(pageSize);
   const [isPending, startTransition] = useTransition();
   const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set());
+  const [isMobile, setIsMobile] = useState(false);
 
-  // Row viewer
   const [viewerOpen, setViewerOpen] = useState(false);
   const [viewerData, setViewerData] = useState<T | null>(null);
 
@@ -154,6 +296,39 @@ export function DynamicServerTable<T extends Record<string, any>>({
   const hasSearchChanged = useRef(false);
   const hasFiltersChanged = useRef(false);
   const hasSortingChanged = useRef(false);
+
+  const storageKey = `table-column-visibility-${tableKey}`;
+
+  const getInitialColumnVisibility = (): VisibilityState => {
+    if (typeof window === "undefined") return {};
+    try {
+      const stored = localStorage.getItem(storageKey);
+      return stored ? JSON.parse(stored) : {};
+    } catch {
+      return {};
+    }
+  };
+
+  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>(getInitialColumnVisibility);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      try {
+        localStorage.setItem(storageKey, JSON.stringify(columnVisibility));
+      } catch (error) {
+        console.error("Failed to save column visibility:", error);
+      }
+    }
+  }, [columnVisibility, storageKey]);
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   const handleViewRow = (row: T) => {
     setViewerData(row);
@@ -170,7 +345,7 @@ export function DynamicServerTable<T extends Record<string, any>>({
     setSelectedRows(newSelection);
 
     if (onSelectionChange) {
-      const selectedData = data.filter((row) => newSelection.has(String(row[rowIdField])) );
+      const selectedData = data.filter((row) => newSelection.has(String(row[rowIdField])));
       onSelectionChange(selectedData);
     }
   };
@@ -197,12 +372,15 @@ export function DynamicServerTable<T extends Record<string, any>>({
 
   const getExportData = (selectedOnly: boolean = false): any[] => {
     const exportSource = selectedOnly ? getSelectedData() : data;
+    const visibleColumns = table.getVisibleLeafColumns();
+
     return exportSource.map((row) => {
       const exportRow: any = {};
-      columns.forEach((col) => {
-        if (col.accessorKey && typeof col.accessorKey === "string") {
-          const header = col.header as string;
-          exportRow[header] = row[col.accessorKey];
+      visibleColumns.forEach((col) => {
+        if (col.id !== 'select' && col.id !== 'actions' && col.columnDef.accessorKey) {
+          const key = col.columnDef.accessorKey as string;
+          const header = (col.columnDef.header as string) || key;
+          exportRow[header] = row[key];
         }
       });
       return exportRow;
@@ -590,7 +768,6 @@ export function DynamicServerTable<T extends Record<string, any>>({
       ]
     : columns;
 
-  // Inject view button in actions column
   const finalColumns: ColumnDef<T>[] = tableColumns.map((col) =>
     col.id === "actions"
       ? {
@@ -623,17 +800,106 @@ export function DynamicServerTable<T extends Record<string, any>>({
     manualSorting: true,
     manualPagination: true,
     onSortingChange: handleSortingChange,
-    state: { sorting },
+    onColumnVisibilityChange: setColumnVisibility,
+    state: {
+      sorting,
+      columnVisibility,
+    },
   });
 
   const startRecord = (currentPage - 1) * currentPageSize + 1;
-  const endRecord = Math.min((currentPage - 1) * currentPageSize + data.length, pagination.totalCount || 0);
+  const endRecord = Math.min(
+    (currentPage - 1) * currentPageSize + data.length,
+    pagination.totalCount || 0
+  );
+
+  const MobileCardView = () => (
+    <div className="space-y-4">
+      {isPending ? (
+        <div className="flex flex-col items-center justify-center py-12">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <span className="text-sm text-muted-foreground mt-2">Loading...</span>
+        </div>
+      ) : data.length > 0 ? (
+        data.map((row, idx) => (
+          <Card key={idx} className="overflow-hidden">
+            <CardContent className="p-4">
+              {selectable && (
+                <div className="flex items-center gap-2 mb-3 pb-3 border-b">
+                  <Checkbox
+                    checked={selectedRows.has(String(row[rowIdField]))}
+                    onCheckedChange={() => toggleRowSelection(String(row[rowIdField]))}
+                  />
+                  <span className="text-sm text-muted-foreground">Select</span>
+                </div>
+              )}
+
+              <div className="space-y-3">
+                {table.getVisibleLeafColumns().map((col) => {
+                  if (col.id === 'actions' || col.id === 'select') return null;
+                  const value = col.columnDef.accessorKey ? row[col.columnDef.accessorKey as string] : null;
+                  return (
+                    <div key={col.id} className="flex justify-between items-start gap-4">
+                      <span className="text-sm font-medium text-muted-foreground min-w-[100px]">
+                        {col.columnDef.header as string}:
+                      </span>
+                      <span className="text-sm text-right flex-1">
+                        {col.columnDef.cell
+                          ? flexRender(col.columnDef.cell, {
+                              getValue: () => value,
+                              row: { original: row } as any,
+                            } as any)
+                          : value}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+
+              <div className="flex items-center gap-2 mt-4 pt-3 border-t">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="flex-1"
+                  onClick={() => handleViewRow(row)}
+                >
+                  <Eye className="h-4 w-4 mr-2" />
+                  View
+                </Button>
+                {columns.find((col) => col.id === 'actions') && (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="outline" size="sm">
+                        <MoreVertical className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                      <DropdownMenuItem onClick={() => handleViewRow(row)}>
+                        <Eye className="mr-2 h-4 w-4" />
+                        View Details
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        ))
+      ) : (
+        <div className="flex flex-col items-center justify-center py-12">
+          <Search className="h-12 w-12 text-muted-foreground" />
+          <span className="text-sm font-medium mt-2">No results found</span>
+          <span className="text-xs text-muted-foreground">Try adjusting your search or filters</span>
+        </div>
+      )}
+    </div>
+  );
 
   return (
     <div className="space-y-4">
-      {/* Search and export bar */}
       <div className="flex flex-col gap-4">
-        <div className="flex items-center gap-4">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
           {searchable && (
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -641,26 +907,94 @@ export function DynamicServerTable<T extends Record<string, any>>({
                 placeholder={searchPlaceholder}
                 value={searchInput}
                 onChange={(e) => setSearchInput(e.target.value)}
-                className="pl-10 pr-10"
+                className="pl-10 pr-10 h-10"
               />
               {searchInput && (
-                <Button variant="ghost" size="icon" className="absolute right-1 top-1/2 transform -translate-y-1/2 h-6 w-6" onClick={() => setSearchInput("")}>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="absolute right-1 top-1/2 transform -translate-y-1/2 h-7 w-7"
+                  onClick={() => setSearchInput("")}
+                >
                   <X className="h-4 w-4" />
                 </Button>
               )}
             </div>
           )}
 
-          {exportable && (
-            <div className="flex gap-2">
+          <div className="flex gap-2">
+            {(
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm" className="gap-2">
-                    <Download className="h-4 w-4" />
-                    <span className="hidden sm:inline">Export</span>
+                  <Button variant="outline" size="default" className="h-10 gap-2">
+                    <Settings2 className="h-4 w-4" />
+                    <span>Columns</span>
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-48">
+                <DropdownMenuContent align="start" className="w-[200px]">
+                  <DropdownMenuLabel>Toggle Columns</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <ScrollArea className="h-[300px]">
+                    <div className="space-y-1 p-1">
+                      {table
+                        .getAllColumns()
+                        .filter(
+                          (column) =>
+                            typeof column.accessorFn !== "undefined" && column.getCanHide()
+                        )
+                        .map((column) => {
+                          return (
+                            <div
+                              key={column.id}
+                              className="flex items-center gap-2 p-2 hover:bg-muted rounded-sm cursor-pointer"
+                              onClick={() => column.toggleVisibility(!column.getIsVisible())}
+                            >
+                              <Checkbox
+                                checked={column.getIsVisible()}
+                                onCheckedChange={(value) =>
+                                  column.toggleVisibility(!!value)
+                                }
+                              />
+                              <span className="text-sm capitalize">
+                                {column.id.replace(/([A-Z])/g, " $1").trim()}
+                              </span>
+                            </div>
+                          );
+                        })}
+                    </div>
+                  </ScrollArea>
+                  <DropdownMenuSeparator />
+                  <div className="p-1 space-y-1">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="w-full justify-start"
+                      onClick={() => table.toggleAllColumnsVisible(true)}
+                    >
+                      Show All
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="w-full justify-start"
+                      onClick={() => table.toggleAllColumnsVisible(false)}
+                    >
+                      Hide All
+                    </Button>
+                  </div>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
+
+            {exportable && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="default" className="h-10 gap-2">
+                    <Download className="h-4 w-4" />
+                    <span>Export</span>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-52">
                   <DropdownMenuLabel>Export Options</DropdownMenuLabel>
                   <DropdownMenuSeparator />
                   {exportConfig.csv && (
@@ -668,7 +1002,7 @@ export function DynamicServerTable<T extends Record<string, any>>({
                       <FileText className="mr-2 h-4 w-4 text-green-600" />
                       <div>
                         <div className="font-medium">CSV</div>
-                        <div className="text-xs text-muted-foreground">Comma-separated</div>
+                        <div className="text-xs text-muted-foreground">Comma-separated values</div>
                       </div>
                     </DropdownMenuItem>
                   )}
@@ -686,7 +1020,7 @@ export function DynamicServerTable<T extends Record<string, any>>({
                       <FileText className="mr-2 h-4 w-4 text-red-600" />
                       <div>
                         <div className="font-medium">PDF</div>
-                        <div className="text-xs text-muted-foreground">Document</div>
+                        <div className="text-xs text-muted-foreground">Portable document</div>
                       </div>
                     </DropdownMenuItem>
                   )}
@@ -701,100 +1035,94 @@ export function DynamicServerTable<T extends Record<string, any>>({
                   )}
                 </DropdownMenuContent>
               </DropdownMenu>
-            </div>
-          )}
+            )}
+          </div>
         </div>
 
         {filters.length > 0 && (
           <div className="flex flex-wrap items-center gap-2">
-            <div className="flex items-center gap-2 text-sm text-muted-foreground whitespace-nowrap">
-              <Filter className="h-4 w-4" />
-              <span className="hidden sm:inline">Filters:</span>
-            </div>
+            {filters.map((filter) => {
+              const selectedValues = getSelectedValues(filter.field);
+              const hasSelection = selectedValues.length > 0;
 
-            <div className="flex flex-wrap gap-2 flex-1">
-              {filters.map((filter) => {
-                const selectedValues = getSelectedValues(filter.field);
-                const hasSelection = selectedValues.length > 0;
-
-                if (filter.type === "multiselect") {
-                  return (
-                    <Popover key={filter.field}>
-                      <PopoverTrigger asChild>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className={cn(
-                            "h-9 gap-2",
-                            hasSelection && "border-primary bg-primary/5"
-                          )}
-                        >
-                          <span>{filter.label}</span>
-                          {hasSelection && (
-                            <Badge variant="secondary" className="h-5 px-1.5 rounded-full">
-                              {selectedValues.length}
-                            </Badge>
-                          )}
-                          <ChevronDown className="h-3 w-3 opacity-50" />
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-[200px] p-2" align="start">
-                        <div className="space-y-1">
-                          {filter.options?.map((option) => {
-                            const isChecked = selectedValues.includes(option.value);
-                            return (
-                              <div
-                                key={option.value}
-                                className="flex items-center gap-2 p-2 hover:bg-muted rounded-sm cursor-pointer"
-                                onClick={() =>
+              if (filter.type === "multiselect") {
+                return (
+                  <Popover key={filter.field}>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className={cn(
+                          "h-9 gap-2",
+                          hasSelection && "border-primary bg-primary/5"
+                        )}
+                      >
+                        <Filter className="h-3 w-3" />
+                        <span>{filter.label}</span>
+                        {hasSelection && (
+                          <Badge variant="secondary" className="h-5 px-1.5 rounded-full ml-1">
+                            {selectedValues.length}
+                          </Badge>
+                        )}
+                        <ChevronDown className="h-3 w-3 opacity-50 ml-1" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-[200px] p-2" align="start">
+                      <div className="space-y-1">
+                        {filter.options?.map((option) => {
+                          const isChecked = selectedValues.includes(option.value);
+                          return (
+                            <div
+                              key={option.value}
+                              className="flex items-center gap-2 p-2 hover:bg-muted rounded-sm cursor-pointer"
+                              onClick={() =>
+                                handleMultiSelectChange(
+                                  filter.field,
+                                  option.value,
+                                  !isChecked
+                                )
+                              }
+                            >
+                              <Checkbox
+                                checked={isChecked}
+                                onCheckedChange={(checked) =>
                                   handleMultiSelectChange(
                                     filter.field,
                                     option.value,
-                                    !isChecked
+                                    checked as boolean
                                   )
                                 }
-                              >
-                                <Checkbox
-                                  checked={isChecked}
-                                  onCheckedChange={(checked) =>
-                                    handleMultiSelectChange(
-                                      filter.field,
-                                      option.value,
-                                      checked as boolean
-                                    )
-                                  }
-                                />
-                                <span className="text-sm">{option.label}</span>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </PopoverContent>
-                    </Popover>
-                  );
-                } else {
-                  return (
-                    <Select
-                      key={filter.field}
-                      value={activeFilters.find((f) => f.field === filter.field)?.value || "all"}
-                      onValueChange={(value) => handleFilterChange(filter.field, value)}
-                    >
-                      <SelectTrigger className="h-9 w-[140px] sm:w-[160px]">
-                        <SelectValue placeholder={filter.label} />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">All {filter.label}</SelectItem>
-                        {filter.options?.map((option) => (
-                          <SelectItem key={option.value} value={option.value}>
-                            {option.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  );
-                }
-              })}
-            </div>
+                              />
+                              <span className="text-sm">{option.label}</span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </PopoverContent>
+                  </Popover>
+                );
+              } else {
+                return (
+                  <Select
+                    key={filter.field}
+                    value={activeFilters.find((f) => f.field === filter.field)?.value || "all"}
+                    onValueChange={(value) => handleFilterChange(filter.field, value)}
+                  >
+                    <SelectTrigger className="h-9 w-[140px] sm:w-[160px]">
+                      <SelectValue placeholder={filter.label} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All {filter.label}</SelectItem>
+                      {filter.options?.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                );
+              }
+            })}
           </div>
         )}
 
@@ -859,18 +1187,18 @@ export function DynamicServerTable<T extends Record<string, any>>({
       </div>
 
       {selectable && selectedRows.size > 0 && (
-        <div className="flex items-center justify-between p-4 bg-primary/10 border border-primary rounded-lg">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 p-4 bg-primary/10 border border-primary rounded-lg">
           <div className="flex items-center gap-3">
             <Checkbox checked={true} className="pointer-events-none" />
             <span className="font-medium">
               {selectedRows.size} {selectedRows.size === 1 ? "row" : "rows"} selected
             </span>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             {exportable && (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm" className="gap-2">
+                  <Button variant="outline" size="sm" className="gap-2 flex-1 sm:flex-initial">
                     <Download className="h-4 w-4" />
                     Export Selected
                   </Button>
@@ -909,7 +1237,7 @@ export function DynamicServerTable<T extends Record<string, any>>({
                   action.onClick(getSelectedData());
                   clearSelection();
                 }}
-                className="gap-2"
+                className="gap-2 flex-1 sm:flex-initial"
               >
                 {action.icon}
                 {action.label}
@@ -923,74 +1251,80 @@ export function DynamicServerTable<T extends Record<string, any>>({
         </div>
       )}
 
-      <div className="rounded-md border overflow-x-auto">
-        <Table>
-          <TableHeader>
-            {table.getHeaderGroups().map((headerGroup) => (
-              <TableRow key={headerGroup.id}>
-                {headerGroup.headers.map((header) => (
-                  <TableHead key={header.id}>
-                    {header.isPlaceholder ? null : (
-                      <div
-                        className={
-                          header.column.getCanSort()
-                            ? "flex items-center gap-2 cursor-pointer select-none hover:text-foreground"
-                            : ""
-                        }
-                        onClick={header.column.getToggleSortingHandler()}
-                      >
-                        {flexRender(header.column.columnDef.header, header.getContext())}
-                        {header.column.getCanSort() && <ArrowUpDown className="h-4 w-4" />}
-                      </div>
-                    )}
-                  </TableHead>
-                ))}
-              </TableRow>
-            ))}
-          </TableHeader>
-          <TableBody>
-            {isPending ? (
-              <TableRow>
-                <TableCell colSpan={finalColumns.length} className="h-24 text-center">
-                  <div className="flex flex-col items-center justify-center gap-2">
-                    <Loader2 className="h-6 w-6 animate-spin text-primary" />
-                    <span className="text-sm text-muted-foreground">Loading...</span>
-                  </div>
-                </TableCell>
-              </TableRow>
-            ) : table.getRowModel().rows?.length ? (
-              table.getRowModel().rows.map((row) => (
-                <TableRow
-                  key={row.id}
-                  data-state={row.getIsSelected() && "selected"}
-                  onClick={() => onRowClick?.(row.original)}
-                  className={onRowClick ? "cursor-pointer" : ""}
-                >
-                  {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</TableCell>
+      {isMobile ? (
+        <MobileCardView />
+      ) : (
+        <div className="rounded-md border overflow-x-auto">
+          <Table>
+            <TableHeader>
+              {table.getHeaderGroups().map((headerGroup) => (
+                <TableRow key={headerGroup.id}>
+                  {headerGroup.headers.map((header) => (
+                    <TableHead key={header.id}>
+                      {header.isPlaceholder ? null : (
+                        <div
+                          className={
+                            header.column.getCanSort()
+                              ? "flex items-center gap-2 cursor-pointer select-none hover:text-foreground"
+                              : ""
+                          }
+                          onClick={header.column.getToggleSortingHandler()}
+                        >
+                          {flexRender(header.column.columnDef.header, header.getContext())}
+                          {header.column.getCanSort() && <ArrowUpDown className="h-4 w-4" />}
+                        </div>
+                      )}
+                    </TableHead>
                   ))}
                 </TableRow>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell colSpan={finalColumns.length} className="h-24 text-center">
-                  <div className="flex flex-col items-center justify-center gap-2">
-                    <Search className="h-8 w-8 text-muted-foreground" />
-                    <span className="text-sm font-medium">No results found</span>
-                    <span className="text-xs text-muted-foreground">
-                      Try adjusting your search or filters
-                    </span>
-                  </div>
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </div>
+              ))}
+            </TableHeader>
+            <TableBody>
+              {isPending ? (
+                <TableRow>
+                  <TableCell colSpan={finalColumns.length} className="h-24 text-center">
+                    <div className="flex flex-col items-center justify-center gap-2">
+                      <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                      <span className="text-sm text-muted-foreground">Loading...</span>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ) : table.getRowModel().rows?.length ? (
+                table.getRowModel().rows.map((row) => (
+                  <TableRow
+                    key={row.id}
+                    data-state={row.getIsSelected() && "selected"}
+                    onClick={() => onRowClick?.(row.original)}
+                    className={onRowClick ? "cursor-pointer" : ""}
+                  >
+                    {row.getVisibleCells().map((cell) => (
+                      <TableCell key={cell.id}>
+                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={finalColumns.length} className="h-24 text-center">
+                    <div className="flex flex-col items-center justify-center gap-2">
+                      <Search className="h-8 w-8 text-muted-foreground" />
+                      <span className="text-sm font-medium">No results found</span>
+                      <span className="text-xs text-muted-foreground">
+                        Try adjusting your search or filters
+                      </span>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </div>
+      )}
 
       <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-2">
-        <div className="flex items-center gap-4 order-2 sm:order-1">
-          <div className="text-sm text-muted-foreground">
+        <div className="flex flex-col sm:flex-row items-center gap-4 order-2 sm:order-1 w-full sm:w-auto">
+          <div className="text-sm text-muted-foreground text-center sm:text-left">
             {pagination.totalCount !== undefined && pagination.totalCount > 0 ? (
               <span>
                 Showing <span className="font-medium text-foreground">{startRecord}</span> to{" "}
@@ -1004,8 +1338,11 @@ export function DynamicServerTable<T extends Record<string, any>>({
           </div>
 
           <div className="flex items-center gap-2">
-            <span className="text-sm text-muted-foreground whitespace-nowrap">Rows per page:</span>
-            <Select value={currentPageSize.toString()} onValueChange={(value) => handlePageSizeChange(parseInt(value))}>
+            <span className="text-sm text-muted-foreground whitespace-nowrap">Rows:</span>
+            <Select
+              value={currentPageSize.toString()}
+              onValueChange={(value) => handlePageSizeChange(parseInt(value))}
+            >
               <SelectTrigger className="h-8 w-[70px]">
                 <SelectValue />
               </SelectTrigger>
@@ -1026,7 +1363,7 @@ export function DynamicServerTable<T extends Record<string, any>>({
             size="sm"
             onClick={handleFirstPage}
             disabled={currentPage === 1 || isPending}
-            className="h-8 w-8 p-0"
+            className="h-9 w-9 p-0"
             title="First page"
           >
             <ChevronsLeft className="h-4 w-4" />
@@ -1036,14 +1373,14 @@ export function DynamicServerTable<T extends Record<string, any>>({
             size="sm"
             onClick={handlePrevPage}
             disabled={!pagination.hasPreviousPage || isPending}
-            className="h-8 gap-1"
+            className="h-9 px-3"
             title="Previous page"
           >
             <ChevronLeft className="h-4 w-4" />
-            <span className="hidden sm:inline">Previous</span>
+            <span className="hidden sm:inline ml-1">Previous</span>
           </Button>
 
-          <div className="flex items-center gap-2 px-3 py-1 border rounded-md bg-muted/50">
+          <div className="flex items-center gap-2 px-3 py-1.5 border rounded-md bg-muted/50">
             <span className="text-sm font-medium">Page {currentPage}</span>
           </div>
 
@@ -1052,10 +1389,10 @@ export function DynamicServerTable<T extends Record<string, any>>({
             size="sm"
             onClick={handleNextPage}
             disabled={!pagination.hasNextPage || isPending}
-            className="h-8 gap-1"
+            className="h-9 px-3"
             title="Next page"
           >
-            <span className="hidden sm:inline">Next</span>
+            <span className="hidden sm:inline mr-1">Next</span>
             <ChevronRight className="h-4 w-4" />
           </Button>
         </div>

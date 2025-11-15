@@ -47,43 +47,116 @@ if (action === "delete") {
   process.exit(0);
 }
 
-// Templates for creating files
-
 const pageFileContent = `import { fetchTableData, TableParams } from '@/app/actions/table-data';
 import { ${pageName}Table } from './${pageNameLower}-table';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Database, CheckCircle, XCircle, DollarSign, Users } from 'lucide-react';
+
+type ${pageName}Item = {
+  id: string;
+  name: string;
+  email: string;
+  status: 'active' | 'inactive';
+  createdAt: string;
+  amount: number;
+};
+
+const sample${pageName}: ${pageName}Item = {
+  id: '1',
+  name: 'John Doe',
+  email: 'john@example.com',
+  status: 'active',
+  createdAt: new Date().toISOString(),
+  amount: 1234,
+};
 
 export default async function ${pageName}Page() {
-  async function fetchData(params: TableParams) {
+  const initialData = await fetchTableData<${pageName}Item>(
+    '/api/${pageNameLower}',
+    {
+      limit: 10,
+      sortBy: 'createdAt',
+      sortOrder: 'desc',
+    },
+    sample${pageName}
+  );
+
+  async function fetch${pageName}Data(params: TableParams) {
     'use server';
-    return fetchTableData('/api/${pageNameLower}', params);
+    return fetchTableData<${pageName}Item>('/api/${pageNameLower}', params);
   }
 
-  const sampleRecord = {
-    id: '1',
-    name: 'John Doe',
-    email: 'john@example.com',
-    status: 'active',
-    createdAt: new Date().toISOString(),
-    amount: 1234,
-  };
-
-  const initialData = await fetchTableData('/api/${pageNameLower}', {
-    limit: 10,
-    sortBy: 'createdAt',
-    sortOrder: 'desc',
-  }, sampleRecord);
+  const totalItems = initialData.pagination.totalCount || 0;
+  const activeItems = initialData.data.filter(item => item.status === 'active').length;
+  const inactiveItems = initialData.data.filter(item => item.status === 'inactive').length;
+  const totalAmount = initialData.data.reduce((sum, item) => sum + (item.amount || 0), 0);
 
   return (
-    <div className="p-6">
-      <Card>
-        <CardHeader>
-          <CardTitle>${pageName} Management</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <${pageName}Table initialData={initialData} fetchData={fetchData} />
-        </CardContent>
-      </Card>
+    <div className="px-6 pb-6">
+      <div className="space-y-6">
+        {/* Header */}
+        <div className="pt-6">
+          <h1 className="text-3xl font-bold flex items-center gap-3">
+            <Database className="h-8 w-8 text-primary" />
+            ${pageName} Management
+          </h1>
+          <p className="text-muted-foreground mt-2">
+            View and manage all ${pageNameLower} records
+          </p>
+        </div>
+
+        {/* Stats Cards */}
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total ${pageName}</CardTitle>
+              <Users className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{totalItems}</div>
+              <p className="text-xs text-muted-foreground">All time records</p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Active</CardTitle>
+              <CheckCircle className="h-4 w-4 text-green-600" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-green-600">{activeItems}</div>
+              <p className="text-xs text-muted-foreground">Currently active</p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Inactive</CardTitle>
+              <XCircle className="h-4 w-4 text-red-600" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-red-600">{inactiveItems}</div>
+              <p className="text-xs text-muted-foreground">Currently inactive</p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total Amount</CardTitle>
+              <DollarSign className="h-4 w-4 text-green-600" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-green-600">
+                ₹{totalAmount.toLocaleString('en-IN')}
+              </div>
+              <p className="text-xs text-muted-foreground">Sum of all amounts</p>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Table */}
+        <${pageName}Table initialData={initialData} fetchData={fetch${pageName}Data} />
+      </div>
     </div>
   );
 }
@@ -143,7 +216,12 @@ export function ${pageName}Table({ initialData, fetchData }: ${pageName}TablePro
     {
       accessorKey: 'email',
       header: 'Email',
-      cell: ({ row }) => row.original.email,
+      cell: ({ row }) => (
+        <div className="flex items-center gap-2">
+          <Mail className="h-4 w-4 text-muted-foreground" />
+          {row.original.email}
+        </div>
+      ),
     },
     {
       accessorKey: 'status',
@@ -158,12 +236,20 @@ export function ${pageName}Table({ initialData, fetchData }: ${pageName}TablePro
       accessorKey: 'createdAt',
       header: 'Created At',
       enableSorting: true,
+      cell: ({ row }) => new Date(row.original.createdAt).toLocaleDateString('en-IN'),
     },
     {
       accessorKey: 'amount',
       header: 'Amount',
       enableSorting: true,
-      cell: ({ row }) => <span className="font-semibold">₹{row.original.amount.toFixed(2)}</span>,
+      cell: ({ row }) => (
+        <div className="flex items-center gap-2">
+          <DollarSign className="h-4 w-4 text-green-600" />
+          <span className="font-semibold text-green-600">
+            ₹{row.original.amount.toLocaleString('en-IN')}
+          </span>
+        </div>
+      ),
     },
     {
       id: 'actions',
@@ -203,39 +289,59 @@ export function ${pageName}Table({ initialData, fetchData }: ${pageName}TablePro
 
   return (
     <DynamicServerTable
+	  tableKey="${pageNameLower}"
       initialData={initialData}
       columns={columns}
       fetchData={fetchData}
       searchable
-      searchPlaceholder="Search items..."
+      searchPlaceholder="Search ${pageNameLower}..."
       searchFields={['name', 'email', 'status']}
       filters={[
         {
           field: 'status',
           label: 'Status',
-          type: 'select',
+          type: 'multiselect',
           options: [
             { label: 'Active', value: 'active' },
             { label: 'Inactive', value: 'inactive' },
           ],
         },
       ]}
+      defaultSortBy="createdAt"
+      defaultSortOrder="desc"
       pageSize={10}
-      pageSizeOptions={[10, 25, 50]}
+      pageSizeOptions={[10, 25, 50, 100]}
       exportable
       exportFileName="${pageNameLower}"
+      exportConfig={{
+        csv: true,
+        excel: true,
+        pdf: true,
+        print: true,
+      }}
       selectable
       rowIdField="id"
       onSelectionChange={setSelectedItems}
       bulkActions={[
         {
-          label: 'Delete Selected',
-          variant: 'destructive',
+          label: 'Delete',
+          icon: <Trash2 className="h-4 w-4" />,
           onClick: handleBulkDelete,
+          variant: 'destructive',
         },
       ]}
       viewerTitle="${pageName} Details"
       viewerSubtitle="Detailed information"
+      viewerFieldConfig={{
+        id: { hidden: true },
+        amount: {
+          format: (value: number) => (
+            <span className="text-green-600 font-bold text-lg">
+              ₹{value.toLocaleString('en-IN')}
+            </span>
+          ),
+        },
+      }}
     />
   );
 }

@@ -52,7 +52,12 @@ export function PaymentsTable({ initialData, fetchData }: PaymentsTableProps) {
     {
       accessorKey: 'email',
       header: 'Email',
-      cell: ({ row }) => row.original.email,
+      cell: ({ row }) => (
+        <div className="flex items-center gap-2">
+          <Mail className="h-4 w-4 text-muted-foreground" />
+          {row.original.email}
+        </div>
+      ),
     },
     {
       accessorKey: 'status',
@@ -67,12 +72,20 @@ export function PaymentsTable({ initialData, fetchData }: PaymentsTableProps) {
       accessorKey: 'createdAt',
       header: 'Created At',
       enableSorting: true,
+      cell: ({ row }) => new Date(row.original.createdAt).toLocaleDateString('en-IN'),
     },
     {
       accessorKey: 'amount',
       header: 'Amount',
       enableSorting: true,
-      cell: ({ row }) => <span className="font-semibold">₹{row.original.amount.toFixed(2)}</span>,
+      cell: ({ row }) => (
+        <div className="flex items-center gap-2">
+          <DollarSign className="h-4 w-4 text-green-600" />
+          <span className="font-semibold text-green-600">
+            ₹{row.original.amount.toLocaleString('en-IN')}
+          </span>
+        </div>
+      ),
     },
     {
       id: 'actions',
@@ -112,39 +125,59 @@ export function PaymentsTable({ initialData, fetchData }: PaymentsTableProps) {
 
   return (
     <DynamicServerTable
+	  tableKey='payments'
       initialData={initialData}
       columns={columns}
       fetchData={fetchData}
       searchable
-      searchPlaceholder="Search items..."
+      searchPlaceholder="Search payments..."
       searchFields={['name', 'email', 'status']}
       filters={[
         {
           field: 'status',
           label: 'Status',
-          type: 'select',
+          type: 'multiselect',
           options: [
             { label: 'Active', value: 'active' },
             { label: 'Inactive', value: 'inactive' },
           ],
         },
       ]}
+      defaultSortBy="createdAt"
+      defaultSortOrder="desc"
       pageSize={10}
-      pageSizeOptions={[10, 25, 50]}
+      pageSizeOptions={[10, 25, 50, 100]}
       exportable
       exportFileName="payments"
+      exportConfig={{
+        csv: true,
+        excel: true,
+        pdf: true,
+        print: true,
+      }}
       selectable
       rowIdField="id"
       onSelectionChange={setSelectedItems}
       bulkActions={[
         {
-          label: 'Delete Selected',
-          variant: 'destructive',
+          label: 'Delete',
+          icon: <Trash2 className="h-4 w-4" />,
           onClick: handleBulkDelete,
+          variant: 'destructive',
         },
       ]}
       viewerTitle="Payments Details"
       viewerSubtitle="Detailed information"
+      viewerFieldConfig={{
+        id: { hidden: true },
+        amount: {
+          format: (value: number) => (
+            <span className="text-green-600 font-bold text-lg">
+              ₹{value.toLocaleString('en-IN')}
+            </span>
+          ),
+        },
+      }}
     />
   );
 }

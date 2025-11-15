@@ -247,6 +247,7 @@ const [selectedFlights, setSelectedFlights] = useState<Flight[]>([]);
 
   return (
     <DynamicServerTable
+      tableKey='flights'
       initialData={initialData}
       columns={columns}
       fetchData={fetchData}

@@ -245,6 +245,7 @@ export function BookingsTable({ initialData, fetchData }: BookingsTableProps) {
 
   return (
     <DynamicServerTable
+	  tableKey='bookings'
       initialData={initialData}
       columns={columns}
       fetchData={fetchData}

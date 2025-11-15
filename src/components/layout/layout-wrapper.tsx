@@ -17,7 +17,6 @@ export function LayoutWrapper({ children }: LayoutWrapperProps) {
       <Sidebar tabs={adminConfig.sidebar.tabs} />
       <main
         className={cn(
-          'pt-16',
           'lg:pl-64',
           'transition-all duration-300'
         )}
@@ -27,4 +26,3 @@ export function LayoutWrapper({ children }: LayoutWrapperProps) {
     </>
   );
 }
-
