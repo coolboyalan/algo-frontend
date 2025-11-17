@@ -134,7 +134,7 @@ export default async function BookingsPage() {
           </Card>
         </div>
 
-        {/* Table */}
+        {/* Table - Now super simple! */}
         <BookingsTable initialData={initialData} fetchData={fetchBookings} />
       </div>
     </div>

@@ -6,9 +6,6 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useState } from 'react';
 import {
-  Eye,
-  Edit,
-  Trash2,
   MoreHorizontal,
   Plane,
   Clock,
@@ -18,7 +15,11 @@ import {
   PlaneLanding,
   CheckCircle2,
   XCircle,
-  AlertCircle
+  AlertCircle,
+  Copy,
+  DollarSignIcon,
+  Trash2,
+  ListOrdered
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -29,6 +30,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { TableParams, TableResponse } from '@/app/actions/table-data';
+import { FormFieldConfig } from '@/components/forms/auto-form-generator';
 
 type Flight = {
   id: string;
@@ -54,18 +56,125 @@ interface FlightsTableProps {
 }
 
 export function FlightsTable({ initialData, fetchData }: FlightsTableProps) {
-const [selectedFlights, setSelectedFlights] = useState<Flight[]>([]);
+  const [selectedFlights, setSelectedFlights] = useState<Flight[]>([]);
 
   // Bulk action handlers
-  const handleBulkDelete = async (bookings: Flight[]) => {
-    if (confirm(`Delete ${bookings.length} booking(s)?`)) {
-      console.log('Deleting:', bookings);
-      // Add your delete API call here
-      // await deleteFlights(bookings.map(b => b.id));
-      alert(`Deleted ${bookings.length} bookings`);
+  const handleBulkDelete = async (flights: Flight[]) => {
+    if (confirm(`Delete ${flights.length} flight(s)?`)) {
+      console.log('Deleting:', flights);
+      alert(`Deleted ${flights.length} flights`);
     }
   };
 
+  const handleBulkUpdateStatus = async (flights: Flight[]) => {
+    console.log('Updating status:', flights);
+    alert(`Updated status for ${flights.length} flights`);
+  };
+
+  // Form fields for Add/Edit
+  const flightFormFields: FormFieldConfig[] = [
+    {
+      name: 'flightNumber',
+      label: 'Flight Number',
+      type: 'text',
+      required: true,
+      placeholder: 'e.g., FO-101',
+    },
+    {
+      name: 'airline',
+      label: 'Airline',
+      type: 'select',
+      required: true,
+      options: [
+        { label: 'Flyomint', value: 'Flyomint' },
+        { label: 'Air India', value: 'Air India' },
+        { label: 'IndiGo', value: 'IndiGo' },
+        { label: 'SpiceJet', value: 'SpiceJet' },
+        { label: 'Vistara', value: 'Vistara' },
+      ],
+    },
+    {
+      name: 'aircraft',
+      label: 'Aircraft',
+      type: 'text',
+      required: true,
+      placeholder: 'e.g., Boeing 737-800',
+    },
+    {
+      name: 'aircraftType',
+      label: 'Aircraft Type',
+      type: 'select',
+      required: true,
+      options: [
+        { label: 'Boeing 737', value: 'Boeing 737' },
+        { label: 'Airbus A320', value: 'Airbus A320' },
+        { label: 'Boeing 787', value: 'Boeing 787' },
+        { label: 'Airbus A321', value: 'Airbus A321' },
+        { label: 'Boeing 777', value: 'Boeing 777' },
+      ],
+    },
+    {
+      name: 'from',
+      label: 'From',
+      type: 'text',
+      required: true,
+      placeholder: 'e.g., Mumbai (BOM)',
+    },
+    {
+      name: 'to',
+      label: 'To',
+      type: 'text',
+      required: true,
+      placeholder: 'e.g., Delhi (DEL)',
+    },
+    {
+      name: 'departureTime',
+      label: 'Departure Time',
+      type: 'text',
+      required: true,
+      placeholder: 'e.g., 06:00 AM',
+    },
+    {
+      name: 'arrivalTime',
+      label: 'Arrival Time',
+      type: 'text',
+      required: true,
+      placeholder: 'e.g., 08:15 AM',
+    },
+    {
+      name: 'duration',
+      label: 'Duration',
+      type: 'text',
+      required: true,
+      placeholder: 'e.g., 2h 15m',
+    },
+    {
+      name: 'price',
+      label: 'Price (₹)',
+      type: 'number',
+      required: true,
+      placeholder: 'Enter base price',
+    },
+    {
+      name: 'capacity',
+      label: 'Capacity',
+      type: 'number',
+      required: true,
+      placeholder: 'Total seats',
+    },
+    {
+      name: 'status',
+      label: 'Status',
+      type: 'select',
+      required: true,
+      options: [
+        { label: 'Scheduled', value: 'scheduled' },
+        { label: 'Delayed', value: 'delayed' },
+        { label: 'Cancelled', value: 'cancelled' },
+        { label: 'Completed', value: 'completed' },
+      ],
+    },
+  ];
 
   const columns: ColumnDef<Flight>[] = [
     {
@@ -124,9 +233,7 @@ const [selectedFlights, setSelectedFlights] = useState<Flight[]>([]);
               <Clock className="h-3 w-3 text-muted-foreground" />
               <span className="text-sm">Arr: {flight.arrivalTime}</span>
             </div>
-            <div className="text-xs text-muted-foreground">
-              Duration: {flight.duration}
-            </div>
+            <div className="text-xs text-muted-foreground">Duration: {flight.duration}</div>
           </div>
         );
       },
@@ -140,9 +247,7 @@ const [selectedFlights, setSelectedFlights] = useState<Flight[]>([]);
         return (
           <div className="flex items-center gap-2">
             <DollarSign className="h-4 w-4 text-green-600" />
-            <span className="font-semibold text-green-600">
-              ₹{price.toLocaleString('en-IN')}
-            </span>
+            <span className="font-semibold text-green-600">₹{price.toLocaleString('en-IN')}</span>
           </div>
         );
       },
@@ -164,16 +269,16 @@ const [selectedFlights, setSelectedFlights] = useState<Flight[]>([]);
             <div className="w-full h-1.5 bg-secondary rounded-full overflow-hidden">
               <div
                 className={`h-full ${
-                  occupancy >= 90 ? 'bg-red-500' :
-                  occupancy >= 70 ? 'bg-orange-500' :
-                  'bg-green-500'
+                  occupancy >= 90
+                    ? 'bg-red-500'
+                    : occupancy >= 70
+                    ? 'bg-orange-500'
+                    : 'bg-green-500'
                 }`}
                 style={{ width: `${occupancy}%` }}
               />
             </div>
-            <div className="text-xs text-muted-foreground">
-              {occupancy.toFixed(0)}% occupied
-            </div>
+            <div className="text-xs text-muted-foreground">{occupancy.toFixed(0)}% occupied</div>
           </div>
         );
       },
@@ -205,41 +310,40 @@ const [selectedFlights, setSelectedFlights] = useState<Flight[]>([]);
     },
     {
       id: 'actions',
-      header: 'Actions',
       cell: ({ row }) => {
+        const flight = row.original;
         return (
-          <div className="flex items-center gap-2">
-            <Button variant="ghost" size="icon" title="Edit Flight">
-              <Edit className="h-4 w-4" />
-            </Button>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon">
-                  <MoreHorizontal className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                <DropdownMenuItem>
-                  <Eye className="mr-2 h-4 w-4" />
-                  View Details
-                </DropdownMenuItem>
-                <DropdownMenuItem>
-                  <Edit className="mr-2 h-4 w-4" />
-                  Edit Flight
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem>View Flights</DropdownMenuItem>
-                <DropdownMenuItem>Update Pricing</DropdownMenuItem>
-                <DropdownMenuItem>Duplicate Flight</DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem className="text-destructive">
-                  <Trash2 className="mr-2 h-4 w-4" />
-                  Cancel Flight
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon">
+                <MoreHorizontal className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuLabel>Flight Actions</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => console.log('View bookings', flight)}>
+                <ListOrdered className="mr-2 h-4 w-4" />
+                View Bookings
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => console.log('Update pricing', flight)}>
+                <DollarSignIcon className="mr-2 h-4 w-4" />
+                Update Pricing
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => console.log('Duplicate flight', flight)}>
+                <Copy className="mr-2 h-4 w-4" />
+                Duplicate Flight
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                onClick={() => console.log('Cancel flight', flight)}
+                className="text-destructive"
+              >
+                <Trash2 className="mr-2 h-4 w-4" />
+                Cancel Flight
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         );
       },
     },
@@ -247,10 +351,12 @@ const [selectedFlights, setSelectedFlights] = useState<Flight[]>([]);
 
   return (
     <DynamicServerTable
-      tableKey='flights'
+      tableKey="flights"
       initialData={initialData}
       columns={columns}
       fetchData={fetchData}
+      apiEndpoint="/api/flights"
+      formFields={flightFormFields}
       searchable
       searchPlaceholder="Search by flight number, airline, or route..."
       searchFields={['flightNumber', 'airline', 'from', 'to']}
@@ -294,20 +400,25 @@ const [selectedFlights, setSelectedFlights] = useState<Flight[]>([]);
       defaultSortBy="departureTime"
       defaultSortOrder="asc"
       pageSize={10}
-      onRowClick={(row) => console.log('Flight clicked:', row)}
-	  pageSizeOptions={[10, 25, 50, 100]}
-      exportable={true}
-      exportFileName="bookings"
+      pageSizeOptions={[10, 25, 50, 100]}
+      exportable
+      exportFileName="flights"
       exportConfig={{
         csv: true,
         excel: true,
         pdf: true,
         print: true,
       }}
-      selectable={true}
+      selectable
       rowIdField="id"
       onSelectionChange={setSelectedFlights}
       bulkActions={[
+        {
+          label: 'Update Status',
+          icon: <CheckCircle2 className="h-4 w-4" />,
+          onClick: handleBulkUpdateStatus,
+          variant: 'default',
+        },
         {
           label: 'Delete',
           icon: <Trash2 className="h-4 w-4" />,
@@ -315,6 +426,12 @@ const [selectedFlights, setSelectedFlights] = useState<Flight[]>([]);
           variant: 'destructive',
         },
       ]}
+      viewerTitle="Flight"
+      viewerSubtitle="Complete flight information"
+      showAddButton
+      addButtonLabel="Add Flight"
+      showEditButton
+      showDeleteButton
     />
   );
 }

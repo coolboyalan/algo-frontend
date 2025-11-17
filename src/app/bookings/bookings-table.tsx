@@ -6,9 +6,6 @@ import { ColumnDef } from '@tanstack/react-table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
-  Eye,
-  Edit,
-  Trash2,
   MoreHorizontal,
   Calendar,
   User,
@@ -16,7 +13,8 @@ import {
   DollarSign,
   Mail,
   Phone,
-  CheckCircle
+  CheckCircle,
+  Trash2,
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -27,6 +25,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { TableParams, TableResponse } from '@/app/actions/table-data';
+import { FormFieldConfig } from '@/components/forms/auto-form-generator';
 
 type Booking = {
   id: string;
@@ -56,8 +55,7 @@ export function BookingsTable({ initialData, fetchData }: BookingsTableProps) {
   const handleBulkDelete = async (bookings: Booking[]) => {
     if (confirm(`Delete ${bookings.length} booking(s)?`)) {
       console.log('Deleting:', bookings);
-      // Add your delete API call here
-      // await deleteBookings(bookings.map(b => b.id));
+      // Your bulk delete logic here
       alert(`Deleted ${bookings.length} bookings`);
     }
   };
@@ -72,16 +70,101 @@ export function BookingsTable({ initialData, fetchData }: BookingsTableProps) {
     alert(`Confirmed ${bookings.length} bookings`);
   };
 
+  // Form fields for Add/Edit
+  const bookingFormFields: FormFieldConfig[] = [
+    {
+      name: 'bookingId',
+      label: 'Booking ID',
+      type: 'text',
+      required: true,
+      placeholder: 'e.g., BK-12345',
+    },
+    {
+      name: 'passengerName',
+      label: 'Passenger Name',
+      type: 'text',
+      required: true,
+      placeholder: 'Enter passenger name',
+    },
+    {
+      name: 'email',
+      label: 'Email',
+      type: 'email',
+      required: true,
+      placeholder: 'Enter email address',
+    },
+    {
+      name: 'phone',
+      label: 'Phone',
+      type: 'text',
+      required: true,
+      placeholder: '+91-XXXXX-XXXXX',
+    },
+    {
+      name: 'flightNumber',
+      label: 'Flight Number',
+      type: 'text',
+      required: true,
+      placeholder: 'e.g., FO-101',
+    },
+    {
+      name: 'route',
+      label: 'Route',
+      type: 'text',
+      required: true,
+      placeholder: 'e.g., Mumbai (BOM) → Delhi (DEL)',
+    },
+    {
+      name: 'departureDate',
+      label: 'Departure Date',
+      type: 'date',
+      required: true,
+    },
+    {
+      name: 'seatClass',
+      label: 'Seat Class',
+      type: 'select',
+      required: true,
+      options: [
+        { label: 'Economy', value: 'Economy' },
+        { label: 'Premium Economy', value: 'Premium Economy' },
+        { label: 'Business', value: 'Business' },
+        { label: 'First Class', value: 'First Class' },
+      ],
+    },
+    {
+      name: 'amount',
+      label: 'Amount (₹)',
+      type: 'number',
+      required: true,
+      placeholder: 'Enter amount',
+    },
+    {
+      name: 'paymentStatus',
+      label: 'Payment Status',
+      type: 'select',
+      required: true,
+      options: [
+        { label: 'Paid', value: 'paid' },
+        { label: 'Pending', value: 'pending' },
+        { label: 'Failed', value: 'failed' },
+      ],
+    },
+    {
+      name: 'status',
+      label: 'Booking Status',
+      type: 'select',
+      required: true,
+      options: [
+        { label: 'Confirmed', value: 'confirmed' },
+        { label: 'Pending', value: 'pending' },
+        { label: 'Cancelled', value: 'cancelled' },
+      ],
+    },
+  ];
+
   const columns: ColumnDef<Booking>[] = [
     {
-      accessorKey: 'id',
-      header: 'ID',
-      enableSorting: true,
-      cell: ({ row }) => (
-        <div className="font-semibold">{row.original.id}</div>
-      ),
-    },
-	  {
       accessorKey: 'bookingId',
       header: 'Booking ID',
       enableSorting: true,
@@ -136,47 +219,37 @@ export function BookingsTable({ initialData, fetchData }: BookingsTableProps) {
     {
       accessorKey: 'seatClass',
       header: 'Class',
-      cell: ({ row }) => {
-        const seatClass = row.original.seatClass;
-        return (
-          <Badge variant="outline" className="font-medium">
-            {seatClass}
-          </Badge>
-        );
-      },
+      cell: ({ row }) => (
+        <Badge variant="outline" className="font-medium">
+          {row.original.seatClass}
+        </Badge>
+      ),
     },
     {
       accessorKey: 'amount',
       header: 'Amount',
       enableSorting: true,
-      cell: ({ row }) => {
-        const amount = row.original.amount;
-        return (
-          <div className="flex items-center gap-2">
-            <DollarSign className="h-4 w-4 text-green-600" />
-            <span className="font-semibold text-green-600">
-              ₹{amount.toLocaleString('en-IN')}
-            </span>
-          </div>
-        );
-      },
+      cell: ({ row }) => (
+        <div className="flex items-center gap-2">
+          <DollarSign className="h-4 w-4 text-green-600" />
+          <span className="font-semibold text-green-600">
+            ₹{row.original.amount.toLocaleString('en-IN')}
+          </span>
+        </div>
+      ),
     },
     {
       accessorKey: 'paymentStatus',
       header: 'Payment',
       cell: ({ row }) => {
-        const paymentStatus = row.original.paymentStatus;
+        const status = row.original.paymentStatus;
         return (
           <Badge
             variant={
-              paymentStatus === 'paid'
-                ? 'default'
-                : paymentStatus === 'pending'
-                ? 'secondary'
-                : 'destructive'
+              status === 'paid' ? 'default' : status === 'pending' ? 'secondary' : 'destructive'
             }
           >
-            {paymentStatus.charAt(0).toUpperCase() + paymentStatus.slice(1)}
+            {status.charAt(0).toUpperCase() + status.slice(1)}
           </Badge>
         );
       },
@@ -189,11 +262,7 @@ export function BookingsTable({ initialData, fetchData }: BookingsTableProps) {
         return (
           <Badge
             variant={
-              status === 'confirmed'
-                ? 'default'
-                : status === 'pending'
-                ? 'secondary'
-                : 'destructive'
+              status === 'confirmed' ? 'default' : status === 'pending' ? 'secondary' : 'destructive'
             }
           >
             {status.charAt(0).toUpperCase() + status.slice(1)}
@@ -204,51 +273,31 @@ export function BookingsTable({ initialData, fetchData }: BookingsTableProps) {
     {
       id: 'actions',
       header: 'Actions',
-      cell: ({ row }) => {
-        return (
-          <div className="flex items-center gap-2">
-            <Button variant="ghost" size="icon" title="Edit Booking">
-              <Edit className="h-4 w-4" />
+      cell: ({ row }) => (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="icon">
+              <MoreHorizontal className="h-4 w-4" />
             </Button>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon">
-                  <MoreHorizontal className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                <DropdownMenuItem>
-                  <Eye className="mr-2 h-4 w-4" />
-                  View Details
-                </DropdownMenuItem>
-                <DropdownMenuItem>
-                  <Edit className="mr-2 h-4 w-4" />
-                  Edit Booking
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem>Send Confirmation Email</DropdownMenuItem>
-                <DropdownMenuItem>Download Ticket</DropdownMenuItem>
-                <DropdownMenuItem>Print Boarding Pass</DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem className="text-destructive">
-                  <Trash2 className="mr-2 h-4 w-4" />
-                  Cancel Booking
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-        );
-      },
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem>Send Confirmation Email</DropdownMenuItem>
+            <DropdownMenuItem>Download Ticket</DropdownMenuItem>
+            <DropdownMenuItem>Print Boarding Pass</DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      ),
     },
   ];
 
   return (
     <DynamicServerTable
-	  tableKey='bookings'
+      tableKey="bookings"
       initialData={initialData}
       columns={columns}
       fetchData={fetchData}
+      apiEndpoint="/api/bookings"
+      formFields={bookingFormFields}
       searchable
       searchPlaceholder="Search by passenger name, booking ID, email, or phone..."
       searchFields={['passengerName', 'bookingId', 'email', 'phone']}
@@ -279,6 +328,7 @@ export function BookingsTable({ initialData, fetchData }: BookingsTableProps) {
           type: 'multiselect',
           options: [
             { label: 'Economy', value: 'Economy' },
+            { label: 'Premium Economy', value: 'Premium Economy' },
             { label: 'Business', value: 'Business' },
             { label: 'First Class', value: 'First Class' },
           ],
@@ -288,15 +338,10 @@ export function BookingsTable({ initialData, fetchData }: BookingsTableProps) {
       defaultSortOrder="desc"
       pageSize={10}
       pageSizeOptions={[10, 25, 50, 100]}
-      exportable={true}
+      exportable
       exportFileName="bookings"
-      exportConfig={{
-        csv: true,
-        excel: true,
-        pdf: true,
-        print: true,
-      }}
-      selectable={true}
+      exportConfig={{ csv: true, excel: true, pdf: true, print: true }}
+      selectable
       rowIdField="id"
       onSelectionChange={setSelectedBookings}
       bulkActions={[
@@ -319,6 +364,25 @@ export function BookingsTable({ initialData, fetchData }: BookingsTableProps) {
           variant: 'destructive',
         },
       ]}
+      viewerTitle="Booking"
+      viewerSubtitle="Complete booking information"
+      viewerFieldConfig={{
+        id: { hidden: true },
+        createdAt: { hidden: true },
+        amount: {
+          label: 'Total Amount',
+          icon: <DollarSign className="h-4 w-4" />,
+          format: (value) => (
+            <span className="text-green-600 font-bold text-lg">
+              ₹{value.toLocaleString('en-IN')}
+            </span>
+          ),
+        },
+      }}
+      showAddButton
+      addButtonLabel="New Booking"
+      showEditButton
+      showDeleteButton
     />
   );
 }

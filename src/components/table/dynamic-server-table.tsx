@@ -1,15 +1,12 @@
 'use client';
 
-import { useState, useTransition, useEffect, useRef } from "react";
 import {
   useReactTable,
   getCoreRowModel,
   getSortedRowModel,
   ColumnDef,
-  SortingState,
   flexRender,
-  VisibilityState,
-} from "@tanstack/react-table";
+} from '@tanstack/react-table';
 import {
   Table,
   TableBody,
@@ -17,190 +14,39 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+} from '@/components/ui/table';
+import { Button } from '@/components/ui/button';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+} from '@/components/ui/select';
+import { Loader2, ArrowUpDown, Search, ChevronLeft, ChevronRight, ChevronsLeft, Eye, Pencil,Trash2 } from 'lucide-react';
+import { TableParams, TableResponse } from '@/app/actions/table-data';
+import { useState } from 'react';
+import * as XLSX from 'xlsx';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Checkbox } from "@/components/ui/checkbox";
-import {
-  ChevronLeft,
-  ChevronRight,
-  ChevronsLeft,
-  ChevronsRight,
-  Search,
-  Loader2,
-  ArrowUpDown,
-  X,
-  Filter,
-  ChevronDown,
-  Download,
-  FileText,
-  FileSpreadsheet,
-  Printer,
-  Eye,
-  Settings2,
-  MoreVertical,
-} from "lucide-react";
-import { TableParams, TableResponse, TableFilter } from "@/app/actions/table-data";
-import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
-import { Card, CardContent } from "@/components/ui/card";
-import { cn } from "@/lib/utils";
-import * as XLSX from "xlsx";
-import jsPDF from "jspdf";
-import autoTable from "jspdf-autotable";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Calendar, Clock, Hash, Mail, Phone, User, DollarSign } from "lucide-react";
-
-export interface RowViewerFieldConfig {
-  label?: string;
-  icon?: React.ReactNode;
-  format?: (value: any) => React.ReactNode;
-  hidden?: boolean;
-}
-
-interface RowViewerDialogProps<T> {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  data: T | null;
-  title?: string;
-  subtitle?: string;
-  fieldConfig?: Record<string, RowViewerFieldConfig>;
-}
-
-function RowViewerDialog<T extends Record<string, any>>({
-  open,
-  onOpenChange,
-  data,
-  title = "Details",
-  subtitle,
-  fieldConfig = {},
-}: RowViewerDialogProps<T>) {
-  if (!data) return null;
-
-  const formatFieldName = (key: string): string =>
-    key.replace(/([A-Z])/g, " $1").replace(/^./, (str) => str.toUpperCase()).trim();
-
-  const getFieldIcon = (key: string): React.ReactNode => {
-    if (fieldConfig[key]?.icon) return fieldConfig[key].icon;
-    const lowerKey = key.toLowerCase();
-    if (lowerKey.includes("email")) return <Mail className="h-4 w-4" />;
-    if (lowerKey.includes("phone")) return <Phone className="h-4 w-4" />;
-    if (lowerKey.includes("name")) return <User className="h-4 w-4" />;
-    if (lowerKey.includes("date")) return <Calendar className="h-4 w-4" />;
-    if (lowerKey.includes("time") || lowerKey.includes("at")) return <Clock className="h-4 w-4" />;
-    if (lowerKey.includes("id") || lowerKey.includes("number")) return <Hash className="h-4 w-4" />;
-    if (lowerKey.includes("amount") || lowerKey.includes("price")) return <DollarSign className="h-4 w-4" />;
-    return null;
-  };
-
-  const formatValue = (key: string, value: any): React.ReactNode => {
-    if (fieldConfig[key]?.format) return fieldConfig[key].format!(value);
-    if (value === null || value === undefined)
-      return <span className="text-muted-foreground italic">Not set</span>;
-    if (typeof value === "boolean")
-      return value ? <Badge variant="default">Yes</Badge> : <Badge variant="secondary">No</Badge>;
-    if (key.toLowerCase().includes("date") || key.toLowerCase().includes("at")) {
-      try {
-        const date = new Date(value);
-        if (!isNaN(date.getTime())) {
-          return date.toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" });
-        }
-      } catch {}
-    }
-    if (key.toLowerCase().includes("status") || key.toLowerCase().includes("state")) {
-      const statusColors: Record<string, string> = {
-        confirmed: "default",
-        completed: "default",
-        active: "default",
-        success: "default",
-        paid: "default",
-        pending: "secondary",
-        processing: "secondary",
-        cancelled: "destructive",
-        failed: "destructive",
-        rejected: "destructive",
-      };
-      const variant = statusColors[String(value).toLowerCase()] || "outline";
-      return <Badge variant={variant as any}>{String(value)}</Badge>;
-    }
-    if (Array.isArray(value)) {
-      return (
-        <div className="flex flex-wrap gap-1">
-          {value.map((item, idx) => (
-            <Badge key={idx} variant="outline">
-              {String(item)}
-            </Badge>
-          ))}
-        </div>
-      );
-    }
-    if (typeof value === "object")
-      return <code className="text-xs bg-muted p-1 rounded">{JSON.stringify(value)}</code>;
-    return String(value);
-  };
-
-  const fields = Object.keys(data).filter((key) => !fieldConfig[key]?.hidden);
-  const primaryId =
-    fields.find((key) => key.toLowerCase().includes("id") || key.toLowerCase().includes("number")) ||
-    fields[0];
-
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh]">
-        <DialogHeader>
-          <DialogTitle className="text-2xl flex items-center gap-2">
-            {title}
-            {primaryId && <Badge variant="outline" className="font-mono">{data[primaryId]}</Badge>}
-          </DialogTitle>
-          {subtitle && <DialogDescription>{subtitle}</DialogDescription>}
-        </DialogHeader>
-        <Separator />
-        <ScrollArea className="max-h-[60vh] pr-4">
-          <div className="space-y-6">
-            {fields.map((key) => {
-              const config = fieldConfig[key] || {};
-              const label = config.label || formatFieldName(key);
-              const icon = getFieldIcon(key);
-              const value = formatValue(key, data[key]);
-              return (
-                <div key={key} className="space-y-2">
-                  <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-                    {icon}
-                    <span>{label}</span>
-                  </div>
-                  <div className="text-base pl-6">{value}</div>
-                </div>
-              );
-            })}
-          </div>
-        </ScrollArea>
-      </DialogContent>
-    </Dialog>
-  );
-}
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { FormDialog } from '@/components/forms/form-dialog';
+import { FormFieldConfig } from '@/components/forms/auto-form-generator';
+import { toast } from 'sonner';
+import { createRecord, updateRecord, deleteRecord } from '@/app/actions/table-data';
+import { RowViewerDialog, RowViewerFieldConfig } from './row-viewer-dialog';
+import { MobileCardView } from './mobile-card-view';
+import { TableToolbar } from './table-toolbar';
+import { useTableState } from './hooks/use-table-state';
 
 interface DynamicServerTableProps<T> {
   initialData: TableResponse<T>;
@@ -212,11 +58,11 @@ interface DynamicServerTableProps<T> {
   filters?: {
     field: string;
     label: string;
-    type: "select" | "multiselect";
+    type: 'select' | 'multiselect';
     options?: { label: string; value: string }[];
   }[];
   defaultSortBy?: string;
-  defaultSortOrder?: "asc" | "desc";
+  defaultSortOrder?: 'asc' | 'desc';
   pageSize?: number;
   pageSizeOptions?: number[];
   onRowClick?: (row: T) => void;
@@ -234,19 +80,26 @@ interface DynamicServerTableProps<T> {
     label: string;
     icon?: React.ReactNode;
     onClick: (selectedRows: T[]) => void;
-    variant?:
-      | "default"
-      | "destructive"
-      | "outline"
-      | "secondary"
-      | "ghost"
-      | "link";
+    variant?: 'default' | 'destructive' | 'outline' | 'secondary' | 'ghost' | 'link';
   }[];
   rowIdField?: string;
   viewerTitle?: string;
   viewerSubtitle?: string;
   viewerFieldConfig?: Record<string, RowViewerFieldConfig>;
   tableKey?: string;
+  apiEndpoint?: string;
+  formFields?: FormFieldConfig[];
+  customAddForm?: React.ReactNode;
+  customEditForm?: (data: T) => React.ReactNode;
+  onCreateRecord?: (data: Partial<T>) => Promise<void>;
+  onUpdateRecord?: (id: string, data: Partial<T>) => Promise<void>;
+  onDeleteRecord?: (id: string) => Promise<void>;
+  showAddButton?: boolean;
+  addButtonLabel?: string;
+  showEditButton?: boolean;
+  showDeleteButton?: boolean;
+  customRowViewer?: (data: T) => React.ReactNode;
+  renderRowViewer?: (data: T, onClose: () => void) => React.ReactNode;
 }
 
 export function DynamicServerTable<T extends Record<string, any>>({
@@ -254,87 +107,201 @@ export function DynamicServerTable<T extends Record<string, any>>({
   columns,
   fetchData,
   searchable = true,
-  searchPlaceholder = "Search...",
+  searchPlaceholder = 'Search...',
   searchFields = [],
   filters = [],
   defaultSortBy,
-  defaultSortOrder = "asc",
+  defaultSortOrder = 'asc',
   pageSize = 10,
   pageSizeOptions = [10, 25, 50, 100],
   onRowClick,
   exportable = false,
-  exportFileName = "data",
+  exportFileName = 'data',
   exportConfig = { csv: true, excel: true, pdf: true, print: true },
   selectable = false,
   onSelectionChange,
   bulkActions = [],
-  rowIdField = "id",
-  viewerTitle = "Details",
+  rowIdField = 'id',
+  viewerTitle = 'Details',
   viewerSubtitle,
   viewerFieldConfig = {},
-  tableKey = "default-table",
+  tableKey = 'default-table',
+  apiEndpoint,
+  formFields = [],
+  customAddForm,
+  customEditForm,
+  onCreateRecord,
+  onUpdateRecord,
+  onDeleteRecord,
+  showAddButton = true,
+  addButtonLabel = 'Add New',
+  showEditButton = true,
+  showDeleteButton = true,
+  customRowViewer,
+  renderRowViewer,
 }: DynamicServerTableProps<T>) {
-  const [data, setData] = useState<T[]>(initialData.data);
-  const [pagination, setPagination] = useState(initialData.pagination);
-  const [searchInput, setSearchInput] = useState("");
-  const [debouncedSearch, setDebouncedSearch] = useState("");
-  const [activeFilters, setActiveFilters] = useState<TableFilter[]>([]);
-  const [sorting, setSorting] = useState<SortingState>(
-    defaultSortBy ? [{ id: defaultSortBy, desc: defaultSortOrder === "desc" }] : []
-  );
-  const [currentPage, setCurrentPage] = useState(1);
-  const [currentPageSize, setCurrentPageSize] = useState(pageSize);
-  const [isPending, startTransition] = useTransition();
-  const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set());
-  const [isMobile, setIsMobile] = useState(false);
+  // Use custom hook for state management
+  const {
+    data,
+    setData,
+    pagination,
+    setPagination,
+    currentPage,
+    setCurrentPage,
+    currentPageSize,
+    setCurrentPageSize,
+    searchInput,
+    setSearchInput,
+    debouncedSearch,
+    activeFilters,
+    handleFilterChange,
+    handleMultiSelectChange,
+    getSelectedValues,
+    removeFilter,
+    clearAllFilters,
+    sorting,
+    setSorting,
+    selectedRows,
+    setSelectedRows,
+    columnVisibility,
+    setColumnVisibility,
+    isPending,
+    isMobile,
+    performFetch,
+  } = useTableState({
+    initialData,
+    fetchData,
+    tableKey,
+    defaultSortBy,
+    defaultSortOrder,
+    pageSize,
+    searchFields,
+  });
 
+  // CRUD State
   const [viewerOpen, setViewerOpen] = useState(false);
   const [viewerData, setViewerData] = useState<T | null>(null);
+  const [isAddFormOpen, setIsAddFormOpen] = useState(false);
+  const [isEditFormOpen, setIsEditFormOpen] = useState(false);
+  const [editingRecord, setEditingRecord] = useState<T | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [recordToDelete, setRecordToDelete] = useState<T | null>(null);
 
-  const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const isFirstRender = useRef(true);
-  const hasSearchChanged = useRef(false);
-  const hasFiltersChanged = useRef(false);
-  const hasSortingChanged = useRef(false);
+  // Default CRUD handlers
+  const defaultCreateHandler = async (data: Partial<T>) => {
+  	if (!apiEndpoint) throw new Error('API endpoint not configured');
+  	const response = await createRecord(apiEndpoint, data);
+  	return response;
+  };
 
-  const storageKey = `table-column-visibility-${tableKey}`;
+	const defaultUpdateHandler = async (id: string, data: Partial<T>) => {
+  if (!apiEndpoint) throw new Error('API endpoint not configured');
+  const response = await updateRecord(apiEndpoint, id, data);
+  return response;
+};
 
-  const getInitialColumnVisibility = (): VisibilityState => {
-    if (typeof window === "undefined") return {};
+const defaultDeleteHandler = async (id: string) => {
+  if (!apiEndpoint) throw new Error('API endpoint not configured');
+  await deleteRecord(apiEndpoint, id);
+};
+
+  const createHandler = onCreateRecord || (apiEndpoint ? defaultCreateHandler : undefined);
+  const updateHandler = onUpdateRecord || (apiEndpoint ? defaultUpdateHandler : undefined);
+  const deleteHandler = onDeleteRecord || (apiEndpoint ? defaultDeleteHandler : undefined);
+
+  // CRUD Handlers
+  const handleCreate = async (formData: Partial<T>) => {
+    setIsSubmitting(true);
     try {
-      const stored = localStorage.getItem(storageKey);
-      return stored ? JSON.parse(stored) : {};
-    } catch {
-      return {};
+      if (createHandler) {
+        await createHandler(formData);
+        toast.success('Record created successfully');
+        setIsAddFormOpen(false);
+        performFetch(undefined, 1);
+      }
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Failed to create record');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
-  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>(getInitialColumnVisibility);
-
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      try {
-        localStorage.setItem(storageKey, JSON.stringify(columnVisibility));
-      } catch (error) {
-        console.error("Failed to save column visibility:", error);
+  const handleUpdate = async (formData: Partial<T>) => {
+    if (!editingRecord) return;
+    setIsSubmitting(true);
+    try {
+      if (updateHandler) {
+        await updateHandler(String(editingRecord[rowIdField]), formData);
+        toast.success('Record updated successfully');
+        setIsEditFormOpen(false);
+        setEditingRecord(null);
+        performFetch(pagination.previousCursor || undefined, currentPage);
       }
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Failed to update record');
+    } finally {
+      setIsSubmitting(false);
     }
-  }, [columnVisibility, storageKey]);
+  };
 
-  useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768);
-    };
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
-  }, []);
+  const handleEditClick = (row: T) => {
+    setEditingRecord(row);
+    setIsEditFormOpen(true);
+  };
+
+  const handleDeleteClick = (row: T) => {
+    setRecordToDelete(row);
+    setDeleteConfirmOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!recordToDelete || !deleteHandler) return;
+    setIsSubmitting(true);
+    try {
+      await deleteHandler(String(recordToDelete[rowIdField]));
+      toast.success('Record deleted successfully');
+      setDeleteConfirmOpen(false);
+      setRecordToDelete(null);
+      performFetch(pagination.previousCursor || undefined, currentPage);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Failed to delete record');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   const handleViewRow = (row: T) => {
     setViewerData(row);
     setViewerOpen(true);
   };
 
+  // Pagination handlers
+  const handleNextPage = () => {
+    if (pagination.hasNextPage && pagination.nextCursor) {
+      performFetch(pagination.nextCursor, currentPage + 1);
+    }
+  };
+
+  const handlePrevPage = () => {
+    if (pagination.hasPreviousPage && pagination.previousCursor) {
+      performFetch(pagination.previousCursor, currentPage - 1);
+    }
+  };
+
+  const handleFirstPage = () => {
+    if (currentPage !== 1) {
+      performFetch(undefined, 1);
+    }
+  };
+
+  const handlePageSizeChange = (newSize: number) => {
+    setCurrentPageSize(newSize);
+    setCurrentPage(1);
+    performFetch(undefined, 1);
+  };
+
+  // Selection handlers
   const toggleRowSelection = (rowId: string) => {
     const newSelection = new Set(selectedRows);
     if (newSelection.has(rowId)) {
@@ -343,7 +310,6 @@ export function DynamicServerTable<T extends Record<string, any>>({
       newSelection.add(rowId);
     }
     setSelectedRows(newSelection);
-
     if (onSelectionChange) {
       const selectedData = data.filter((row) => newSelection.has(String(row[rowIdField])));
       onSelectionChange(selectedData);
@@ -370,395 +336,149 @@ export function DynamicServerTable<T extends Record<string, any>>({
     return data.filter((row) => selectedRows.has(String(row[rowIdField])));
   };
 
-  const getExportData = (selectedOnly: boolean = false): any[] => {
-    const exportSource = selectedOnly ? getSelectedData() : data;
-    const visibleColumns = table.getVisibleLeafColumns();
-
-    return exportSource.map((row) => {
-      const exportRow: any = {};
-      visibleColumns.forEach((col) => {
-        if (col.id !== 'select' && col.id !== 'actions' && col.columnDef.accessorKey) {
-          const key = col.columnDef.accessorKey as string;
-          const header = (col.columnDef.header as string) || key;
-          exportRow[header] = row[key];
-        }
-      });
-      return exportRow;
-    });
-  };
-
+  // Export functions
   const exportToCSV = (selectedOnly: boolean = false) => {
-    const exportData = getExportData(selectedOnly);
-    if (exportData.length === 0) {
-      alert(selectedOnly ? "No rows selected" : "No data to export");
-      return;
-    }
+    const dataToExport = selectedOnly ? getSelectedData() : data;
+    const visibleColumns = table
+      .getAllColumns()
+      .filter((col) => col.getIsVisible() && col.id !== 'select' && col.id !== 'actions');
 
-    const headers = Object.keys(exportData[0]);
+    const headers = visibleColumns.map((col) => String(col.columnDef.header));
+    const rows = dataToExport.map((row) =>
+      visibleColumns.map((col) => {
+        const value = row[col.id as keyof T];
+        return value !== null && value !== undefined ? String(value) : '';
+      })
+    );
 
-    const csv = [
-      headers.join(","),
-      ...exportData.map((row) =>
-        headers
-          .map((header) => {
-            const value = row[header];
-            return typeof value === "string" && value.includes(",")
-              ? `"${value}"`
-              : value;
-          })
-          .join(",")
-      ),
-    ].join("\n");
-
-    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = `${exportFileName}-${selectedOnly ? "selected-" : ""}${new Date()
-      .toISOString()
-      .split("T")[0]}.csv`;
+    const csv = [headers, ...rows].map((row) => row.map((cell) => `"${cell}"`).join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `${exportFileName}_${new Date().toISOString().split('T')[0]}.csv`;
     link.click();
-    URL.revokeObjectURL(url);
   };
 
   const exportToExcel = (selectedOnly: boolean = false) => {
-    const exportData = getExportData(selectedOnly);
-    if (exportData.length === 0) {
-      alert(selectedOnly ? "No rows selected" : "No data to export");
-      return;
-    }
+    const dataToExport = selectedOnly ? getSelectedData() : data;
+    const visibleColumns = table
+      .getAllColumns()
+      .filter((col) => col.getIsVisible() && col.id !== 'select' && col.id !== 'actions');
 
-    const worksheet = XLSX.utils.json_to_sheet(exportData);
-
-    const colWidths = Object.keys(exportData[0]).map((key) => ({
-      wch: Math.max(
-        key.length,
-        ...exportData.map((row) => String(row[key] || "").length)
-      ) + 2,
-    }));
-    worksheet["!cols"] = colWidths;
-
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Data");
-    XLSX.writeFile(
-      workbook,
-      `${exportFileName}-${selectedOnly ? "selected-" : ""}${new Date()
-        .toISOString()
-        .split("T")[0]}.xlsx`
+    const headers = visibleColumns.map((col) => String(col.columnDef.header));
+    const rows = dataToExport.map((row) =>
+      visibleColumns.map((col) => {
+        const value = row[col.id as keyof T];
+        return value !== null && value !== undefined ? value : '';
+      })
     );
+
+    const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Data');
+    XLSX.writeFile(wb, `${exportFileName}_${new Date().toISOString().split('T')[0]}.xlsx`);
   };
 
   const exportToPDF = (selectedOnly: boolean = false) => {
-    const exportData = getExportData(selectedOnly);
-    if (exportData.length === 0) {
-      alert(selectedOnly ? "No rows selected" : "No data to export");
-      return;
-    }
+    const dataToExport = selectedOnly ? getSelectedData() : data;
+    const visibleColumns = table
+      .getAllColumns()
+      .filter((col) => col.getIsVisible() && col.id !== 'select' && col.id !== 'actions');
 
-    const doc = new jsPDF("landscape");
-
-    doc.setFontSize(18);
-    doc.text(
-      `${exportFileName.charAt(0).toUpperCase() + exportFileName.slice(1)} Report`,
-      14,
-      20
+    const doc = new jsPDF();
+    const headers = visibleColumns.map((col) => String(col.columnDef.header));
+    const rows = dataToExport.map((row) =>
+      visibleColumns.map((col) => {
+        const value = row[col.id as keyof T];
+        return value !== null && value !== undefined ? String(value) : '';
+      })
     );
-
-    doc.setFontSize(10);
-    doc.text(`Generated: ${new Date().toLocaleString()}`, 14, 28);
-    doc.text(
-      `Total Records: ${exportData.length}${selectedOnly ? " (selected)" : ""}`,
-      14,
-      34
-    );
-
-    const headers = Object.keys(exportData[0]);
-    const body = exportData.map((row) => headers.map((h) => row[h]));
 
     autoTable(doc, {
-      startY: 40,
       head: [headers],
-      body: body,
+      body: rows,
       styles: { fontSize: 8 },
-      headStyles: { fillColor: [59, 130, 246] },
-      alternateRowStyles: { fillColor: [245, 247, 250] },
+      headStyles: { fillColor: [66, 66, 66] },
     });
 
-    const pageCount = (doc as any).internal.getNumberOfPages();
-    for (let i = 1; i <= pageCount; i++) {
-      doc.setPage(i);
-      doc.setFontSize(8);
-      doc.text(
-        `Page ${i} of ${pageCount}`,
-        doc.internal.pageSize.getWidth() / 2,
-        doc.internal.pageSize.getHeight() - 10,
-        { align: "center" }
-      );
-    }
-
-    doc.save(
-      `${exportFileName}-${selectedOnly ? "selected-" : ""}${new Date()
-        .toISOString()
-        .split("T")[0]}.pdf`
-    );
+    doc.save(`${exportFileName}_${new Date().toISOString().split('T')[0]}.pdf`);
   };
 
   const handlePrint = (selectedOnly: boolean = false) => {
-    const exportData = getExportData(selectedOnly);
-    if (exportData.length === 0) {
-      alert(selectedOnly ? "No rows selected" : "No data to print");
-      return;
-    }
+    const dataToExport = selectedOnly ? getSelectedData() : data;
+    const visibleColumns = table
+      .getAllColumns()
+      .filter((col) => col.getIsVisible() && col.id !== 'select' && col.id !== 'actions');
 
-    const headers = Object.keys(exportData[0]);
-
-    const printWindow = window.open("", "_blank");
+    const printWindow = window.open('', '_blank');
     if (!printWindow) return;
 
-    const printContent = `
+    const headers = visibleColumns.map((col) => String(col.columnDef.header));
+    const rows = dataToExport.map((row) =>
+      visibleColumns.map((col) => {
+        const value = row[col.id as keyof T];
+        return value !== null && value !== undefined ? String(value) : '';
+      })
+    );
+
+    const html = `
       <!DOCTYPE html>
       <html>
         <head>
-          <title>${exportFileName} - Print</title>
+          <title>Print ${exportFileName}</title>
           <style>
             body { font-family: Arial, sans-serif; padding: 20px; }
-            h1 { color: #1e40af; margin-bottom: 10px; }
-            .meta { color: #666; margin-bottom: 20px; font-size: 14px; }
             table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-            th { background-color: #3b82f6; color: white; padding: 12px; text-align: left; border: 1px solid #ddd; font-size: 12px; }
-            td { padding: 10px; border: 1px solid #ddd; font-size: 11px; }
-            tr:nth-child(even) { background-color: #f9fafb; }
-            @media print { button { display: none; } }
+            th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+            th { background-color: #f2f2f2; font-weight: bold; }
+            tr:nth-child(even) { background-color: #f9f9f9; }
+            h1 { margin-bottom: 10px; }
           </style>
         </head>
         <body>
-          <h1>${exportFileName.charAt(0).toUpperCase() + exportFileName.slice(1)} Report</h1>
-          <div class="meta">
-            <div>Generated: ${new Date().toLocaleString()}</div>
-            <div>Total Records: ${
-              exportData.length + (selectedOnly ? " (selected)" : "")
-            }</div>
-          </div>
+          <h1>${exportFileName}</h1>
+          <p>Generated on ${new Date().toLocaleDateString()}</p>
           <table>
             <thead>
-              <tr>${headers.map((h) => `<th>${h}</th>`).join("")}</tr>
+              <tr>${headers.map((h) => `<th>${h}</th>`).join('')}</tr>
             </thead>
             <tbody>
-              ${exportData
-                .map(
-                  (row) =>
-                    `<tr>${headers
-                      .map((h) => `<td>${row[h] !== null && row[h] !== undefined ? row[h] : ""}</td>`)
-                      .join("")}</tr>`
-                )
-                .join("")}
+              ${rows.map((row) => `<tr>${row.map((cell) => `<td>${cell}</td>`).join('')}</tr>`).join('')}
             </tbody>
           </table>
-          <br>
-          <button
-            onclick="window.print()"
-            style="
-              padding: 10px 20px;
-              background: #3b82f6;
-              color: white;
-              border: none;
-              border-radius: 5px;
-              cursor: pointer;
-              font-size: 14px;
-            "
-          >
-            Print
-          </button>
         </body>
       </html>
     `;
 
-    printWindow.document.write(printContent);
+    printWindow.document.write(html);
     printWindow.document.close();
+    printWindow.focus();
+    setTimeout(() => {
+      printWindow.print();
+      printWindow.close();
+    }, 250);
   };
 
-  const performFetch = (cursor?: string, pageNum?: number) => {
-    startTransition(async () => {
-      try {
-        const params: TableParams = {
-          cursor: cursor || undefined,
-          limit: currentPageSize,
-          sortBy: sorting[0]?.id || defaultSortBy,
-          sortOrder: sorting[0]?.desc ? "desc" : defaultSortOrder,
-          searchQuery: debouncedSearch || undefined,
-          searchFields: searchFields.length > 0 ? searchFields : undefined,
-          filters: activeFilters.length > 0 ? activeFilters : undefined,
-        };
-
-        const result = await fetchData(params);
-        setData(result.data);
-        setPagination(result.pagination);
-        if (pageNum !== undefined) setCurrentPage(pageNum);
-      } catch (error) {
-        console.error("Error fetching data:", error);
-      }
-    });
-  };
-
-  useEffect(() => {
-    if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
-
-    searchTimeoutRef.current = setTimeout(() => {
-      if (searchInput !== debouncedSearch) {
-        hasSearchChanged.current = true;
-        setDebouncedSearch(searchInput);
-      }
-    }, 300);
-
-    return () => {
-      if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
-    };
-  }, [searchInput]);
-
-  useEffect(() => {
-    if (isFirstRender.current) {
-      isFirstRender.current = false;
-      return;
-    }
-
-    if (hasSearchChanged.current) {
-      hasSearchChanged.current = false;
-      clearSelection();
-      performFetch(undefined, 1);
-    }
-  }, [debouncedSearch]);
-
-  useEffect(() => {
-    if (hasFiltersChanged.current) {
-      hasFiltersChanged.current = false;
-      clearSelection();
-      performFetch(undefined, 1);
-    }
-  }, [activeFilters]);
-
-  useEffect(() => {
-    if (hasSortingChanged.current) {
-      hasSortingChanged.current = false;
-      clearSelection();
-      performFetch(undefined, 1);
-    }
-  }, [sorting]);
-
-  const handleNextPage = () => {
-    if (!pagination.hasNextPage || !pagination.nextCursor) return;
-    clearSelection();
-    performFetch(pagination.nextCursor, currentPage + 1);
-  };
-
-  const handlePrevPage = () => {
-    if (!pagination.hasPreviousPage || !pagination.previousCursor) return;
-    clearSelection();
-    performFetch(pagination.previousCursor, currentPage - 1);
-  };
-
-  const handleFirstPage = () => {
-    if (currentPage === 1) return;
-    clearSelection();
-    performFetch(undefined, 1);
-  };
-
-  const handlePageSizeChange = (newSize: number) => {
-    setCurrentPageSize(newSize);
-    setCurrentPage(1);
-    clearSelection();
-
-    startTransition(async () => {
-      try {
-        const params: TableParams = {
-          limit: newSize,
-          sortBy: sorting[0]?.id || defaultSortBy,
-          sortOrder: sorting[0]?.desc ? "desc" : defaultSortOrder,
-          searchQuery: debouncedSearch || undefined,
-          searchFields: searchFields.length > 0 ? searchFields : undefined,
-          filters: activeFilters.length > 0 ? activeFilters : undefined,
-        };
-        const result = await fetchData(params);
-        setData(result.data);
-        setPagination(result.pagination);
-        setCurrentPage(1);
-      } catch (error) {
-        console.error("Error fetching data:", error);
-      }
-    });
-  };
-
-  const handleFilterChange = (field: string, value: string) => {
-    const newFilters = activeFilters.filter((f) => f.field !== field);
-    if (value && value !== "all") {
-      newFilters.push({ field, operator: "equals", value });
-    }
-    hasFiltersChanged.current = true;
-    setActiveFilters(newFilters);
-  };
-
-  const handleMultiSelectChange = (field: string, value: string, checked: boolean) => {
-    const currentFieldFilters = activeFilters.filter((f) => f.field === field);
-    const otherFilters = activeFilters.filter((f) => f.field !== field);
-    hasFiltersChanged.current = true;
-    if (checked) {
-      setActiveFilters([...otherFilters, ...currentFieldFilters, { field, operator: "equals", value }]);
-    } else {
-      setActiveFilters([...otherFilters, ...currentFieldFilters.filter((f) => f.value !== value)]);
-    }
-  };
-
-  const getSelectedValues = (field: string): string[] => {
-    return activeFilters.filter((f) => f.field === field).map((f) => f.value);
-  };
-
-  const removeFilter = (field: string, value?: string) => {
-    hasFiltersChanged.current = true;
-    if (value) {
-      setActiveFilters(activeFilters.filter((f) => !(f.field === field && f.value === value)));
-    } else {
-      setActiveFilters(activeFilters.filter((f) => f.field !== field));
-    }
-  };
-
-  const clearAllFilters = () => {
-    hasFiltersChanged.current = true;
-    setActiveFilters([]);
-  };
-
-  const handleSortingChange = (newSorting: SortingState) => {
-    hasSortingChanged.current = true;
-    setSorting(newSorting);
-  };
-
+  // Build table columns
   const tableColumns = selectable
     ? [
         {
-          id: "select",
-          header: () => (
-            <Checkbox
-              checked={selectedRows.size === data.length && data.length > 0}
-              onCheckedChange={() => {
-                if (selectedRows.size === data.length) setSelectedRows(new Set());
-                else setSelectedRows(new Set(data.map((row) => String(row[rowIdField]))));
-              }}
+          id: 'select',
+          header: ({ table }: any) => (
+            <input
+              type="checkbox"
+              checked={table.getIsAllPageRowsSelected()}
+              onChange={() => toggleAllRows()}
               aria-label="Select all"
-              className="translate-y-[2px]"
             />
           ),
           cell: ({ row }: any) => (
-            <Checkbox
+            <input
+              type="checkbox"
               checked={selectedRows.has(String(row.original[rowIdField]))}
-              onCheckedChange={() =>
-                setSelectedRows((prev) => {
-                  const newSet = new Set(prev);
-                  const id = String(row.original[rowIdField]);
-                  newSet.has(id) ? newSet.delete(id) : newSet.add(id);
-                  return newSet;
-                })
-              }
-              aria-label="Select row"
-              className="translate-y-[2px]"
+              onChange={() => toggleRowSelection(String(row.original[rowIdField]))}
               onClick={(e) => e.stopPropagation()}
+              aria-label="Select row"
             />
           ),
           enableSorting: false,
@@ -769,11 +489,11 @@ export function DynamicServerTable<T extends Record<string, any>>({
     : columns;
 
   const finalColumns: ColumnDef<T>[] = tableColumns.map((col) =>
-    col.id === "actions"
+    col.id === 'actions'
       ? {
           ...col,
           cell: (ctx) => (
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1">
               <Button
                 variant="ghost"
                 size="icon"
@@ -785,6 +505,35 @@ export function DynamicServerTable<T extends Record<string, any>>({
               >
                 <Eye className="h-4 w-4" />
               </Button>
+
+              {updateHandler && showEditButton && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  title="Edit"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleEditClick(ctx.row.original);
+                  }}
+                >
+                  <Pencil className="h-4 w-4" />
+                </Button>
+              )}
+
+              {deleteHandler && showDeleteButton && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  title="Delete"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleDeleteClick(ctx.row.original);
+                  }}
+                >
+                  <Trash2 className="h-4 w-4 text-destructive" />
+                </Button>
+              )}
+
               {col.cell ? col.cell(ctx) : null}
             </div>
           ),
@@ -797,462 +546,70 @@ export function DynamicServerTable<T extends Record<string, any>>({
     columns: finalColumns,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
-    manualSorting: true,
-    manualPagination: true,
-    onSortingChange: handleSortingChange,
+    onSortingChange: setSorting,
     onColumnVisibilityChange: setColumnVisibility,
     state: {
       sorting,
       columnVisibility,
     },
+    manualSorting: true,
+    manualPagination: true,
   });
 
   const startRecord = (currentPage - 1) * currentPageSize + 1;
-  const endRecord = Math.min(
-    (currentPage - 1) * currentPageSize + data.length,
-    pagination.totalCount || 0
-  );
-
-  const MobileCardView = () => (
-    <div className="space-y-4">
-      {isPending ? (
-        <div className="flex flex-col items-center justify-center py-12">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          <span className="text-sm text-muted-foreground mt-2">Loading...</span>
-        </div>
-      ) : data.length > 0 ? (
-        data.map((row, idx) => (
-          <Card key={idx} className="overflow-hidden">
-            <CardContent className="p-4">
-              {selectable && (
-                <div className="flex items-center gap-2 mb-3 pb-3 border-b">
-                  <Checkbox
-                    checked={selectedRows.has(String(row[rowIdField]))}
-                    onCheckedChange={() => toggleRowSelection(String(row[rowIdField]))}
-                  />
-                  <span className="text-sm text-muted-foreground">Select</span>
-                </div>
-              )}
-
-              <div className="space-y-3">
-                {table.getVisibleLeafColumns().map((col) => {
-                  if (col.id === 'actions' || col.id === 'select') return null;
-                  const value = col.columnDef.accessorKey ? row[col.columnDef.accessorKey as string] : null;
-                  return (
-                    <div key={col.id} className="flex justify-between items-start gap-4">
-                      <span className="text-sm font-medium text-muted-foreground min-w-[100px]">
-                        {col.columnDef.header as string}:
-                      </span>
-                      <span className="text-sm text-right flex-1">
-                        {col.columnDef.cell
-                          ? flexRender(col.columnDef.cell, {
-                              getValue: () => value,
-                              row: { original: row } as any,
-                            } as any)
-                          : value}
-                      </span>
-                    </div>
-                  );
-                })}
-              </div>
-
-              <div className="flex items-center gap-2 mt-4 pt-3 border-t">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="flex-1"
-                  onClick={() => handleViewRow(row)}
-                >
-                  <Eye className="h-4 w-4 mr-2" />
-                  View
-                </Button>
-                {columns.find((col) => col.id === 'actions') && (
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="outline" size="sm">
-                        <MoreVertical className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                      <DropdownMenuItem onClick={() => handleViewRow(row)}>
-                        <Eye className="mr-2 h-4 w-4" />
-                        View Details
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        ))
-      ) : (
-        <div className="flex flex-col items-center justify-center py-12">
-          <Search className="h-12 w-12 text-muted-foreground" />
-          <span className="text-sm font-medium mt-2">No results found</span>
-          <span className="text-xs text-muted-foreground">Try adjusting your search or filters</span>
-        </div>
-      )}
-    </div>
-  );
+  const endRecord = Math.min(currentPage * currentPageSize, pagination.totalCount || 0);
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-col gap-4">
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-          {searchable && (
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder={searchPlaceholder}
-                value={searchInput}
-                onChange={(e) => setSearchInput(e.target.value)}
-                className="pl-10 pr-10 h-10"
-              />
-              {searchInput && (
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="absolute right-1 top-1/2 transform -translate-y-1/2 h-7 w-7"
-                  onClick={() => setSearchInput("")}
-                >
-                  <X className="h-4 w-4" />
-                </Button>
-              )}
-            </div>
-          )}
+      {/* Toolbar */}
+      <TableToolbar
+        searchable={searchable}
+        searchPlaceholder={searchPlaceholder}
+        searchInput={searchInput}
+        setSearchInput={setSearchInput}
+        filters={filters}
+        activeFilters={activeFilters}
+        handleFilterChange={handleFilterChange}
+        handleMultiSelectChange={handleMultiSelectChange}
+        getSelectedValues={getSelectedValues}
+        removeFilter={removeFilter}
+        clearAllFilters={clearAllFilters}
+        table={table}
+        exportable={exportable}
+        exportConfig={exportConfig}
+        exportToCSV={exportToCSV}
+        exportToExcel={exportToExcel}
+        exportToPDF={exportToPDF}
+        handlePrint={handlePrint}
+        selectedRows={selectedRows}
+        clearSelection={clearSelection}
+        bulkActions={bulkActions}
+        getSelectedData={getSelectedData}
+        showAddButton={showAddButton}
+        createHandler={createHandler}
+        addButtonLabel={addButtonLabel}
+        setIsAddFormOpen={setIsAddFormOpen}
+      />
 
-          <div className="flex gap-2">
-            {(
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="default" className="h-10 gap-2">
-                    <Settings2 className="h-4 w-4" />
-                    <span>Columns</span>
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="start" className="w-[200px]">
-                  <DropdownMenuLabel>Toggle Columns</DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  <ScrollArea className="h-[300px]">
-                    <div className="space-y-1 p-1">
-                      {table
-                        .getAllColumns()
-                        .filter(
-                          (column) =>
-                            typeof column.accessorFn !== "undefined" && column.getCanHide()
-                        )
-                        .map((column) => {
-                          return (
-                            <div
-                              key={column.id}
-                              className="flex items-center gap-2 p-2 hover:bg-muted rounded-sm cursor-pointer"
-                              onClick={() => column.toggleVisibility(!column.getIsVisible())}
-                            >
-                              <Checkbox
-                                checked={column.getIsVisible()}
-                                onCheckedChange={(value) =>
-                                  column.toggleVisibility(!!value)
-                                }
-                              />
-                              <span className="text-sm capitalize">
-                                {column.id.replace(/([A-Z])/g, " $1").trim()}
-                              </span>
-                            </div>
-                          );
-                        })}
-                    </div>
-                  </ScrollArea>
-                  <DropdownMenuSeparator />
-                  <div className="p-1 space-y-1">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="w-full justify-start"
-                      onClick={() => table.toggleAllColumnsVisible(true)}
-                    >
-                      Show All
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="w-full justify-start"
-                      onClick={() => table.toggleAllColumnsVisible(false)}
-                    >
-                      Hide All
-                    </Button>
-                  </div>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            )}
-
-            {exportable && (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="default" className="h-10 gap-2">
-                    <Download className="h-4 w-4" />
-                    <span>Export</span>
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-52">
-                  <DropdownMenuLabel>Export Options</DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  {exportConfig.csv && (
-                    <DropdownMenuItem onClick={() => exportToCSV(false)} className="cursor-pointer">
-                      <FileText className="mr-2 h-4 w-4 text-green-600" />
-                      <div>
-                        <div className="font-medium">CSV</div>
-                        <div className="text-xs text-muted-foreground">Comma-separated values</div>
-                      </div>
-                    </DropdownMenuItem>
-                  )}
-                  {exportConfig.excel && (
-                    <DropdownMenuItem onClick={() => exportToExcel(false)} className="cursor-pointer">
-                      <FileSpreadsheet className="mr-2 h-4 w-4 text-green-600" />
-                      <div>
-                        <div className="font-medium">Excel</div>
-                        <div className="text-xs text-muted-foreground">XLSX format</div>
-                      </div>
-                    </DropdownMenuItem>
-                  )}
-                  {exportConfig.pdf && (
-                    <DropdownMenuItem onClick={() => exportToPDF(false)} className="cursor-pointer">
-                      <FileText className="mr-2 h-4 w-4 text-red-600" />
-                      <div>
-                        <div className="font-medium">PDF</div>
-                        <div className="text-xs text-muted-foreground">Portable document</div>
-                      </div>
-                    </DropdownMenuItem>
-                  )}
-                  {exportConfig.print && (
-                    <>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem onClick={() => handlePrint(false)} className="cursor-pointer">
-                        <Printer className="mr-2 h-4 w-4" />
-                        <div className="font-medium">Print</div>
-                      </DropdownMenuItem>
-                    </>
-                  )}
-                </DropdownMenuContent>
-              </DropdownMenu>
-            )}
-          </div>
-        </div>
-
-        {filters.length > 0 && (
-          <div className="flex flex-wrap items-center gap-2">
-            {filters.map((filter) => {
-              const selectedValues = getSelectedValues(filter.field);
-              const hasSelection = selectedValues.length > 0;
-
-              if (filter.type === "multiselect") {
-                return (
-                  <Popover key={filter.field}>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className={cn(
-                          "h-9 gap-2",
-                          hasSelection && "border-primary bg-primary/5"
-                        )}
-                      >
-                        <Filter className="h-3 w-3" />
-                        <span>{filter.label}</span>
-                        {hasSelection && (
-                          <Badge variant="secondary" className="h-5 px-1.5 rounded-full ml-1">
-                            {selectedValues.length}
-                          </Badge>
-                        )}
-                        <ChevronDown className="h-3 w-3 opacity-50 ml-1" />
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-[200px] p-2" align="start">
-                      <div className="space-y-1">
-                        {filter.options?.map((option) => {
-                          const isChecked = selectedValues.includes(option.value);
-                          return (
-                            <div
-                              key={option.value}
-                              className="flex items-center gap-2 p-2 hover:bg-muted rounded-sm cursor-pointer"
-                              onClick={() =>
-                                handleMultiSelectChange(
-                                  filter.field,
-                                  option.value,
-                                  !isChecked
-                                )
-                              }
-                            >
-                              <Checkbox
-                                checked={isChecked}
-                                onCheckedChange={(checked) =>
-                                  handleMultiSelectChange(
-                                    filter.field,
-                                    option.value,
-                                    checked as boolean
-                                  )
-                                }
-                              />
-                              <span className="text-sm">{option.label}</span>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </PopoverContent>
-                  </Popover>
-                );
-              } else {
-                return (
-                  <Select
-                    key={filter.field}
-                    value={activeFilters.find((f) => f.field === filter.field)?.value || "all"}
-                    onValueChange={(value) => handleFilterChange(filter.field, value)}
-                  >
-                    <SelectTrigger className="h-9 w-[140px] sm:w-[160px]">
-                      <SelectValue placeholder={filter.label} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All {filter.label}</SelectItem>
-                      {filter.options?.map((option) => (
-                        <SelectItem key={option.value} value={option.value}>
-                          {option.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                );
-              }
-            })}
-          </div>
-        )}
-
-        {activeFilters.length > 0 && (
-          <div className="flex items-start gap-2 flex-wrap p-3 bg-muted/30 rounded-lg border border-dashed">
-            <span className="text-sm font-medium text-muted-foreground whitespace-nowrap mt-0.5">
-              Active:
-            </span>
-            <div className="flex flex-wrap gap-2 flex-1">
-              {Object.entries(
-                activeFilters.reduce((acc, filter) => {
-                  if (!acc[filter.field]) acc[filter.field] = [];
-                  acc[filter.field].push(filter.value);
-                  return acc;
-                }, {} as Record<string, string[]>)
-              ).map(([field, values]) => {
-                const filterConfig = filters.find((f) => f.field === field);
-                if (values.length === 1) {
-                  const option = filterConfig?.options?.find((o) => o.value === values[0]);
-                  return (
-                    <Badge
-                      key={`${field}-${values[0]}`}
-                      variant="secondary"
-                      className="gap-1 pl-2 pr-1"
-                    >
-                      <span className="font-medium">{filterConfig?.label}:</span>
-                      <span>{option?.label || values[0]}</span>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-4 w-4 p-0 hover:bg-transparent ml-1"
-                        onClick={() => removeFilter(field, values[0])}
-                      >
-                        <X className="h-3 w-3" />
-                      </Button>
-                    </Badge>
-                  );
-                } else {
-                  return (
-                    <Badge key={field} variant="secondary" className="gap-1 pl-2 pr-1">
-                      <span className="font-medium">{filterConfig?.label}:</span>
-                      <span>{values.length} selected</span>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-4 w-4 p-0 hover:bg-transparent ml-1"
-                        onClick={() => removeFilter(field)}
-                      >
-                        <X className="h-3 w-3" />
-                      </Button>
-                    </Badge>
-                  );
-                }
-              })}
-            </div>
-            <Separator orientation="vertical" className="h-5" />
-            <Button variant="ghost" size="sm" onClick={clearAllFilters} className="h-6 text-xs whitespace-nowrap">
-              Clear all
-            </Button>
-          </div>
-        )}
-      </div>
-
-      {selectable && selectedRows.size > 0 && (
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 p-4 bg-primary/10 border border-primary rounded-lg">
-          <div className="flex items-center gap-3">
-            <Checkbox checked={true} className="pointer-events-none" />
-            <span className="font-medium">
-              {selectedRows.size} {selectedRows.size === 1 ? "row" : "rows"} selected
-            </span>
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
-            {exportable && (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm" className="gap-2 flex-1 sm:flex-initial">
-                    <Download className="h-4 w-4" />
-                    Export Selected
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuLabel>Export {selectedRows.size} rows</DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  {exportConfig.csv && (
-                    <DropdownMenuItem onClick={() => exportToCSV(true)} className="cursor-pointer">
-                      <FileText className="mr-2 h-4 w-4 text-green-600" />
-                      CSV
-                    </DropdownMenuItem>
-                  )}
-                  {exportConfig.excel && (
-                    <DropdownMenuItem onClick={() => exportToExcel(true)} className="cursor-pointer">
-                      <FileSpreadsheet className="mr-2 h-4 w-4 text-green-600" />
-                      Excel
-                    </DropdownMenuItem>
-                  )}
-                  {exportConfig.pdf && (
-                    <DropdownMenuItem onClick={() => exportToPDF(true)} className="cursor-pointer">
-                      <FileText className="mr-2 h-4 w-4 text-red-600" />
-                      PDF
-                    </DropdownMenuItem>
-                  )}
-                </DropdownMenuContent>
-              </DropdownMenu>
-            )}
-
-            {bulkActions.map((action, index) => (
-              <Button
-                key={index}
-                variant={action.variant || "outline"}
-                size="sm"
-                onClick={() => {
-                  action.onClick(getSelectedData());
-                  clearSelection();
-                }}
-                className="gap-2 flex-1 sm:flex-initial"
-              >
-                {action.icon}
-                {action.label}
-              </Button>
-            ))}
-
-            <Button variant="ghost" size="sm" onClick={clearSelection}>
-              Clear
-            </Button>
-          </div>
-        </div>
-      )}
-
+      {/* Table Content */}
       {isMobile ? (
-        <MobileCardView />
+        <MobileCardView
+          data={data}
+          isPending={isPending}
+          table={table}
+          selectedRows={selectedRows}
+          rowIdField={rowIdField}
+          selectable={selectable}
+          updateHandler={updateHandler}
+          deleteHandler={deleteHandler}
+          showEditButton={showEditButton}
+          showDeleteButton={showDeleteButton}
+          toggleRowSelection={toggleRowSelection}
+          handleViewRow={handleViewRow}
+          handleEditClick={handleEditClick}
+          handleDeleteClick={handleDeleteClick}
+		  columns={columns}
+        />
       ) : (
         <div className="rounded-md border overflow-x-auto">
           <Table>
@@ -1265,8 +622,8 @@ export function DynamicServerTable<T extends Record<string, any>>({
                         <div
                           className={
                             header.column.getCanSort()
-                              ? "flex items-center gap-2 cursor-pointer select-none hover:text-foreground"
-                              : ""
+                              ? 'flex items-center gap-2 cursor-pointer select-none hover:text-foreground'
+                              : ''
                           }
                           onClick={header.column.getToggleSortingHandler()}
                         >
@@ -1293,9 +650,9 @@ export function DynamicServerTable<T extends Record<string, any>>({
                 table.getRowModel().rows.map((row) => (
                   <TableRow
                     key={row.id}
-                    data-state={row.getIsSelected() && "selected"}
+                    data-state={row.getIsSelected() && 'selected'}
                     onClick={() => onRowClick?.(row.original)}
-                    className={onRowClick ? "cursor-pointer" : ""}
+                    className={onRowClick ? 'cursor-pointer' : ''}
                   >
                     {row.getVisibleCells().map((cell) => (
                       <TableCell key={cell.id}>
@@ -1322,27 +679,23 @@ export function DynamicServerTable<T extends Record<string, any>>({
         </div>
       )}
 
+      {/* Pagination */}
       <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-2">
         <div className="flex flex-col sm:flex-row items-center gap-4 order-2 sm:order-1 w-full sm:w-auto">
           <div className="text-sm text-muted-foreground text-center sm:text-left">
             {pagination.totalCount !== undefined && pagination.totalCount > 0 ? (
               <span>
-                Showing <span className="font-medium text-foreground">{startRecord}</span> to{" "}
-                <span className="font-medium text-foreground">{endRecord}</span> of{" "}
-                <span className="font-medium text-foreground">{pagination.totalCount}</span>{" "}
-                results
+                Showing <span className="font-medium text-foreground">{startRecord}</span> to{' '}
+                <span className="font-medium text-foreground">{endRecord}</span> of{' '}
+                <span className="font-medium text-foreground">{pagination.totalCount}</span> results
               </span>
             ) : (
               <span>No results</span>
             )}
           </div>
-
           <div className="flex items-center gap-2">
             <span className="text-sm text-muted-foreground whitespace-nowrap">Rows:</span>
-            <Select
-              value={currentPageSize.toString()}
-              onValueChange={(value) => handlePageSizeChange(parseInt(value))}
-            >
+            <Select value={currentPageSize.toString()} onValueChange={(value) => handlePageSizeChange(parseInt(value))}>
               <SelectTrigger className="h-8 w-[70px]">
                 <SelectValue />
               </SelectTrigger>
@@ -1356,7 +709,6 @@ export function DynamicServerTable<T extends Record<string, any>>({
             </Select>
           </div>
         </div>
-
         <div className="flex items-center gap-2 order-1 sm:order-2">
           <Button
             variant="outline"
@@ -1379,11 +731,9 @@ export function DynamicServerTable<T extends Record<string, any>>({
             <ChevronLeft className="h-4 w-4" />
             <span className="hidden sm:inline ml-1">Previous</span>
           </Button>
-
           <div className="flex items-center gap-2 px-3 py-1.5 border rounded-md bg-muted/50">
             <span className="text-sm font-medium">Page {currentPage}</span>
           </div>
-
           <Button
             variant="outline"
             size="sm"
@@ -1398,14 +748,70 @@ export function DynamicServerTable<T extends Record<string, any>>({
         </div>
       </div>
 
-      <RowViewerDialog
-        open={viewerOpen}
-        onOpenChange={setViewerOpen}
-        data={viewerData}
-        title={viewerTitle}
-        subtitle={viewerSubtitle}
-        fieldConfig={viewerFieldConfig}
+      {/* Dialogs */}
+      <FormDialog
+        open={isAddFormOpen}
+        onOpenChange={setIsAddFormOpen}
+        title={`Add New ${viewerTitle}`}
+        description="Fill in the information below to create a new record"
+        fields={formFields}
+        onSubmit={handleCreate}
+        submitLabel="Create"
+        isLoading={isSubmitting}
+        customForm={customAddForm}
       />
+
+      <FormDialog
+        open={isEditFormOpen}
+        onOpenChange={(open) => {
+          setIsEditFormOpen(open);
+          if (!open) setEditingRecord(null);
+        }}
+        title={`Edit ${viewerTitle}`}
+        description="Update the information below"
+        fields={formFields}
+        onSubmit={handleUpdate}
+        submitLabel="Update"
+        isLoading={isSubmitting}
+        defaultValues={editingRecord || undefined}
+        customForm={customEditForm ? customEditForm(editingRecord!) : undefined}
+      />
+
+      <AlertDialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the record.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isSubmitting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDelete}
+              disabled={isSubmitting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {renderRowViewer ? (
+        viewerOpen && viewerData && renderRowViewer(viewerData, () => setViewerOpen(false))
+      ) : (
+        <RowViewerDialog
+          open={viewerOpen}
+          onOpenChange={setViewerOpen}
+          data={viewerData}
+          title={viewerTitle}
+          subtitle={viewerSubtitle}
+          fieldConfig={viewerFieldConfig}
+          customContent={customRowViewer}
+        />
+      )}
     </div>
   );
 }

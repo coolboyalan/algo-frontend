@@ -1,4 +1,7 @@
+// app/actions/table-data.ts
 'use server';
+
+import { ApiError } from '@/lib/api-error';
 
 export type SortOrder = 'asc' | 'desc';
 
@@ -18,18 +21,65 @@ export interface TableParams {
   filters?: TableFilter[];
 }
 
-// UPDATED: Industry standard pagination interface
 export interface TablePagination {
-  hasNextPage: boolean;        // Changed from hasMore
-  hasPreviousPage: boolean;    // New field
+  hasNextPage: boolean;
+  hasPreviousPage: boolean;
   nextCursor: string | null;
-  previousCursor: string | null;  // Changed from prevCursor
+  previousCursor: string | null;
   totalCount?: number;
 }
 
 export interface TableResponse<T> {
   data: T[];
   pagination: TablePagination;
+}
+
+// API Response Types (matching backend)
+interface ApiSuccessResponse<T = any> {
+  success: true;
+  message: string;
+  data: T;
+  timestamp: string;
+}
+
+interface ApiErrorResponse {
+  success: false;
+  error: {
+    code: string;
+    message: string;
+    details?: any;
+  };
+  timestamp: string;
+}
+
+type ApiResponse<T = any> = ApiSuccessResponse<T> | ApiErrorResponse;
+
+/**
+ * Handle API response and throw errors if needed
+ */
+async function handleApiResponse<T>(response: Response): Promise<T> {
+  let data: ApiResponse<T>;
+
+  try {
+    data = await response.json();
+  } catch (error) {
+    throw new ApiError(
+      'PARSE_ERROR',
+      'Failed to parse API response',
+      response.status
+    );
+  }
+
+  if (!data.success) {
+    throw new ApiError(
+      data.error.code,
+      data.error.message,
+      response.status,
+      data.error.details
+    );
+  }
+
+  return data.data;
 }
 
 /**
@@ -45,7 +95,12 @@ async function ensureCollectionExists<T>(
     // Check if collection exists by trying to fetch
     const checkResponse = await fetch(
       `${baseUrl}${endpoint}?limit=1`,
-      { cache: 'no-store' }
+      {
+        cache: 'no-store',
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      }
     );
 
     if (checkResponse.status === 404) {
@@ -64,22 +119,31 @@ async function ensureCollectionExists<T>(
       );
 
       if (!seedResponse.ok) {
+        const errorData = await handleApiResponse(seedResponse);
         throw new Error(`Failed to seed collection: ${seedResponse.status}`);
       }
 
-      const result = await seedResponse.json();
+      const result = await handleApiResponse<{ count: number; sample: T }>(seedResponse);
       console.log(`✅ Auto-seeded ${result.count} records for ${endpoint}`);
-    } else {
+    } else if (checkResponse.ok) {
       console.log(`✓ Collection exists: ${endpoint}`);
+    } else {
+      // Handle other errors
+      await handleApiResponse(checkResponse);
     }
   } catch (error) {
-    console.error('Error ensuring collection exists:', error);
+    if (error instanceof ApiError) {
+      console.error(`API Error [${error.code}]:`, error.message);
+      // Don't rethrow - seeding is optional
+    } else {
+      console.error('Error ensuring collection exists:', error);
+    }
   }
 }
 
 /**
- * Generic server-side table data fetcher with auto-seeding
- * Now supports industry-standard cursor pagination
+ * Generic server-side table data fetcher with standardized API responses
+ * Supports cursor pagination, search, filters, and sorting
  */
 export async function fetchTableData<T>(
   endpoint: string,
@@ -87,8 +151,8 @@ export async function fetchTableData<T>(
   sampleRecord?: T
 ): Promise<TableResponse<T>> {
   try {
-    // Auto-seed if sample record provided
-    if (sampleRecord) {
+    // Auto-seed if sample record provided (only in development)
+    if (sampleRecord && process.env.NODE_ENV === 'development') {
       await ensureCollectionExists(endpoint, sampleRecord);
     }
 
@@ -102,6 +166,7 @@ export async function fetchTableData<T>(
       filters = [],
     } = params;
 
+    // Build query parameters
     const queryParams = new URLSearchParams();
 
     if (cursor) queryParams.append('cursor', cursor);
@@ -113,6 +178,7 @@ export async function fetchTableData<T>(
       queryParams.append('searchFields', searchFields.join(','));
     }
 
+    // Add filters
     filters.forEach((filter, idx) => {
       queryParams.append(`filters[${idx}][field]`, filter.field);
       queryParams.append(`filters[${idx}][operator]`, filter.operator);
@@ -120,32 +186,218 @@ export async function fetchTableData<T>(
     });
 
     const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:4000';
-    const response = await fetch(
-      `${baseUrl}${endpoint}?${queryParams}`,
-      {
-        cache: 'no-store',
-      }
-    );
+    const url = `${baseUrl}${endpoint}?${queryParams}`;
 
-    if (!response.ok) {
-      throw new Error(`API error: ${response.status} ${response.statusText}`);
-    }
+    console.log(`🔄 Fetching table data: ${url}`);
 
-    const result = await response.json();
+    const response = await fetch(url, {
+      cache: 'no-store',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
 
-    // UPDATED: Map backend response to industry-standard interface
+    // Handle response with standardized error handling
+    const result = await handleApiResponse<TableResponse<T>>(response);
+
+    console.log(`✅ Fetched ${result.data.length} records from ${endpoint}`);
+
     return {
       data: result.data,
       pagination: {
-        hasNextPage: result.pagination.hasNextPage,           // Industry standard
-        hasPreviousPage: result.pagination.hasPreviousPage,   // Industry standard
+        hasNextPage: result.pagination.hasNextPage,
+        hasPreviousPage: result.pagination.hasPreviousPage,
         nextCursor: result.pagination.nextCursor,
-        previousCursor: result.pagination.previousCursor,     // Industry standard
+        previousCursor: result.pagination.previousCursor,
         totalCount: result.pagination.totalCount,
       },
     };
   } catch (error) {
-    console.error('Error fetching table data:', error);
-    throw error;
+    if (error instanceof ApiError) {
+      console.error(`❌ API Error [${error.code}]:`, error.message);
+
+      // Provide user-friendly error messages
+      if (error.code === 'NOT_FOUND') {
+        throw new Error(`Collection not found: ${endpoint}`);
+      }
+
+      if (error.code === 'VALIDATION_ERROR') {
+        throw new Error(`Invalid request parameters: ${error.message}`);
+      }
+
+      throw new Error(`API Error: ${error.message}`);
+    }
+
+    console.error('❌ Unexpected error fetching table data:', error);
+    throw new Error('Failed to fetch table data. Please try again.');
+  }
+}
+
+/**
+ * Fetch single record by ID
+ */
+export async function fetchRecordById<T>(
+  endpoint: string,
+  id: string
+): Promise<T> {
+  try {
+    const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:4000';
+    const url = `${baseUrl}${endpoint}/${id}`;
+
+    console.log(`🔄 Fetching record: ${url}`);
+
+    const response = await fetch(url, {
+      cache: 'no-store',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    const result = await handleApiResponse<T>(response);
+    console.log(`✅ Fetched record ${id} from ${endpoint}`);
+
+    return result;
+  } catch (error) {
+    if (error instanceof ApiError) {
+      console.error(`❌ API Error [${error.code}]:`, error.message);
+
+      if (error.code === 'NOT_FOUND') {
+        throw new Error(`Record not found: ${id}`);
+      }
+
+      throw new Error(`API Error: ${error.message}`);
+    }
+
+    console.error('❌ Unexpected error fetching record:', error);
+    throw new Error('Failed to fetch record. Please try again.');
+  }
+}
+
+/**
+ * Create new record
+ */
+export async function createRecord<T>(
+  endpoint: string,
+  data: Partial<T>
+): Promise<T> {
+  try {
+    const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:4000';
+    const url = `${baseUrl}${endpoint}`;
+
+    console.log(`🔄 Creating record: ${url}`);
+
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data),
+    });
+
+    const result = await handleApiResponse<T>(response);
+    console.log(`✅ Created record in ${endpoint}`);
+
+    return result;
+  } catch (error) {
+    if (error instanceof ApiError) {
+      console.error(`❌ API Error [${error.code}]:`, error.message);
+
+      if (error.code === 'VALIDATION_ERROR') {
+        throw new Error(`Validation failed: ${error.message}`);
+      }
+
+      if (error.code === 'CONFLICT') {
+        throw new Error(`Record already exists: ${error.message}`);
+      }
+
+      throw new Error(`API Error: ${error.message}`);
+    }
+
+    console.error('❌ Unexpected error creating record:', error);
+    throw new Error('Failed to create record. Please try again.');
+  }
+}
+
+/**
+ * Update existing record
+ */
+export async function updateRecord<T>(
+  endpoint: string,
+  id: string,
+  data: Partial<T>
+): Promise<T> {
+  try {
+    const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:4000';
+    const url = `${baseUrl}${endpoint}/${id}`;
+
+    console.log(`🔄 Updating record: ${url}`);
+
+    const response = await fetch(url, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data),
+    });
+
+    const result = await handleApiResponse<T>(response);
+    console.log(`✅ Updated record ${id} in ${endpoint}`);
+
+    return result;
+  } catch (error) {
+    if (error instanceof ApiError) {
+      console.error(`❌ API Error [${error.code}]:`, error.message);
+
+      if (error.code === 'NOT_FOUND') {
+        throw new Error(`Record not found: ${id}`);
+      }
+
+      if (error.code === 'VALIDATION_ERROR') {
+        throw new Error(`Validation failed: ${error.message}`);
+      }
+
+      throw new Error(`API Error: ${error.message}`);
+    }
+
+    console.error('❌ Unexpected error updating record:', error);
+    throw new Error('Failed to update record. Please try again.');
+  }
+}
+
+/**
+ * Delete record
+ */
+export async function deleteRecord(
+  endpoint: string,
+  id: string
+): Promise<void> {
+  try {
+    const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:4000';
+    const url = `${baseUrl}${endpoint}/${id}`;
+
+    console.log(`🔄 Deleting record: ${url}`);
+
+    const response = await fetch(url, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    await handleApiResponse<void>(response);
+    console.log(`✅ Deleted record ${id} from ${endpoint}`);
+  } catch (error) {
+    if (error instanceof ApiError) {
+      console.error(`❌ API Error [${error.code}]:`, error.message);
+
+      if (error.code === 'NOT_FOUND') {
+        throw new Error(`Record not found: ${id}`);
+      }
+
+      throw new Error(`API Error: ${error.message}`);
+    }
+
+    console.error('❌ Unexpected error deleting record:', error);
+    throw new Error('Failed to delete record. Please try again.');
   }
 }
