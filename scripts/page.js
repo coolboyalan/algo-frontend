@@ -47,6 +47,7 @@ if (action === "delete") {
   process.exit(0);
 }
 
+// ==================== PAGE.TSX ====================
 const pageFileContent = `import { fetchTableData, TableParams } from '@/app/actions/table-data';
 import { ${pageName}Table } from './${pageNameLower}-table';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -162,6 +163,7 @@ export default async function ${pageName}Page() {
 }
 `;
 
+// ==================== TABLE.TSX ====================
 const tableFileContent = `'use client';
 
 import { useState } from 'react';
@@ -169,7 +171,10 @@ import { DynamicServerTable } from '@/components/table/dynamic-server-table';
 import { ColumnDef } from '@tanstack/react-table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Eye, Edit, Trash2, MoreHorizontal, User, Mail, DollarSign } from 'lucide-react';
+import {
+  Eye, Edit, Trash2, MoreHorizontal, User, Mail,
+  DollarSign, FileText, Send, Printer
+} from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -179,6 +184,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { TableParams, TableResponse } from '@/app/actions/table-data';
+import type { FormFieldConfig } from '@/components/forms/auto-form-generator';
 
 type ${pageName}Item = {
   id: string;
@@ -197,10 +203,18 @@ interface ${pageName}TableProps {
 export function ${pageName}Table({ initialData, fetchData }: ${pageName}TableProps) {
   const [selectedItems, setSelectedItems] = useState<${pageName}Item[]>([]);
 
+  // ==================== BULK ACTIONS ====================
   const handleBulkDelete = (items: ${pageName}Item[]) => {
+    console.log('Deleting items:', items);
     alert(\`Deleting \${items.length} items\`);
   };
 
+  const handleBulkEmail = (items: ${pageName}Item[]) => {
+    console.log('Emailing items:', items);
+    alert(\`Sending emails to \${items.length} items\`);
+  };
+
+  // ==================== COLUMNS ====================
   const columns: ColumnDef<${pageName}Item>[] = [
     {
       accessorKey: 'name',
@@ -209,7 +223,7 @@ export function ${pageName}Table({ initialData, fetchData }: ${pageName}TablePro
       cell: ({ row }) => (
         <div className="flex items-center gap-2">
           <User className="h-4 w-4 text-muted-foreground" />
-          {row.original.name}
+          <span className="font-medium">{row.original.name}</span>
         </div>
       ),
     },
@@ -219,7 +233,12 @@ export function ${pageName}Table({ initialData, fetchData }: ${pageName}TablePro
       cell: ({ row }) => (
         <div className="flex items-center gap-2">
           <Mail className="h-4 w-4 text-muted-foreground" />
-          {row.original.email}
+          <a
+            href={\`mailto:\${row.original.email}\`}
+            className="text-blue-600 hover:underline"
+          >
+            {row.original.email}
+          </a>
         </div>
       ),
     },
@@ -255,47 +274,129 @@ export function ${pageName}Table({ initialData, fetchData }: ${pageName}TablePro
       id: 'actions',
       header: 'Actions',
       cell: ({ row }) => (
-        <div className="flex items-center gap-2">
-          <Button variant="ghost" size="icon" title="View">
-            <Eye className="h-4 w-4" />
-          </Button>
-          <Button variant="ghost" size="icon" title="Edit">
-            <Edit className="h-4 w-4" />
-          </Button>
-          <Button variant="ghost" size="icon" title="Delete">
-            <Trash2 className="h-4 w-4" />
-          </Button>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon">
-                <MoreHorizontal className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuLabel>Actions</DropdownMenuLabel>
-              <DropdownMenuItem>View Details</DropdownMenuItem>
-              <DropdownMenuItem>Edit</DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem>Send Email</DropdownMenuItem>
-              <DropdownMenuItem>Print</DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem className="text-destructive">Delete</DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="icon">
+              <MoreHorizontal className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuLabel>Actions</DropdownMenuLabel>
+            <DropdownMenuItem>
+              <Eye className="h-4 w-4 mr-2" />
+              View Details
+            </DropdownMenuItem>
+            <DropdownMenuItem>
+              <Edit className="h-4 w-4 mr-2" />
+              Edit
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem>
+              <Send className="h-4 w-4 mr-2" />
+              Send Email
+            </DropdownMenuItem>
+            <DropdownMenuItem>
+              <Printer className="h-4 w-4 mr-2" />
+              Print
+            </DropdownMenuItem>
+            <DropdownMenuItem>
+              <FileText className="h-4 w-4 mr-2" />
+              Generate Report
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem className="text-destructive">
+              <Trash2 className="h-4 w-4 mr-2" />
+              Delete
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       ),
     },
   ];
 
+  // ==================== FORM FIELDS (FOR CRUD) ====================
+  const formFields: FormFieldConfig[] = [
+    {
+      name: 'name',
+      label: 'Name',
+      type: 'text',
+      placeholder: 'Enter name',
+      required: true,
+    },
+    {
+      name: 'email',
+      label: 'Email',
+      type: 'email',
+      placeholder: 'email@example.com',
+      required: true,
+    },
+    {
+      name: 'status',
+      label: 'Status',
+      type: 'select',
+      required: true,
+      options: [
+        { label: 'Active', value: 'active' },
+        { label: 'Inactive', value: 'inactive' },
+      ],
+    },
+    {
+      name: 'amount',
+      label: 'Amount',
+      type: 'number',
+      placeholder: '1000',
+      required: true,
+    },
+  ];
+
+  // ==================== CUSTOM CRUD HANDLERS (OPTIONAL) ====================
+  // Uncomment these if you want custom logic instead of default handlers
+
+  // const handleCreate = async (data: Partial<${pageName}Item>) => {
+  //   console.log('Creating:', data);
+  //   // Your custom create logic here
+  //   // const result = await customCreateAPI(data);
+  //   // return result;
+  // };
+
+  // const handleUpdate = async (id: string, data: Partial<${pageName}Item>) => {
+  //   console.log('Updating:', id, data);
+  //   // Your custom update logic here
+  // };
+
+  // const handleDelete = async (id: string) => {
+  //   console.log('Deleting:', id);
+  //   // Your custom delete logic here
+  // };
+
   return (
     <DynamicServerTable
-	  tableKey="${pageNameLower}"
+      // ==================== BASIC CONFIG ====================
+      tableKey="${pageNameLower}"
       initialData={initialData}
       columns={columns}
       fetchData={fetchData}
+      rowIdField="id"
+
+      // ==================== CRUD CONFIG ====================
+      apiEndpoint="/api/${pageNameLower}"  // 🔥 REQUIRED FOR CRUD
+      formFields={formFields}              // 🔥 REQUIRED FOR CRUD
+      showAddButton={true}
+      showEditButton={true}
+      showDeleteButton={true}
+      addButtonLabel="Add ${pageName}"
+
+      // Custom CRUD handlers (optional - uncomment to use)
+      // onCreateRecord={handleCreate}
+      // onUpdateRecord={handleUpdate}
+      // onDeleteRecord={handleDelete}
+
+      // ==================== SEARCH CONFIG ====================
       searchable
       searchPlaceholder="Search ${pageNameLower}..."
       searchFields={['name', 'email', 'status']}
+
+      // ==================== FILTER CONFIG ====================
       filters={[
         {
           field: 'status',
@@ -307,10 +408,16 @@ export function ${pageName}Table({ initialData, fetchData }: ${pageName}TablePro
           ],
         },
       ]}
+
+      // ==================== SORTING CONFIG ====================
       defaultSortBy="createdAt"
       defaultSortOrder="desc"
+
+      // ==================== PAGINATION CONFIG ====================
       pageSize={10}
       pageSizeOptions={[10, 25, 50, 100]}
+
+      // ==================== EXPORT CONFIG ====================
       exportable
       exportFileName="${pageNameLower}"
       exportConfig={{
@@ -319,19 +426,28 @@ export function ${pageName}Table({ initialData, fetchData }: ${pageName}TablePro
         pdf: true,
         print: true,
       }}
+
+      // ==================== SELECTION & BULK ACTIONS ====================
       selectable
-      rowIdField="id"
       onSelectionChange={setSelectedItems}
       bulkActions={[
         {
-          label: 'Delete',
+          label: 'Send Email',
+          icon: <Send className="h-4 w-4" />,
+          onClick: handleBulkEmail,
+          variant: 'default',
+        },
+        {
+          label: 'Delete Selected',
           icon: <Trash2 className="h-4 w-4" />,
           onClick: handleBulkDelete,
           variant: 'destructive',
         },
       ]}
+
+      // ==================== ROW VIEWER CONFIG ====================
       viewerTitle="${pageName} Details"
-      viewerSubtitle="Detailed information"
+      viewerSubtitle="Complete information"
       viewerFieldConfig={{
         id: { hidden: true },
         amount: {
@@ -341,7 +457,58 @@ export function ${pageName}Table({ initialData, fetchData }: ${pageName}TablePro
             </span>
           ),
         },
+        email: {
+          format: (value: string) => (
+            <a href={\`mailto:\${value}\`} className="text-blue-600 hover:underline">
+              {value}
+            </a>
+          ),
+        },
+        status: {
+          format: (value: string) => (
+            <Badge variant={value === 'active' ? 'default' : 'destructive'}>
+              {value}
+            </Badge>
+          ),
+        },
       }}
+
+      // ==================== CUSTOM FORMS (OPTIONAL) ====================
+      // Uncomment these if you want completely custom forms
+
+      // customAddForm={
+      //   <div className="space-y-4">
+      //     <h2>Custom Add Form</h2>
+      //     {/* Your custom form JSX here */}
+      //   </div>
+      // }
+
+      // customEditForm={(data) => (
+      //   <div className="space-y-4">
+      //     <h2>Custom Edit Form for {data.name}</h2>
+      //     {/* Your custom edit form JSX here */}
+      //   </div>
+      // )}
+
+      // ==================== CUSTOM ROW VIEWER (OPTIONAL) ====================
+      // customRowViewer={(data) => (
+      //   <div className="space-y-4">
+      //     <h2 className="text-2xl font-bold">{data.name}</h2>
+      //     <div className="grid grid-cols-2 gap-4">
+      //       <div>
+      //         <label className="text-sm text-muted-foreground">Email</label>
+      //         <p>{data.email}</p>
+      //       </div>
+      //       <div>
+      //         <label className="text-sm text-muted-foreground">Status</label>
+      //         <Badge variant={data.status === 'active' ? 'default' : 'destructive'}>
+      //           {data.status}
+      //         </Badge>
+      //       </div>
+      //     </div>
+      //     {/* Your custom viewer content */}
+      //   </div>
+      // )}
     />
   );
 }
@@ -362,7 +529,16 @@ function createPage() {
 
   fs.writeFileSync(pageFile, pageFileContent, "utf8");
   fs.writeFileSync(tableFile, tableFileContent, "utf8");
-  console.log(`✔️ Created ${pageFile} and ${tableFile}`);
+
+  console.log(`\n✅ Successfully created ${pageName} page!\n`);
+  console.log(`📁 Files created:`);
+  console.log(`   - ${pageFile}`);
+  console.log(`   - ${tableFile}`);
+  console.log(`\n📝 Next steps:`);
+  console.log(`   1. Update the type definition with your actual fields`);
+  console.log(`   2. Update formFields to match your data structure`);
+  console.log(`   3. Customize columns as needed`);
+  console.log(`   4. Add the route to your sidebar config\n`);
 }
 
 if (action === "create") {
