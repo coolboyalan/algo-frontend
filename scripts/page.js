@@ -53,11 +53,11 @@ import { ${pageName}Table } from './${pageNameLower}-table';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Database, CheckCircle, XCircle, DollarSign, Users } from 'lucide-react';
 
-type ${pageName}Item = {
+export type ${pageName}Item = {
   id: string;
   name: string;
   email: string;
-  status: 'active' | 'inactive';
+  status: 'active' | 'inactive' | 'pending';
   createdAt: string;
   amount: number;
 };
@@ -68,7 +68,7 @@ const sample${pageName}: ${pageName}Item = {
   email: 'john@example.com',
   status: 'active',
   createdAt: new Date().toISOString(),
-  amount: 1234,
+  amount: 1000,
 };
 
 export default async function ${pageName}Page() {
@@ -90,6 +90,7 @@ export default async function ${pageName}Page() {
   const totalItems = initialData.pagination.totalCount || 0;
   const activeItems = initialData.data.filter(item => item.status === 'active').length;
   const inactiveItems = initialData.data.filter(item => item.status === 'inactive').length;
+  const pendingItems = initialData.data.filter(item => item.status === 'pending').length;
   const totalAmount = initialData.data.reduce((sum, item) => sum + (item.amount || 0), 0);
 
   return (
@@ -170,30 +171,10 @@ import { useState } from 'react';
 import { DynamicServerTable } from '@/components/table/dynamic-server-table';
 import { ColumnDef } from '@tanstack/react-table';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import {
-  Eye, Edit, Trash2, MoreHorizontal, User, Mail,
-  DollarSign, FileText, Send, Printer
-} from 'lucide-react';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 import { TableParams, TableResponse } from '@/app/actions/table-data';
 import type { FormFieldConfig } from '@/components/forms/auto-form-generator';
-
-type ${pageName}Item = {
-  id: string;
-  name: string;
-  email: string;
-  status: 'active' | 'inactive';
-  createdAt: string;
-  amount: number;
-};
+import { User, Mail, DollarSign, Trash2, Send, Hash, Calendar } from 'lucide-react';
+import type { ${pageName}Item } from './page';
 
 interface ${pageName}TableProps {
   initialData: TableResponse<${pageName}Item>;
@@ -236,6 +217,7 @@ export function ${pageName}Table({ initialData, fetchData }: ${pageName}TablePro
           <a
             href={\`mailto:\${row.original.email}\`}
             className="text-blue-600 hover:underline"
+            onClick={(e) => e.stopPropagation()}
           >
             {row.original.email}
           </a>
@@ -245,17 +227,31 @@ export function ${pageName}Table({ initialData, fetchData }: ${pageName}TablePro
     {
       accessorKey: 'status',
       header: 'Status',
-      cell: ({ row }) => (
-        <Badge variant={row.original.status === 'active' ? 'default' : 'destructive'}>
-          {row.original.status}
-        </Badge>
-      ),
+      cell: ({ row }) => {
+        const variant =
+          row.original.status === 'active' ? 'default' :
+          row.original.status === 'pending' ? 'secondary' :
+          'destructive';
+
+        return (
+          <Badge variant={variant}>
+            {row.original.status}
+          </Badge>
+        );
+      },
     },
     {
       accessorKey: 'createdAt',
-      header: 'Created At',
+      header: 'Date',
       enableSorting: true,
-      cell: ({ row }) => new Date(row.original.createdAt).toLocaleDateString('en-IN'),
+      cell: ({ row }) => (
+        <div className="flex items-center gap-2">
+          <Calendar className="h-3 w-3 text-muted-foreground" />
+          <span className="text-sm">
+            {new Date(row.original.createdAt).toLocaleDateString('en-IN')}
+          </span>
+        </div>
+      ),
     },
     {
       accessorKey: 'amount',
@@ -270,51 +266,9 @@ export function ${pageName}Table({ initialData, fetchData }: ${pageName}TablePro
         </div>
       ),
     },
-    {
-      id: 'actions',
-      header: 'Actions',
-      cell: ({ row }) => (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon">
-              <MoreHorizontal className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuLabel>Actions</DropdownMenuLabel>
-            <DropdownMenuItem>
-              <Eye className="h-4 w-4 mr-2" />
-              View Details
-            </DropdownMenuItem>
-            <DropdownMenuItem>
-              <Edit className="h-4 w-4 mr-2" />
-              Edit
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem>
-              <Send className="h-4 w-4 mr-2" />
-              Send Email
-            </DropdownMenuItem>
-            <DropdownMenuItem>
-              <Printer className="h-4 w-4 mr-2" />
-              Print
-            </DropdownMenuItem>
-            <DropdownMenuItem>
-              <FileText className="h-4 w-4 mr-2" />
-              Generate Report
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem className="text-destructive">
-              <Trash2 className="h-4 w-4 mr-2" />
-              Delete
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      ),
-    },
   ];
 
-  // ==================== FORM FIELDS (FOR CRUD) ====================
+  // ==================== FORM FIELDS ====================
   const formFields: FormFieldConfig[] = [
     {
       name: 'name',
@@ -338,6 +292,7 @@ export function ${pageName}Table({ initialData, fetchData }: ${pageName}TablePro
       options: [
         { label: 'Active', value: 'active' },
         { label: 'Inactive', value: 'inactive' },
+        { label: 'Pending', value: 'pending' },
       ],
     },
     {
@@ -349,54 +304,45 @@ export function ${pageName}Table({ initialData, fetchData }: ${pageName}TablePro
     },
   ];
 
-  // ==================== CUSTOM CRUD HANDLERS (OPTIONAL) ====================
-  // Uncomment these if you want custom logic instead of default handlers
-
-  // const handleCreate = async (data: Partial<${pageName}Item>) => {
-  //   console.log('Creating:', data);
-  //   // Your custom create logic here
-  //   // const result = await customCreateAPI(data);
-  //   // return result;
-  // };
-
-  // const handleUpdate = async (id: string, data: Partial<${pageName}Item>) => {
-  //   console.log('Updating:', id, data);
-  //   // Your custom update logic here
-  // };
-
-  // const handleDelete = async (id: string) => {
-  //   console.log('Deleting:', id);
-  //   // Your custom delete logic here
-  // };
-
   return (
     <DynamicServerTable
-      // ==================== BASIC CONFIG ====================
       tableKey="${pageNameLower}"
       initialData={initialData}
       columns={columns}
       fetchData={fetchData}
       rowIdField="id"
 
-      // ==================== CRUD CONFIG ====================
-      apiEndpoint="/api/${pageNameLower}"  // 🔥 REQUIRED FOR CRUD
-      formFields={formFields}              // 🔥 REQUIRED FOR CRUD
+      // ==================== CRUD WITH AUTO FORMS ====================
+      apiEndpoint="/api/${pageNameLower}"
+      formFields={formFields}
       showAddButton={true}
       showEditButton={true}
       showDeleteButton={true}
       addButtonLabel="Add ${pageName}"
 
-      // Custom CRUD handlers (optional - uncomment to use)
-      // onCreateRecord={handleCreate}
-      // onUpdateRecord={handleUpdate}
-      // onDeleteRecord={handleDelete}
+      // ==================== CUSTOM FORMS (OPTIONAL) ====================
+      // Uncomment to use custom forms instead of auto-generated ones
 
-      // ==================== SEARCH CONFIG ====================
+      // customAddForm={
+      //   <Custom${pageName}Form
+      //     onSuccess={() => router.refresh()}
+      //   />
+      // }
+
+      // customEditForm={(data) => (
+      //   <Custom${pageName}Form
+      //     onSuccess={() => router.refresh()}
+      //     defaultValues={data}
+      //     isEdit
+      //   />
+      // )}
+
+      // ==================== SEARCH ====================
       searchable
       searchPlaceholder="Search ${pageNameLower}..."
       searchFields={['name', 'email', 'status']}
 
-      // ==================== FILTER CONFIG ====================
+      // ==================== FILTERS ====================
       filters={[
         {
           field: 'status',
@@ -405,19 +351,20 @@ export function ${pageName}Table({ initialData, fetchData }: ${pageName}TablePro
           options: [
             { label: 'Active', value: 'active' },
             { label: 'Inactive', value: 'inactive' },
+            { label: 'Pending', value: 'pending' },
           ],
         },
       ]}
 
-      // ==================== SORTING CONFIG ====================
+      // ==================== SORTING ====================
       defaultSortBy="createdAt"
       defaultSortOrder="desc"
 
-      // ==================== PAGINATION CONFIG ====================
+      // ==================== PAGINATION ====================
       pageSize={10}
       pageSizeOptions={[10, 25, 50, 100]}
 
-      // ==================== EXPORT CONFIG ====================
+      // ==================== EXPORT ====================
       exportable
       exportFileName="${pageNameLower}"
       exportConfig={{
@@ -427,7 +374,7 @@ export function ${pageName}Table({ initialData, fetchData }: ${pageName}TablePro
         print: true,
       }}
 
-      // ==================== SELECTION & BULK ACTIONS ====================
+      // ==================== BULK ACTIONS ====================
       selectable
       onSelectionChange={setSelectedItems}
       bulkActions={[
@@ -445,19 +392,21 @@ export function ${pageName}Table({ initialData, fetchData }: ${pageName}TablePro
         },
       ]}
 
-      // ==================== ROW VIEWER CONFIG ====================
+      // ==================== ROW VIEWER ====================
       viewerTitle="${pageName} Details"
       viewerSubtitle="Complete information"
       viewerFieldConfig={{
         id: { hidden: true },
         amount: {
+          label: 'Amount',
           format: (value: number) => (
-            <span className="text-green-600 font-bold text-lg">
+            <span className="text-green-600 font-bold text-xl">
               ₹{value.toLocaleString('en-IN')}
             </span>
           ),
         },
         email: {
+          label: 'Email Address',
           format: (value: string) => (
             <a href={\`mailto:\${value}\`} className="text-blue-600 hover:underline">
               {value}
@@ -465,50 +414,25 @@ export function ${pageName}Table({ initialData, fetchData }: ${pageName}TablePro
           ),
         },
         status: {
+          label: 'Status',
           format: (value: string) => (
-            <Badge variant={value === 'active' ? 'default' : 'destructive'}>
-              {value}
+            <Badge
+              variant={
+                value === 'active' ? 'default' :
+                value === 'pending' ? 'secondary' :
+                'destructive'
+              }
+              className="text-sm"
+            >
+              {value.toUpperCase()}
             </Badge>
           ),
         },
+        createdAt: {
+          label: 'Created On',
+          format: (value: string) => new Date(value).toLocaleString('en-IN'),
+        },
       }}
-
-      // ==================== CUSTOM FORMS (OPTIONAL) ====================
-      // Uncomment these if you want completely custom forms
-
-      // customAddForm={
-      //   <div className="space-y-4">
-      //     <h2>Custom Add Form</h2>
-      //     {/* Your custom form JSX here */}
-      //   </div>
-      // }
-
-      // customEditForm={(data) => (
-      //   <div className="space-y-4">
-      //     <h2>Custom Edit Form for {data.name}</h2>
-      //     {/* Your custom edit form JSX here */}
-      //   </div>
-      // )}
-
-      // ==================== CUSTOM ROW VIEWER (OPTIONAL) ====================
-      // customRowViewer={(data) => (
-      //   <div className="space-y-4">
-      //     <h2 className="text-2xl font-bold">{data.name}</h2>
-      //     <div className="grid grid-cols-2 gap-4">
-      //       <div>
-      //         <label className="text-sm text-muted-foreground">Email</label>
-      //         <p>{data.email}</p>
-      //       </div>
-      //       <div>
-      //         <label className="text-sm text-muted-foreground">Status</label>
-      //         <Badge variant={data.status === 'active' ? 'default' : 'destructive'}>
-      //           {data.status}
-      //         </Badge>
-      //       </div>
-      //     </div>
-      //     {/* Your custom viewer content */}
-      //   </div>
-      // )}
     />
   );
 }
@@ -534,11 +458,20 @@ function createPage() {
   console.log(`📁 Files created:`);
   console.log(`   - ${pageFile}`);
   console.log(`   - ${tableFile}`);
+  console.log(`\n🎯 Features included:`);
+  console.log(`   ✅ Full CRUD (Create, Read, Update, Delete)`);
+  console.log(`   ✅ Search & Filters`);
+  console.log(`   ✅ Export (CSV, Excel, PDF, Print)`);
+  console.log(`   ✅ Bulk Actions`);
+  console.log(`   ✅ Row Viewer with custom formatting`);
+  console.log(`   ✅ Stats cards with metrics`);
+  console.log(`   ✅ Mobile responsive`);
   console.log(`\n📝 Next steps:`);
-  console.log(`   1. Update the type definition with your actual fields`);
+  console.log(`   1. Update the ${pageName}Item type with your actual fields`);
   console.log(`   2. Update formFields to match your data structure`);
   console.log(`   3. Customize columns as needed`);
-  console.log(`   4. Add the route to your sidebar config\n`);
+  console.log(`   4. Add the route to your sidebar config`);
+  console.log(`   5. (Optional) Create custom forms if needed\n`);
 }
 
 if (action === "create") {

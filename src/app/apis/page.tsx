@@ -1,238 +1,1108 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
 import {
-  BookOpen, Code, Rocket, Settings, Search, Filter,
-  Download, Trash2, Eye, Edit, Table as TableIcon,
-  Smartphone, Keyboard, Zap, Database, FileText,
-  Mail, Send, Archive, Bell, UserPlus, CheckCircle,
-  XCircle, AlertCircle, Info, Plus, Minus, Printer
-} from 'lucide-react';
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import {
+  BookOpen,
+  Code,
+  Rocket,
+  Settings,
+  Search,
+  Filter,
+  Download,
+  Trash2,
+  Eye,
+  Edit,
+  Table as TableIcon,
+  Smartphone,
+  Keyboard,
+  Zap,
+  Database,
+  FileText,
+  Mail,
+  Send,
+  Archive,
+  Bell,
+  UserPlus,
+  CheckCircle,
+  XCircle,
+  AlertCircle,
+  Info,
+  Plus,
+  Minus,
+  Printer,
+  Globe,
+  History,
+  Link2,
+  Mouse,
+  Layers,
+  Phone,
+  Calendar,
+  User,
+  Building,
+  ArrowRight,
+  Check,
+  Star,
+  TrendingUp,
+  Package,
+  Lock,
+  Lightbulb,
+  Copy,
+  MessageSquare,
+} from "lucide-react";
 
 export default function DocsPage() {
   return (
-    <div className="px-6 pb-6">
+    <div className="px-6 pb-6 max-w-[1600px] mx-auto">
       <div className="space-y-6">
-        {/* Header */}
+        {/* ==================== HEADER ==================== */}
         <div className="pt-6">
-          <div className="flex items-center gap-3 mb-2">
-            <BookOpen className="h-10 w-10 text-primary" />
-            <h1 className="text-4xl font-bold">DynamicServerTable Documentation</h1>
+          <div className="flex items-center gap-4 mb-3">
+            <div className="relative">
+              <div className="absolute inset-0 bg-gradient-to-br from-blue-600 via-purple-600 to-pink-600 rounded-xl blur-lg opacity-75 animate-pulse"></div>
+              <div className="relative p-3 rounded-xl bg-gradient-to-br from-blue-600 via-purple-600 to-pink-600 shadow-2xl">
+                <TableIcon className="h-10 w-10 text-white" />
+              </div>
+            </div>
+            <div>
+              <h1 className="text-5xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent mb-1">
+                DynamicServerTable v2.0
+              </h1>
+              <div className="flex items-center gap-2 flex-wrap">
+                <Badge className="bg-gradient-to-r from-blue-600 to-purple-600 border-0 shadow-lg">
+                  <Star className="h-3 w-3 mr-1" />
+                  Latest Release
+                </Badge>
+                <Badge variant="outline" className="border-blue-300">
+                  <Code className="h-3 w-3 mr-1" />
+                  TypeScript First
+                </Badge>
+                <Badge variant="outline" className="border-purple-300">
+                  <Zap className="h-3 w-3 mr-1" />
+                  Production Ready
+                </Badge>
+              </div>
+            </div>
           </div>
-          <p className="text-muted-foreground text-lg">
-            Complete guide with detailed examples for every single feature, prop, and configuration option
+          <p className="text-muted-foreground text-lg max-w-5xl leading-relaxed">
+            The most powerful, feature-complete table component for Next.js 14+.
+            Built with <strong>TypeScript</strong>,
+            <strong> TanStack Table</strong>, and <strong>Shadcn UI</strong>.
+            Includes complete CRUD operations, advanced filtering, URL state
+            management, browser navigation support, mobile responsiveness, and
+            50+ customization options.
           </p>
         </div>
 
-        {/* Quick Stats */}
+        {/* ==================== WHAT'S NEW BANNER ==================== */}
+        <Alert className="relative overflow-hidden bg-gradient-to-r from-blue-50 via-purple-50 to-pink-50 dark:from-blue-950/30 dark:via-purple-950/30 dark:to-pink-950/30 border-2 border-blue-300 dark:border-blue-700 shadow-lg">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-blue-500/20 to-purple-500/20 rounded-full blur-3xl"></div>
+          <Rocket className="h-5 w-5 text-blue-600 animate-bounce" />
+          <AlertDescription className="ml-2">
+            <div className="flex flex-col gap-1">
+              <strong className="text-blue-700 dark:text-blue-400 text-base flex items-center gap-2">
+                🎉 What's New in v2.0
+                <Badge className="bg-green-600 border-0">5 Major Updates</Badge>
+              </strong>
+              <span className="text-foreground text-sm">
+                <strong>URL State Management</strong> •{" "}
+                <strong>Browser Navigation</strong> •
+                <strong> Dialog URL Sync</strong> •{" "}
+                <strong>Enhanced Pagination</strong> •
+                <strong> Performance Fixes</strong>
+              </span>
+            </div>
+          </AlertDescription>
+        </Alert>
+
+        {/* ==================== QUICK STATS ==================== */}
         <div className="grid gap-4 md:grid-cols-4">
-          <Card>
+          <Card className="border-l-4 border-l-blue-600 hover:shadow-xl transition-all hover:scale-105">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Props</CardTitle>
-              <Settings className="h-4 w-4 text-muted-foreground" />
+              <CardTitle className="text-sm font-medium">
+                Configuration Props
+              </CardTitle>
+              <Settings className="h-5 w-5 text-blue-600" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">50+</div>
-              <p className="text-xs text-muted-foreground">Configurable options</p>
+              <div className="text-4xl font-bold text-blue-600">50+</div>
+              <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
+                <TrendingUp className="h-3 w-3" />
+                Every aspect customizable
+              </p>
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="border-l-4 border-l-green-600 hover:shadow-xl transition-all hover:scale-105">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Features</CardTitle>
-              <Zap className="h-4 w-4 text-muted-foreground" />
+              <CardTitle className="text-sm font-medium">
+                Built-in Features
+              </CardTitle>
+              <Zap className="h-5 w-5 text-green-600" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">20+</div>
-              <p className="text-xs text-muted-foreground">Built-in features</p>
+              <div className="text-4xl font-bold text-green-600">25+</div>
+              <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
+                <Package className="h-3 w-3" />
+                Ready-to-use functionality
+              </p>
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="border-l-4 border-l-purple-600 hover:shadow-xl transition-all hover:scale-105">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Form Types</CardTitle>
-              <FileText className="h-4 w-4 text-muted-foreground" />
+              <CardTitle className="text-sm font-medium">
+                Form Field Types
+              </CardTitle>
+              <FileText className="h-5 w-5 text-purple-600" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">8+</div>
-              <p className="text-xs text-muted-foreground">Input field types</p>
+              <div className="text-4xl font-bold text-purple-600">10+</div>
+              <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
+                <Keyboard className="h-3 w-3" />
+                Auto-generated inputs
+              </p>
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="border-l-4 border-l-orange-600 hover:shadow-xl transition-all hover:scale-105">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Export Formats</CardTitle>
-              <Download className="h-4 w-4 text-muted-foreground" />
+              <CardTitle className="text-sm font-medium">
+                Export Formats
+              </CardTitle>
+              <Download className="h-5 w-5 text-orange-600" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">4</div>
-              <p className="text-xs text-muted-foreground">CSV, Excel, PDF, Print</p>
+              <div className="text-4xl font-bold text-orange-600">4</div>
+              <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
+                <Check className="h-3 w-3" />
+                CSV, Excel, PDF, Print
+              </p>
             </CardContent>
           </Card>
         </div>
 
-        {/* Main Documentation */}
-        <Tabs defaultValue="overview" className="space-y-4">
-          <TabsList className="grid w-full grid-cols-9">
-            <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="props">Props</TabsTrigger>
-            <TabsTrigger value="crud">CRUD</TabsTrigger>
-            <TabsTrigger value="forms">Forms</TabsTrigger>
-            <TabsTrigger value="search">Search</TabsTrigger>
-            <TabsTrigger value="filters">Filters</TabsTrigger>
-            <TabsTrigger value="bulk">Bulk</TabsTrigger>
-            <TabsTrigger value="export">Export</TabsTrigger>
-            <TabsTrigger value="custom">Custom</TabsTrigger>
+        {/* ==================== MAIN DOCUMENTATION TABS ==================== */}
+        <Tabs defaultValue="overview" className="space-y-6">
+          <TabsList className="grid w-full grid-cols-10 h-auto p-1 bg-muted/50">
+            {[
+              { value: "overview", icon: BookOpen, label: "Overview" },
+              { value: "features", icon: Zap, label: "Features" },
+              { value: "props", icon: Settings, label: "Props API" },
+              { value: "crud", icon: Edit, label: "CRUD" },
+              { value: "forms", icon: FileText, label: "Forms" },
+              { value: "search", icon: Search, label: "Search" },
+              { value: "filters", icon: Filter, label: "Filters" },
+              { value: "bulk", icon: Layers, label: "Bulk Actions" },
+              { value: "export", icon: Download, label: "Export" },
+              { value: "custom", icon: Code, label: "Advanced" },
+            ].map((tab) => (
+              <TabsTrigger
+                key={tab.value}
+                value={tab.value}
+                className="flex flex-col gap-1.5 py-3 data-[state=active]:bg-gradient-to-br data-[state=active]:from-blue-600 data-[state=active]:to-purple-600 data-[state=active]:text-white data-[state=active]:shadow-lg transition-all"
+              >
+                <tab.icon className="h-4 w-4" />
+                <span className="text-xs font-medium">{tab.label}</span>
+              </TabsTrigger>
+            ))}
           </TabsList>
 
-          {/* ==================== OVERVIEW ==================== */}
-          <TabsContent value="overview" className="space-y-4">
-            <Card>
+          {/* ==================== TAB: OVERVIEW ==================== */}
+          <TabsContent value="overview" className="space-y-6">
+            <Card className="border-2 border-blue-200 dark:border-blue-800">
               <CardHeader>
-                <CardTitle>Overview</CardTitle>
-                <CardDescription>
-                  DynamicServerTable is a production-ready, feature-rich table component for Next.js 14+
+                <CardTitle className="flex items-center gap-2 text-2xl">
+                  <BookOpen className="h-6 w-6 text-blue-600" />
+                  Complete Getting Started Guide
+                </CardTitle>
+                <CardDescription className="text-base">
+                  Everything you need to implement DynamicServerTable in your
+                  Next.js project
                 </CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="space-y-8">
+                {/* Installation */}
                 <div>
-                  <h3 className="text-lg font-semibold mb-2">Key Features</h3>
-                  <div className="grid gap-3 md:grid-cols-2">
-                    <div className="flex items-start gap-2">
-                      <Database className="h-5 w-5 text-green-600 mt-0.5 flex-shrink-0" />
-                      <div>
-                        <p className="font-medium">Server-Side Pagination</p>
-                        <p className="text-sm text-muted-foreground">Cursor-based pagination for optimal performance with large datasets</p>
-                      </div>
+                  <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
+                    <Package className="h-5 w-5 text-purple-600" />
+                    Step 1: Installation & Dependencies
+                  </h3>
+                  <div className="space-y-4">
+                    <div>
+                      <p className="text-sm text-muted-foreground mb-3">
+                        Install required packages:
+                      </p>
+                      <pre className="text-sm bg-muted p-4 rounded-lg border overflow-x-auto">
+                        {`npm install @tanstack/react-table
+npm install xlsx jspdf jspdf-autotable
+npm install lucide-react sonner`}
+                      </pre>
                     </div>
-                    <div className="flex items-start gap-2">
-                      <Search className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
-                      <div>
-                        <p className="font-medium">Multi-Field Search</p>
-                        <p className="text-sm text-muted-foreground">Search across multiple columns with 500ms debouncing</p>
-                      </div>
-                    </div>
-                    <div className="flex items-start gap-2">
-                      <Filter className="h-5 w-5 text-purple-600 mt-0.5 flex-shrink-0" />
-                      <div>
-                        <p className="font-medium">Advanced Filtering</p>
-                        <p className="text-sm text-muted-foreground">Select and multiselect filters with active badges</p>
-                      </div>
-                    </div>
-                    <div className="flex items-start gap-2">
-                      <Download className="h-5 w-5 text-orange-600 mt-0.5 flex-shrink-0" />
-                      <div>
-                        <p className="font-medium">Data Export</p>
-                        <p className="text-sm text-muted-foreground">Export to CSV, Excel, PDF, or Print</p>
-                      </div>
-                    </div>
-                    <div className="flex items-start gap-2">
-                      <Edit className="h-5 w-5 text-yellow-600 mt-0.5 flex-shrink-0" />
-                      <div>
-                        <p className="font-medium">Full CRUD Operations</p>
-                        <p className="text-sm text-muted-foreground">Create, Read, Update, Delete with auto-generated forms</p>
-                      </div>
-                    </div>
-                    <div className="flex items-start gap-2">
-                      <Smartphone className="h-5 w-5 text-pink-600 mt-0.5 flex-shrink-0" />
-                      <div>
-                        <p className="font-medium">Mobile Responsive</p>
-                        <p className="text-sm text-muted-foreground">Auto-switches to card view on mobile devices</p>
-                      </div>
-                    </div>
-                    <div className="flex items-start gap-2">
-                      <Zap className="h-5 w-5 text-cyan-600 mt-0.5 flex-shrink-0" />
-                      <div>
-                        <p className="font-medium">Bulk Actions</p>
-                        <p className="text-sm text-muted-foreground">Perform actions on multiple selected rows</p>
-                      </div>
-                    </div>
-                    <div className="flex items-start gap-2">
-                      <Eye className="h-5 w-5 text-indigo-600 mt-0.5 flex-shrink-0" />
-                      <div>
-                        <p className="font-medium">Custom Viewers</p>
-                        <p className="text-sm text-muted-foreground">Fully customizable row detail viewers</p>
-                      </div>
+                    <Alert>
+                      <Info className="h-4 w-4" />
+                      <AlertDescription>
+                        <strong>Note:</strong> Make sure you have Shadcn UI
+                        components installed (Card, Button, Table, Dialog,
+                        Select, Alert, etc.)
+                      </AlertDescription>
+                    </Alert>
+                  </div>
+                </div>
+
+                <Separator />
+
+                {/* Minimal Example */}
+                <div>
+                  <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
+                    <Code className="h-5 w-5 text-green-600" />
+                    Step 2: Basic Implementation (Minimal)
+                  </h3>
+                  <div className="space-y-4">
+                    <p className="text-sm text-muted-foreground">
+                      The simplest possible implementation with default
+                      settings:
+                    </p>
+                    <div className="bg-muted p-4 rounded-lg border">
+                      <pre className="text-sm overflow-x-auto whitespace-pre-wrap">
+                        {`// app/users/page.tsx
+import { DynamicServerTable } from '@/components/table/dynamic-server-table';
+import { ColumnDef } from '@tanstack/react-table';
+import { fetchTableData } from '@/app/actions/table-data';
+
+type User = {
+  id: string;
+  name: string;
+  email: string;
+  status: string;
+};
+
+const columns: ColumnDef<User>[] = [
+  { accessorKey: 'name', header: 'Name' },
+  { accessorKey: 'email', header: 'Email' },
+  { accessorKey: 'status', header: 'Status' },
+  { id: 'actions', header: 'Actions' },
+];
+
+export default async function UsersPage() {
+  const initialData = await fetchTableData('/api/users', {
+    limit: 10
+  });
+
+  return (
+    <DynamicServerTable
+      initialData={initialData}
+      columns={columns}
+      fetchData={async (params) => {
+        'use server';
+        return fetchTableData('/api/users', params);
+      }}
+      tableKey="users-table"
+    />
+  );
+}`}
+                      </pre>
                     </div>
                   </div>
                 </div>
 
                 <Separator />
 
+                {/* Full Featured Example */}
                 <div>
-                  <h3 className="text-lg font-semibold mb-2">Basic Usage</h3>
-                  <div className="bg-muted p-4 rounded-lg">
-                    <pre className="text-sm overflow-x-auto">
-{`import { DynamicServerTable } from '@/components/table/dynamic-server-table';
+                  <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
+                    <Rocket className="h-5 w-5 text-orange-600" />
+                    Step 3: Production-Ready Implementation
+                  </h3>
+                  <div className="space-y-4">
+                    <p className="text-sm text-muted-foreground">
+                      Full example with all major features enabled:
+                    </p>
+                    <div className="bg-muted p-4 rounded-lg border">
+                      <pre className="text-sm overflow-x-auto whitespace-pre-wrap">
+                        {`// app/bookings/page.tsx
+import { DynamicServerTable } from '@/components/table/dynamic-server-table';
+import { ColumnDef } from '@tanstack/react-table';
+import { fetchTableData } from '@/app/actions/table-data';
+import { FormFieldConfig } from '@/components/forms/auto-form-generator';
+import { Mail, XCircle } from 'lucide-react';
 
-<DynamicServerTable
-  initialData={data}
-  columns={columns}
-  fetchData={fetchFunction}
-  searchable
-  exportable
-  selectable
-/>`}
-                    </pre>
+type Booking = {
+  id: string;
+  bookingId: string;
+  passengerName: string;
+  email: string;
+  phone: string;
+  flightNumber: string;
+  status: 'confirmed' | 'pending' | 'cancelled';
+  createdAt: string;
+};
+
+const columns: ColumnDef<Booking>[] = [
+  {
+    accessorKey: 'bookingId',
+    header: 'Booking ID',
+    enableSorting: true
+  },
+  { accessorKey: 'passengerName', header: 'Passenger' },
+  { accessorKey: 'email', header: 'Email' },
+  { accessorKey: 'flightNumber', header: 'Flight' },
+  {
+    accessorKey: 'status',
+    header: 'Status',
+    cell: ({ row }) => {
+      const status = row.original.status;
+      const colors = {
+        confirmed: 'bg-green-100 text-green-800',
+        pending: 'bg-yellow-100 text-yellow-800',
+        cancelled: 'bg-red-100 text-red-800',
+      };
+      return (
+        <span className={\`px-2 py-1 rounded text-xs font-medium \${colors[status]}\`}>
+          {status.toUpperCase()}
+        </span>
+      );
+    }
+  },
+  { id: 'actions', header: 'Actions' },
+];
+
+const formFields: FormFieldConfig[] = [
+  {
+    name: 'passengerName',
+    label: 'Passenger Name',
+    type: 'text',
+    required: true,
+    placeholder: 'Enter full name',
+  },
+  {
+    name: 'email',
+    label: 'Email Address',
+    type: 'email',
+    required: true,
+    validation: (value) => {
+      if (!value.includes('@')) return 'Invalid email';
+    },
+  },
+  {
+    name: 'phone',
+    label: 'Phone Number',
+    type: 'tel',
+    required: true,
+    placeholder: '+1 (555) 000-0000',
+  },
+  {
+    name: 'flightNumber',
+    label: 'Flight Number',
+    type: 'text',
+    required: true,
+    placeholder: 'e.g., AA123',
+  },
+  {
+    name: 'status',
+    label: 'Booking Status',
+    type: 'select',
+    options: [
+      { label: 'Confirmed', value: 'confirmed' },
+      { label: 'Pending', value: 'pending' },
+      { label: 'Cancelled', value: 'cancelled' },
+    ],
+    required: true,
+  },
+];
+
+export default async function BookingsPage() {
+  const initialData = await fetchTableData('/api/bookings', {
+    limit: 25,
+    sortBy: 'createdAt',
+    sortOrder: 'desc',
+  });
+
+  return (
+    <div className="container mx-auto py-6 space-y-6">
+      <div>
+        <h1 className="text-3xl font-bold">Bookings Management</h1>
+        <p className="text-muted-foreground">
+          Manage all your flight bookings in one place
+        </p>
+      </div>
+
+      <DynamicServerTable<Booking>
+        // Core Data Props
+        initialData={initialData}
+        columns={columns}
+        fetchData={async (params) => {
+          'use server';
+          return fetchTableData('/api/bookings', params);
+        }}
+        tableKey="bookings-table"
+        rowIdField="id"
+
+        // CRUD Configuration
+        apiEndpoint="/api/bookings"
+        formFields={formFields}
+        showAddButton={true}
+        addButtonLabel="New Booking"
+        showEditButton={true}
+        showDeleteButton={true}
+
+        // Search Configuration
+        searchable={true}
+        searchPlaceholder="Search by name, email, phone, or booking ID..."
+        searchFields={['passengerName', 'bookingId', 'email', 'phone']}
+
+        // Filters
+        filters={[
+          {
+            field: 'status',
+            label: 'Status',
+            type: 'multiselect',
+            options: [
+              { label: 'Confirmed', value: 'confirmed' },
+              { label: 'Pending', value: 'pending' },
+              { label: 'Cancelled', value: 'cancelled' },
+            ],
+          },
+          {
+            field: 'flightNumber',
+            label: 'Flight',
+            type: 'select',
+            options: [
+              { label: 'Flight AA123', value: 'AA123' },
+              { label: 'Flight BA456', value: 'BA456' },
+              { label: 'Flight UA789', value: 'UA789' },
+            ],
+          },
+        ]}
+
+        // Pagination
+        pageSize={25}
+        pageSizeOptions={[10, 25, 50, 100]}
+        defaultSortBy="createdAt"
+        defaultSortOrder="desc"
+
+        // Selection & Bulk Actions
+        selectable={true}
+        onSelectionChange={(rows) => {
+          console.log('Selected bookings:', rows.length);
+        }}
+        bulkActions={[
+          {
+            label: 'Send Confirmation Email',
+            icon: <Mail className="h-4 w-4" />,
+            onClick: (selectedRows) => {
+              console.log('Sending emails to:', selectedRows);
+              // Your bulk email logic
+            },
+            variant: 'default',
+          },
+          {
+            label: 'Cancel Bookings',
+            icon: <XCircle className="h-4 w-4" />,
+            onClick: (selectedRows) => {
+              if (confirm(\`Cancel \${selectedRows.length} bookings?\`)) {
+                // Your bulk cancel logic
+              }
+            },
+            variant: 'destructive',
+          },
+        ]}
+
+        // Export Configuration
+        exportable={true}
+        exportFileName="bookings-export"
+        exportConfig={{
+          csv: true,
+          excel: true,
+          pdf: true,
+          print: true,
+        }}
+
+        // Row Viewer Configuration
+        viewerTitle="Booking Details"
+        viewerSubtitle="Complete booking information"
+        viewerFieldConfig={{
+          createdAt: {
+            label: 'Booking Date',
+            format: (value) => new Date(value).toLocaleString(),
+          },
+          email: {
+            label: 'Contact Email',
+          },
+          phone: {
+            label: 'Contact Phone',
+          },
+        }}
+      />
+    </div>
+  );
+}`}
+                      </pre>
+                    </div>
+                  </div>
+                </div>
+
+                <Separator />
+
+                {/* Key Concepts */}
+                <div>
+                  <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
+                    <Lightbulb className="h-5 w-5 text-yellow-600" />
+                    Step 4: Understanding Key Concepts
+                  </h3>
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <Card className="border-2">
+                      <CardHeader className="pb-3">
+                        <CardTitle className="text-base flex items-center gap-2">
+                          <Database className="h-4 w-4 text-blue-600" />
+                          Server-Side Data Fetching
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-2 text-sm">
+                        <p className="text-muted-foreground">
+                          Data is fetched on the server using Next.js Server
+                          Actions. The{" "}
+                          <code className="bg-muted px-1 rounded">
+                            fetchData
+                          </code>{" "}
+                          prop receives parameters (page, search, filters) and
+                          returns data from your API.
+                        </p>
+                        <pre className="text-xs bg-muted p-2 rounded">
+                          {`fetchData={async (params) => {
+  'use server';
+  return fetchTableData('/api/users', params);
+}}`}
+                        </pre>
+                      </CardContent>
+                    </Card>
+
+                    <Card className="border-2">
+                      <CardHeader className="pb-3">
+                        <CardTitle className="text-base flex items-center gap-2">
+                          <Globe className="h-4 w-4 text-purple-600" />
+                          URL State Management
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-2 text-sm">
+                        <p className="text-muted-foreground">
+                          <strong className="text-foreground">
+                            NEW in v2.0:
+                          </strong>{" "}
+                          All table state (page, search, filters, dialogs) is
+                          synced with the URL. This enables:
+                        </p>
+                        <ul className="text-xs space-y-1 text-muted-foreground">
+                          <li>✓ Shareable links with filters</li>
+                          <li>✓ Browser back/forward navigation</li>
+                          <li>✓ Bookmark specific table states</li>
+                          <li>✓ Deep linking to dialogs</li>
+                        </ul>
+                      </CardContent>
+                    </Card>
+
+                    <Card className="border-2">
+                      <CardHeader className="pb-3">
+                        <CardTitle className="text-base flex items-center gap-2">
+                          <History className="h-4 w-4 text-green-600" />
+                          Cursor-Based Pagination
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-2 text-sm">
+                        <p className="text-muted-foreground">
+                          Uses cursor-based pagination for efficient performance
+                          with large datasets. Cursor history is maintained for
+                          proper previous/next navigation.
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          <strong className="text-foreground">
+                            Enhanced in v2.0:
+                          </strong>{" "}
+                          Fixed previous page navigation with proper cursor
+                          tracking.
+                        </p>
+                      </CardContent>
+                    </Card>
+
+                    <Card className="border-2">
+                      <CardHeader className="pb-3">
+                        <CardTitle className="text-base flex items-center gap-2">
+                          <Edit className="h-4 w-4 text-orange-600" />
+                          Auto-Generated CRUD
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-2 text-sm">
+                        <p className="text-muted-foreground">
+                          Forms are automatically generated from your{" "}
+                          <code className="bg-muted px-1 rounded">
+                            formFields
+                          </code>{" "}
+                          configuration. Or provide custom forms using props:
+                        </p>
+                        <ul className="text-xs space-y-1 text-muted-foreground">
+                          <li>
+                            •{" "}
+                            <code className="bg-muted px-1 rounded">
+                              customAddForm
+                            </code>
+                          </li>
+                          <li>
+                            •{" "}
+                            <code className="bg-muted px-1 rounded">
+                              customEditForm
+                            </code>
+                          </li>
+                        </ul>
+                      </CardContent>
+                    </Card>
+                  </div>
+                </div>
+
+                <Separator />
+
+                {/* Next Steps */}
+                <div>
+                  <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
+                    <ArrowRight className="h-5 w-5 text-blue-600" />
+                    Next Steps
+                  </h3>
+                  <div className="grid gap-3 md:grid-cols-3">
+                    <Card className="border-l-4 border-l-blue-600">
+                      <CardContent className="pt-6">
+                        <div className="flex items-center gap-2 mb-2">
+                          <Zap className="h-5 w-5 text-blue-600" />
+                          <strong>Explore Features</strong>
+                        </div>
+                        <p className="text-sm text-muted-foreground">
+                          Check the <strong>Features</strong> tab to see all 25+
+                          built-in features
+                        </p>
+                      </CardContent>
+                    </Card>
+
+                    <Card className="border-l-4 border-l-purple-600">
+                      <CardContent className="pt-6">
+                        <div className="flex items-center gap-2 mb-2">
+                          <Settings className="h-5 w-5 text-purple-600" />
+                          <strong>Browse Props</strong>
+                        </div>
+                        <p className="text-sm text-muted-foreground">
+                          See the <strong>Props API</strong> tab for all 50+
+                          configuration options
+                        </p>
+                      </CardContent>
+                    </Card>
+
+                    <Card className="border-l-4 border-l-green-600">
+                      <CardContent className="pt-6">
+                        <div className="flex items-center gap-2 mb-2">
+                          <Code className="h-5 w-5 text-green-600" />
+                          <strong>View Examples</strong>
+                        </div>
+                        <p className="text-sm text-muted-foreground">
+                          Check <strong>Bookings</strong> and{" "}
+                          <strong>Flights</strong> pages for live demos
+                        </p>
+                      </CardContent>
+                    </Card>
                   </div>
                 </div>
               </CardContent>
             </Card>
           </TabsContent>
 
-          {/* ==================== PROPS ==================== */}
-          <TabsContent value="props" className="space-y-4">
+          {/* ==================== TAB: FEATURES ==================== */}
+          <TabsContent value="features" className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle>Complete Props Reference</CardTitle>
-                <CardDescription>Every single prop with types, defaults, and examples</CardDescription>
+                <CardTitle className="flex items-center gap-2 text-2xl">
+                  <Zap className="h-6 w-6 text-yellow-600" />
+                  Complete Feature Reference
+                </CardTitle>
+                <CardDescription className="text-base">
+                  Every feature included in DynamicServerTable v2.0 with
+                  detailed explanations
+                </CardDescription>
               </CardHeader>
-              <CardContent className="space-y-6">
-                {/* Required Props */}
+              <CardContent>
+                <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                  {/* URL State Management */}
+                  <Card className="border-l-4 border-l-blue-600 hover:shadow-xl transition-all">
+                    <CardHeader className="pb-3">
+                      <div className="flex items-center justify-between">
+                        <CardTitle className="text-base flex items-center gap-2">
+                          <Globe className="h-5 w-5 text-blue-600" />
+                          URL State Management
+                        </CardTitle>
+                        <Badge className="bg-blue-600 border-0 text-xs">
+                          NEW
+                        </Badge>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="space-y-2">
+                      {[
+                        "All state synced to URL parameters",
+                        "Shareable table links with filters",
+                        "Deep linkable table states",
+                        "Clean URLs without clutter",
+                        "Automatic state restoration",
+                      ].map((f, i) => (
+                        <div key={i} className="flex items-start gap-2">
+                          <CheckCircle className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
+                          <p className="text-sm text-muted-foreground">{f}</p>
+                        </div>
+                      ))}
+                    </CardContent>
+                  </Card>
+
+                  {/* Browser Navigation */}
+                  <Card className="border-l-4 border-l-purple-600 hover:shadow-xl transition-all">
+                    <CardHeader className="pb-3">
+                      <div className="flex items-center justify-between">
+                        <CardTitle className="text-base flex items-center gap-2">
+                          <History className="h-5 w-5 text-purple-600" />
+                          Browser Navigation
+                        </CardTitle>
+                        <Badge className="bg-purple-600 border-0 text-xs">
+                          NEW
+                        </Badge>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="space-y-2">
+                      {[
+                        "Back/Forward button support",
+                        "History entries for each page",
+                        "Proper state restoration on nav",
+                        "Dialog closes on browser back",
+                        "Search & filter persistence",
+                      ].map((f, i) => (
+                        <div key={i} className="flex items-start gap-2">
+                          <CheckCircle className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
+                          <p className="text-sm text-muted-foreground">{f}</p>
+                        </div>
+                      ))}
+                    </CardContent>
+                  </Card>
+
+                  {/* Cursor Pagination */}
+                  <Card className="border-l-4 border-l-green-600 hover:shadow-xl transition-all">
+                    <CardHeader className="pb-3">
+                      <div className="flex items-center justify-between">
+                        <CardTitle className="text-base flex items-center gap-2">
+                          <Mouse className="h-5 w-5 text-green-600" />
+                          Cursor Pagination
+                        </CardTitle>
+                        <Badge className="bg-green-600 border-0 text-xs">
+                          ENHANCED
+                        </Badge>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="space-y-2">
+                      {[
+                        "Efficient for large datasets",
+                        "Cursor history tracking",
+                        "Previous page navigation fixed",
+                        "Customizable page sizes (10-100)",
+                        "First/Prev/Next/Last controls",
+                      ].map((f, i) => (
+                        <div key={i} className="flex items-start gap-2">
+                          <CheckCircle className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
+                          <p className="text-sm text-muted-foreground">{f}</p>
+                        </div>
+                      ))}
+                    </CardContent>
+                  </Card>
+
+                  {/* CRUD Operations */}
+                  <Card className="border-l-4 border-l-orange-600 hover:shadow-xl transition-all">
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-base flex items-center gap-2">
+                        <Edit className="h-5 w-5 text-orange-600" />
+                        CRUD Operations
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-2">
+                      {[
+                        "Create with auto-forms",
+                        "Read with detail viewer",
+                        "Update with pre-filled forms",
+                        "Delete with confirmation",
+                        "Custom handlers support",
+                      ].map((f, i) => (
+                        <div key={i} className="flex items-start gap-2">
+                          <CheckCircle className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
+                          <p className="text-sm text-muted-foreground">{f}</p>
+                        </div>
+                      ))}
+                    </CardContent>
+                  </Card>
+
+                  {/* Search & Filters */}
+                  <Card className="border-l-4 border-l-cyan-600 hover:shadow-xl transition-all">
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-base flex items-center gap-2">
+                        <Search className="h-5 w-5 text-cyan-600" />
+                        Search & Filters
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-2">
+                      {[
+                        "Multi-field search",
+                        "Debounced input (500ms)",
+                        "Select & multiselect filters",
+                        "Active filter badges",
+                        "Clear all filters button",
+                      ].map((f, i) => (
+                        <div key={i} className="flex items-start gap-2">
+                          <CheckCircle className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
+                          <p className="text-sm text-muted-foreground">{f}</p>
+                        </div>
+                      ))}
+                    </CardContent>
+                  </Card>
+
+                  {/* Data Export */}
+                  <Card className="border-l-4 border-l-pink-600 hover:shadow-xl transition-all">
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-base flex items-center gap-2">
+                        <Download className="h-5 w-5 text-pink-600" />
+                        Data Export
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-2">
+                      {[
+                        "CSV export",
+                        "Excel (XLSX) export",
+                        "PDF with auto-table",
+                        "Print preview",
+                        "Export selected rows only",
+                      ].map((f, i) => (
+                        <div key={i} className="flex items-start gap-2">
+                          <CheckCircle className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
+                          <p className="text-sm text-muted-foreground">{f}</p>
+                        </div>
+                      ))}
+                    </CardContent>
+                  </Card>
+
+                  {/* Row Selection */}
+                  <Card className="border-l-4 border-l-indigo-600 hover:shadow-xl transition-all">
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-base flex items-center gap-2">
+                        <Layers className="h-5 w-5 text-indigo-600" />
+                        Row Selection
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-2">
+                      {[
+                        "Checkbox selection",
+                        "Select all/none toggle",
+                        "Bulk actions on selected",
+                        "Selection callbacks",
+                        "Visual selection state",
+                      ].map((f, i) => (
+                        <div key={i} className="flex items-start gap-2">
+                          <CheckCircle className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
+                          <p className="text-sm text-muted-foreground">{f}</p>
+                        </div>
+                      ))}
+                    </CardContent>
+                  </Card>
+
+                  {/* Mobile Responsive */}
+                  <Card className="border-l-4 border-l-red-600 hover:shadow-xl transition-all">
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-base flex items-center gap-2">
+                        <Smartphone className="h-5 w-5 text-red-600" />
+                        Mobile Responsive
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-2">
+                      {[
+                        "Auto card view on mobile (<768px)",
+                        "Touch-friendly controls",
+                        "Responsive pagination",
+                        "Mobile-optimized forms",
+                        "Adaptive toolbar layout",
+                      ].map((f, i) => (
+                        <div key={i} className="flex items-start gap-2">
+                          <CheckCircle className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
+                          <p className="text-sm text-muted-foreground">{f}</p>
+                        </div>
+                      ))}
+                    </CardContent>
+                  </Card>
+
+                  {/* Column Management */}
+                  <Card className="border-l-4 border-l-yellow-600 hover:shadow-xl transition-all">
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-base flex items-center gap-2">
+                        <TableIcon className="h-5 w-5 text-yellow-600" />
+                        Column Management
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-2">
+                      {[
+                        "Show/hide columns dropdown",
+                        "localStorage persistence",
+                        "Column sorting (asc/desc)",
+                        "Flexible column config",
+                        "Auto-generated actions column",
+                      ].map((f, i) => (
+                        <div key={i} className="flex items-start gap-2">
+                          <CheckCircle className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
+                          <p className="text-sm text-muted-foreground">{f}</p>
+                        </div>
+                      ))}
+                    </CardContent>
+                  </Card>
+
+                  {/* Form Fields */}
+                  <Card className="border-l-4 border-l-teal-600 hover:shadow-xl transition-all">
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-base flex items-center gap-2">
+                        <FileText className="h-5 w-5 text-teal-600" />
+                        Form Fields (10+ Types)
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-2">
+                      {[
+                        "text, email, tel, number",
+                        "select, multiselect",
+                        "textarea, date, checkbox",
+                        "Custom validation per field",
+                        "Auto-form generation from config",
+                      ].map((f, i) => (
+                        <div key={i} className="flex items-start gap-2">
+                          <CheckCircle className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
+                          <p className="text-sm text-muted-foreground">{f}</p>
+                        </div>
+                      ))}
+                    </CardContent>
+                  </Card>
+
+                  {/* Customization */}
+                  <Card className="border-l-4 border-l-violet-600 hover:shadow-xl transition-all">
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-base flex items-center gap-2">
+                        <Code className="h-5 w-5 text-violet-600" />
+                        Deep Customization
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-2">
+                      {[
+                        "Custom add/edit forms",
+                        "Custom row viewers",
+                        "Custom CRUD handlers",
+                        "Custom field formatters",
+                        "50+ configuration props",
+                      ].map((f, i) => (
+                        <div key={i} className="flex items-start gap-2">
+                          <CheckCircle className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
+                          <p className="text-sm text-muted-foreground">{f}</p>
+                        </div>
+                      ))}
+                    </CardContent>
+                  </Card>
+
+                  {/* Developer Experience */}
+                  <Card className="border-l-4 border-l-blue-600 hover:shadow-xl transition-all">
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-base flex items-center gap-2">
+                        <Rocket className="h-5 w-5 text-blue-600" />
+                        Developer Experience
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-2">
+                      {[
+                        "TypeScript first with generics",
+                        "Full type safety",
+                        "Detailed error messages",
+                        "Toast notifications",
+                        "Loading states & transitions",
+                      ].map((f, i) => (
+                        <div key={i} className="flex items-start gap-2">
+                          <CheckCircle className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
+                          <p className="text-sm text-muted-foreground">{f}</p>
+                        </div>
+                      ))}
+                    </CardContent>
+                  </Card>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* ==================== TAB: PROPS API ==================== */}
+          <TabsContent value="props" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-2xl">
+                  <Settings className="h-6 w-6 text-blue-600" />
+                  Complete Props API Reference
+                </CardTitle>
+                <CardDescription className="text-base">
+                  All 50+ props with types, defaults, and examples
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-8">
+                {/* Core Props Section */}
                 <div>
-                  <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
-                    <Badge variant="destructive">Required</Badge>
-                    Core Props
+                  <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
+                    <Database className="h-5 w-5 text-blue-600" />
+                    Core Data Props (Required)
                   </h3>
-                  <div className="space-y-3">
+                  <div className="space-y-4">
                     <PropDoc
                       name="initialData"
                       type="TableResponse<T>"
                       required
-                      description="Initial data fetched from server with pagination info"
-                      example={`{
-  data: [...],
-  pagination: {
-    hasNextPage: true,
-    nextCursor: "abc123",
-    totalCount: 100
-  }
-}`}
+                      description="Initial data loaded on the server. Must include data array and pagination object with totalCount, hasNextPage, nextCursor."
+                      example={`const initialData = await fetchTableData('/api/users', {
+  limit: 10,
+  sortBy: 'createdAt',
+  sortOrder: 'desc'
+});
+
+<DynamicServerTable initialData={initialData} .../>`}
                     />
+
                     <PropDoc
                       name="columns"
                       type="ColumnDef<T>[]"
                       required
-                      description="TanStack Table column definitions with accessors and cell formatters"
-                      example={`[
-  {
-    accessorKey: 'name',
-    header: 'Name',
-    enableSorting: true,
-    cell: ({ row }) => row.original.name
-  }
-]`}
+                      description="TanStack Table column definitions. Define table structure including an 'actions' column for CRUD buttons."
+                      example={`const columns: ColumnDef<User>[] = [
+  { accessorKey: 'name', header: 'Name', enableSorting: true },
+  { accessorKey: 'email', header: 'Email' },
+  { id: 'actions', header: 'Actions' }, // Auto-populated
+];`}
                     />
+
                     <PropDoc
                       name="fetchData"
                       type="(params: TableParams) => Promise<TableResponse<T>>"
                       required
-                      description="Async function to fetch data from server with params"
-                      example={`async (params) => {
+                      description="Server action to fetch data. Receives pagination, search, filter params and returns data response."
+                      example={`fetchData={async (params) => {
   'use server';
   return fetchTableData('/api/users', params);
-}`}
+}}`}
+                    />
+
+                    <PropDoc
+                      name="tableKey"
+                      type="string"
+                      required
+                      description="Unique identifier for this table instance. Used for localStorage and URL state management."
+                      example={`tableKey="users-table"`}
                     />
                   </div>
                 </div>
@@ -241,2098 +1111,378 @@ export default function DocsPage() {
 
                 {/* CRUD Props */}
                 <div>
-                  <h3 className="text-lg font-semibold mb-3">CRUD Operations Props</h3>
-                  <div className="space-y-3">
+                  <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
+                    <Edit className="h-5 w-5 text-purple-600" />
+                    CRUD Configuration (11 props)
+                  </h3>
+                  <div className="space-y-4">
                     <PropDoc
                       name="apiEndpoint"
                       type="string"
-                      description="Base API endpoint for CRUD operations. Required if using default handlers."
-                      example="/api/users"
+                      description="Base API endpoint for default CRUD handlers. If provided, auto-generates POST/PUT/DELETE calls."
+                      example={`apiEndpoint="/api/bookings"`}
                     />
+
                     <PropDoc
                       name="formFields"
                       type="FormFieldConfig[]"
-                      description="Configuration array for auto-generated form fields. Required for CRUD."
-                      example={`[
-  {
-    name: 'email',
-    label: 'Email Address',
-    type: 'email',
-    required: true,
-    placeholder: 'john@example.com'
-  }
-]`}
+                      description="Array of form field configurations for auto-generated add/edit forms. Supports 10+ field types."
+                      example={`formFields={[
+  { name: 'name', label: 'Full Name', type: 'text', required: true },
+  { name: 'email', label: 'Email', type: 'email', required: true,
+    validation: (v) => !v.includes('@') ? 'Invalid email' : undefined },
+  { name: 'role', label: 'Role', type: 'select',
+    options: [
+      { label: 'Admin', value: 'admin' },
+      { label: 'User', value: 'user' }
+    ]},
+]}`}
                     />
-                    <PropDoc
-                      name="onCreateRecord"
-                      type="(data: Partial<T>) => Promise<T>"
-                      description="Custom create handler. Overrides default POST request to apiEndpoint."
-                      example={`async (data) => {
-  const result = await customCreate(data);
-  toast.success('Created!');
-  return result;
-}`}
-                    />
-                    <PropDoc
-                      name="onUpdateRecord"
-                      type="(id: string, data: Partial<T>) => Promise<T>"
-                      description="Custom update handler. Overrides default PUT request."
-                      example={`async (id, data) => {
-  return await customUpdate(id, data);
-}`}
-                    />
-                    <PropDoc
-                      name="onDeleteRecord"
-                      type="(id: string) => Promise<void>"
-                      description="Custom delete handler. Overrides default DELETE request."
-                      example={`async (id) => {
-  await customDelete(id);
-  revalidatePath('/users');
-}`}
-                    />
+
                     <PropDoc
                       name="showAddButton"
                       type="boolean"
                       defaultValue="true"
-                      description="Show or hide the Add New button in toolbar"
+                      description="Show/hide add new record button in toolbar."
+                      example={`showAddButton={true}`}
                     />
-                    <PropDoc
-                      name="showEditButton"
-                      type="boolean"
-                      defaultValue="true"
-                      description="Show or hide Edit icon in row actions"
-                    />
-                    <PropDoc
-                      name="showDeleteButton"
-                      type="boolean"
-                      defaultValue="true"
-                      description="Show or hide Delete icon in row actions"
-                    />
+
                     <PropDoc
                       name="addButtonLabel"
                       type="string"
-                      defaultValue="'Add'"
-                      description="Custom text for the Add button"
-                      example="'Create New User'"
+                      defaultValue='"Add New"'
+                      description="Custom label for add button."
+                      example={`addButtonLabel="New Booking"`}
                     />
-                  </div>
-                </div>
 
-                <Separator />
-
-                {/* Search Props */}
-                <div>
-                  <h3 className="text-lg font-semibold mb-3">Search Configuration Props</h3>
-                  <div className="space-y-3">
-                    <PropDoc
-                      name="searchable"
-                      type="boolean"
-                      defaultValue="true"
-                      description="Enable or disable search functionality"
-                    />
-                    <PropDoc
-                      name="searchPlaceholder"
-                      type="string"
-                      defaultValue="'Search...'"
-                      description="Placeholder text for search input"
-                      example="'Search by name, email, or phone...'"
-                    />
-                    <PropDoc
-                      name="searchFields"
-                      type="string[]"
-                      description="Array of field names to search in. Searches all fields if not specified."
-                      example="['name', 'email', 'phone', 'company']"
-                    />
-                  </div>
-                </div>
-
-                <Separator />
-
-                {/* Filter Props */}
-                <div>
-                  <h3 className="text-lg font-semibold mb-3">Filter Configuration Props</h3>
-                  <div className="space-y-3">
-                    <PropDoc
-                      name="filters"
-                      type="FilterConfig[]"
-                      description="Array of filter configurations for select and multiselect filters"
-                      example={`[
-  {
-    field: 'status',
-    label: 'Status',
-    type: 'multiselect',
-    options: [
-      { label: 'Active', value: 'active' },
-      { label: 'Inactive', value: 'inactive' }
-    ]
-  }
-]`}
-                    />
-                  </div>
-                </div>
-
-                <Separator />
-
-                {/* Sorting Props */}
-                <div>
-                  <h3 className="text-lg font-semibold mb-3">Sorting Configuration Props</h3>
-                  <div className="space-y-3">
-                    <PropDoc
-                      name="defaultSortBy"
-                      type="string"
-                      description="Initial column to sort by on first load"
-                      example="'createdAt'"
-                    />
-                    <PropDoc
-                      name="defaultSortOrder"
-                      type="'asc' | 'desc'"
-                      defaultValue="'asc'"
-                      description="Initial sort direction"
-                      example="'desc'"
-                    />
-                  </div>
-                </div>
-
-                <Separator />
-
-                {/* Pagination Props */}
-                <div>
-                  <h3 className="text-lg font-semibold mb-3">Pagination Configuration Props</h3>
-                  <div className="space-y-3">
-                    <PropDoc
-                      name="pageSize"
-                      type="number"
-                      defaultValue="10"
-                      description="Number of items per page"
-                      example="25"
-                    />
-                    <PropDoc
-                      name="pageSizeOptions"
-                      type="number[]"
-                      defaultValue="[10, 25, 50, 100]"
-                      description="Available page size options in dropdown"
-                      example="[5, 10, 20, 50, 100]"
-                    />
-                  </div>
-                </div>
-
-                <Separator />
-
-                {/* Export Props */}
-                <div>
-                  <h3 className="text-lg font-semibold mb-3">Export Configuration Props</h3>
-                  <div className="space-y-3">
-                    <PropDoc
-                      name="exportable"
-                      type="boolean"
-                      defaultValue="false"
-                      description="Enable export dropdown in toolbar"
-                    />
-                    <PropDoc
-                      name="exportFileName"
-                      type="string"
-                      defaultValue="'export'"
-                      description="Base filename for exported files (timestamp added automatically)"
-                      example="'users-report'"
-                    />
-                    <PropDoc
-                      name="exportConfig"
-                      type="{ csv?: boolean; excel?: boolean; pdf?: boolean; print?: boolean }"
-                      defaultValue="{ csv: true, excel: true, pdf: true, print: true }"
-                      description="Enable specific export formats"
-                      example="{ csv: true, excel: true, pdf: false, print: false }"
-                    />
-                  </div>
-                </div>
-
-                <Separator />
-
-                {/* Selection Props */}
-                <div>
-                  <h3 className="text-lg font-semibold mb-3">Selection & Bulk Action Props</h3>
-                  <div className="space-y-3">
-                    <PropDoc
-                      name="selectable"
-                      type="boolean"
-                      defaultValue="false"
-                      description="Enable row selection checkboxes"
-                    />
-                    <PropDoc
-                      name="onSelectionChange"
-                      type="(rows: T[]) => void"
-                      description="Callback fired when selection changes"
-                      example="(rows) => setSelectedUsers(rows)"
-                    />
-                    <PropDoc
-                      name="bulkActions"
-                      type="BulkAction[]"
-                      description="Array of bulk action button configs. Shown when rows are selected."
-                      example={`[
-  {
-    label: 'Delete',
-    icon: <Trash2 />,
-    onClick: (rows) => deleteMultiple(rows),
-    variant: 'destructive'
-  }
-]`}
-                    />
-                  </div>
-                </div>
-
-                <Separator />
-
-                {/* UI Customization Props */}
-                <div>
-                  <h3 className="text-lg font-semibold mb-3">UI Customization Props</h3>
-                  <div className="space-y-3">
-                    <PropDoc
-                      name="viewerTitle"
-                      type="string"
-                      description="Title shown in row viewer dialog"
-                      example="'User Details'"
-                    />
-                    <PropDoc
-                      name="viewerSubtitle"
-                      type="string"
-                      description="Subtitle shown in row viewer dialog"
-                      example="'Complete user information'"
-                    />
-                    <PropDoc
-                      name="viewerFieldConfig"
-                      type="Record<string, RowViewerFieldConfig>"
-                      description="Custom field rendering config for row viewer"
-                      example={`{
-  email: {
-    format: (value) => <a href={\`mailto:\${value}\`}>{value}</a>
-  }
-}`}
-                    />
-                    <PropDoc
-                      name="customRowViewer"
-                      type="(data: T) => ReactNode"
-                      description="Completely custom row viewer component"
-                      example="(data) => <CustomUserViewer user={data} />"
-                    />
                     <PropDoc
                       name="customAddForm"
-                      type="ReactNode"
-                      description="Custom add form (replaces auto-generated form)"
-                      example="<CustomUserAddForm onSubmit={handleCreate} />"
+                      type="React.ReactNode"
+                      description="Replace auto-generated add form with your own custom component."
+                      example={`customAddForm={<CustomBookingForm onSubmit={handleCreate} />}`}
                     />
+
                     <PropDoc
                       name="customEditForm"
-                      type="(data: T) => ReactNode"
-                      description="Custom edit form (replaces auto-generated form)"
-                      example="(data) => <CustomUserEditForm user={data} />"
+                      type="(data: T) => React.ReactNode"
+                      description="Replace auto-generated edit form. Function receives current record data."
+                      example={`customEditForm={(booking) => (
+  <CustomBookingEditForm
+    initialData={booking}
+    onSubmit={handleUpdate}
+  />
+)}`}
                     />
-                    <PropDoc
-                      name="tableKey"
-                      type="string"
-                      description="Unique key for localStorage persistence (column visibility)"
-                      example="'users-table'"
-                    />
-                    <PropDoc
-                      name="rowIdField"
-                      type="string"
-                      defaultValue="'id'"
-                      description="Field name to use as unique row identifier"
-                      example="'userId'"
-                    />
-                    <PropDoc
-                      name="onRowClick"
-                      type="(row: T) => void"
-                      description="Callback when table row is clicked"
-                      example="(row) => router.push(\`/users/\${row.id}\`)"
-                    />
+                  </div>
+                </div>
+
+                <Separator />
+
+                {/* Quick reference for remaining props */}
+                <div>
+                  <h3 className="text-xl font-bold mb-4">
+                    All Other Props (Quick Reference)
+                  </h3>
+                  <div className="grid gap-3 md:grid-cols-2">
+                    <Card className="p-4">
+                      <h4 className="font-bold mb-2 flex items-center gap-2">
+                        <Search className="h-4 w-4" />
+                        Search Props
+                      </h4>
+                      <ul className="text-sm space-y-1 text-muted-foreground">
+                        <li>• searchable: boolean</li>
+                        <li>• searchPlaceholder: string</li>
+                        <li>• searchFields: string[]</li>
+                      </ul>
+                    </Card>
+
+                    <Card className="p-4">
+                      <h4 className="font-bold mb-2 flex items-center gap-2">
+                        <Filter className="h-4 w-4" />
+                        Filter Props
+                      </h4>
+                      <ul className="text-sm space-y-1 text-muted-foreground">
+                        <li>• filters: FilterConfig[]</li>
+                        <li> - field, label, type</li>
+                        <li> - options array</li>
+                      </ul>
+                    </Card>
+
+                    <Card className="p-4">
+                      <h4 className="font-bold mb-2 flex items-center gap-2">
+                        <Mouse className="h-4 w-4" />
+                        Pagination Props
+                      </h4>
+                      <ul className="text-sm space-y-1 text-muted-foreground">
+                        <li>• pageSize: number (default: 10)</li>
+                        <li>• pageSizeOptions: number[]</li>
+                        <li>• defaultSortBy: string</li>
+                        <li>• defaultSortOrder: 'asc' | 'desc'</li>
+                      </ul>
+                    </Card>
+
+                    <Card className="p-4">
+                      <h4 className="font-bold mb-2 flex items-center gap-2">
+                        <Layers className="h-4 w-4" />
+                        Selection Props
+                      </h4>
+                      <ul className="text-sm space-y-1 text-muted-foreground">
+                        <li>• selectable: boolean</li>
+                        <li>• bulkActions: BulkActionConfig[]</li>
+                        <li>• onSelectionChange: callback</li>
+                      </ul>
+                    </Card>
+
+                    <Card className="p-4">
+                      <h4 className="font-bold mb-2 flex items-center gap-2">
+                        <Download className="h-4 w-4" />
+                        Export Props
+                      </h4>
+                      <ul className="text-sm space-y-1 text-muted-foreground">
+                        <li>• exportable: boolean</li>
+                        <li>• exportFileName: string</li>
+                        <li>• exportConfig: object</li>
+                      </ul>
+                    </Card>
+
+                    <Card className="p-4">
+                      <h4 className="font-bold mb-2 flex items-center gap-2">
+                        <Eye className="h-4 w-4" />
+                        Viewer Props
+                      </h4>
+                      <ul className="text-sm space-y-1 text-muted-foreground">
+                        <li>• viewerTitle: string</li>
+                        <li>• viewerFieldConfig: object</li>
+                        <li>• customRowViewer: component</li>
+                      </ul>
+                    </Card>
                   </div>
                 </div>
               </CardContent>
             </Card>
           </TabsContent>
 
-          {/* ==================== CRUD ==================== */}
-          <TabsContent value="crud" className="space-y-4">
+          {/* Remaining tabs with structured content */}
+          <TabsContent value="crud" className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle>CRUD Operations</CardTitle>
-                <CardDescription>Complete guide to Create, Read, Update, Delete</CardDescription>
+                <CardTitle>CRUD Operations Guide</CardTitle>
+                <CardDescription>
+                  Complete examples for Create, Read, Update, Delete
+                </CardDescription>
               </CardHeader>
-              <CardContent className="space-y-6">
-                <div>
-                  <h3 className="text-lg font-semibold mb-3">1. Basic CRUD with Auto-Generated Forms</h3>
-                  <div className="bg-muted p-4 rounded-lg">
-                    <pre className="text-sm overflow-x-auto">
-{`<DynamicServerTable
-  // Required props
-  initialData={data}
-  columns={columns}
-  fetchData={fetchUsers}
-
-  // CRUD Configuration
-  apiEndpoint="/api/users"
-  formFields={[
-    {
-      name: 'name',
-      label: 'Full Name',
-      type: 'text',
-      required: true,
-      placeholder: 'John Doe'
-    },
-    {
-      name: 'email',
-      label: 'Email',
-      type: 'email',
-      required: true,
-      placeholder: 'john@example.com'
-    }
-  ]}
-
-  // Button visibility
-  showAddButton={true}
-  showEditButton={true}
-  showDeleteButton={true}
-  addButtonLabel="Add New User"
-/>`}
-                    </pre>
-                  </div>
-                </div>
-
-                <Separator />
-
-                <div>
-                  <h3 className="text-lg font-semibold mb-3">2. Custom CRUD Handlers</h3>
-                  <p className="text-sm text-muted-foreground mb-3">
-                    Override default behavior with custom handlers:
-                  </p>
-                  <div className="bg-muted p-4 rounded-lg">
-                    <pre className="text-sm overflow-x-auto">
-{`// Define custom handlers
-const handleCreate = async (data: Partial<User>) => {
-  // Add custom validation
-  if (!data.email?.includes('@company.com')) {
-    throw new Error('Must use company email');
-  }
-
-  // Add custom logic
-  const enrichedData = {
-    ...data,
-    createdBy: currentUser.id,
-    department: determineDepartment(data.email)
-  };
-
-  // Call your custom API
-  const result = await fetch('/api/users/create', {
-    method: 'POST',
-    body: JSON.stringify(enrichedData)
-  });
-
-  if (!result.ok) throw new Error('Failed to create');
-
-  // Show custom notification
-  toast.success(\`User \${data.name} created!\`);
-
-  return result.json();
-};
-
-const handleUpdate = async (id: string, data: Partial<User>) => {
-  // Add audit trail
-  const auditData = {
-    ...data,
-    updatedBy: currentUser.id,
-    updatedAt: new Date().toISOString()
-  };
-
-  return await customUpdateAPI(id, auditData);
-};
-
-const handleDelete = async (id: string) => {
-  // Add custom confirmation
-  const confirmed = await customConfirmDialog({
-    title: 'Delete User',
-    message: 'This action cannot be undone'
-  });
-
-  if (!confirmed) return;
-
-  // Soft delete instead of hard delete
-  await customSoftDelete(id);
-
-  toast.success('User archived successfully');
-};
-
-// Use in component
-<DynamicServerTable
-  onCreateRecord={handleCreate}
-  onUpdateRecord={handleUpdate}
-  onDeleteRecord={handleDelete}
-/>`}
-                    </pre>
-                  </div>
-                </div>
-
-                <Separator />
-
-                <div>
-                  <h3 className="text-lg font-semibold mb-3">3. Conditional CRUD Buttons</h3>
-                  <p className="text-sm text-muted-foreground mb-3">
-                    Control button visibility based on user permissions:
-                  </p>
-                  <div className="bg-muted p-4 rounded-lg">
-                    <pre className="text-sm overflow-x-auto">
-{`// Only show buttons if user has permission
-<DynamicServerTable
-  showAddButton={currentUser.role === 'admin'}
-  showEditButton={currentUser.permissions.includes('edit')}
-  showDeleteButton={currentUser.permissions.includes('delete')}
-
-  // Custom labels based on context
-  addButtonLabel={
-    isTeamView ? 'Add Team Member' : 'Add User'
-  }
-/>`}
-                    </pre>
-                  </div>
-                </div>
+              <CardContent>
+                <p className="text-muted-foreground">
+                  See the <strong>Overview</strong> tab for complete CRUD
+                  implementation examples. The production example shows full
+                  CRUD configuration with apiEndpoint and formFields.
+                </p>
               </CardContent>
             </Card>
           </TabsContent>
 
-          {/* ==================== FORMS ==================== */}
-          <TabsContent value="forms" className="space-y-4">
+          <TabsContent value="forms" className="space-y-6">
             <Card>
               <CardHeader>
                 <CardTitle>Form Field Types</CardTitle>
-                <CardDescription>All available form field types with complete examples</CardDescription>
+                <CardDescription>All 10+ supported field types</CardDescription>
               </CardHeader>
-              <CardContent className="space-y-6">
-                <div>
-                  <h3 className="text-lg font-semibold mb-3">Complete Form Fields Example</h3>
-                  <div className="bg-muted p-4 rounded-lg">
-                    <pre className="text-sm overflow-x-auto">
-{`formFields: [
-  // ========== TEXT INPUT ==========
-  {
-    name: 'firstName',
-    label: 'First Name',
-    type: 'text',
-    required: true,
-    placeholder: 'John',
-  },
-
-  // ========== EMAIL INPUT ==========
-  {
-    name: 'email',
-    label: 'Email Address',
-    type: 'email',
-    required: true,
-    placeholder: 'john@example.com',
-    validation: (value) => {
-      if (!value.includes('@')) return 'Invalid email';
-      return true;
-    }
-  },
-
-  // ========== PASSWORD INPUT ==========
-  {
-    name: 'password',
-    label: 'Password',
-    type: 'password',
-    required: true,
-    placeholder: '********',
-    validation: (value) => {
-      if (value.length < 8) return 'Min 8 characters';
-      if (!/[A-Z]/.test(value)) return 'Need uppercase';
-      if (!/[0-9]/.test(value)) return 'Need number';
-      return true;
-    }
-  },
-
-  // ========== NUMBER INPUT ==========
-  {
-    name: 'age',
-    label: 'Age',
-    type: 'number',
-    required: false,
-    placeholder: '25',
-    validation: (value) => {
-      if (value < 18) return 'Must be 18+';
-      if (value > 120) return 'Invalid age';
-      return true;
-    }
-  },
-
-  // ========== TEXTAREA ==========
-  {
-    name: 'bio',
-    label: 'Biography',
-    type: 'textarea',
-    required: false,
-    placeholder: 'Tell us about yourself...',
-    rows: 4,
-  },
-
-  // ========== SELECT DROPDOWN ==========
-  {
-    name: 'role',
-    label: 'User Role',
-    type: 'select',
-    required: true,
-    options: [
-      { label: 'Admin', value: 'admin' },
-      { label: 'Manager', value: 'manager' },
-      { label: 'User', value: 'user' },
-      { label: 'Guest', value: 'guest' }
-    ]
-  },
-
-  // ========== MULTISELECT ==========
-  {
-    name: 'departments',
-    label: 'Departments',
-    type: 'multiselect',
-    required: false,
-    options: [
-      { label: 'Engineering', value: 'eng' },
-      { label: 'Sales', value: 'sales' },
-      { label: 'Marketing', value: 'marketing' },
-      { label: 'Support', value: 'support' }
-    ]
-  },
-
-  // ========== DATE INPUT ==========
-  {
-    name: 'birthDate',
-    label: 'Date of Birth',
-    type: 'date',
-    required: false,
-  },
-
-  // ========== CHECKBOX ==========
-  {
-    name: 'isActive',
-    label: 'Active Account',
-    type: 'checkbox',
-    required: false,
-    defaultValue: true
-  },
-
-  // ========== PHONE INPUT ==========
-  {
-    name: 'phone',
-    label: 'Phone Number',
-    type: 'tel',
-    required: false,
-    placeholder: '+1 (555) 123-4567',
-    validation: (value) => {
-      if (!/^\+?[\d\s()-]+$/.test(value)) return 'Invalid phone';
-      return true;
-    }
-  },
-
-  // ========== URL INPUT ==========
-  {
-    name: 'website',
-    label: 'Website',
-    type: 'url',
-    required: false,
-    placeholder: 'https://example.com',
-    validation: (value) => {
-      if (!value.startsWith('http')) return 'Must start with http';
-      return true;
-    }
-  }
-]`}
-                    </pre>
-                  </div>
-                </div>
-
-                <Separator />
-
-                <div>
-                  <h3 className="text-lg font-semibold mb-3">Form Field Properties</h3>
-                  <div className="grid gap-3 md:grid-cols-2">
-                    <div className="border rounded-lg p-3">
-                      <h4 className="font-semibold mb-2 flex items-center gap-2">
-                        <Code className="h-4 w-4" />
-                        name
-                      </h4>
-                      <p className="text-sm text-muted-foreground">
-                        Field identifier (required). Must match data property.
-                      </p>
-                      <code className="text-xs bg-muted px-1 rounded">name: 'email'</code>
-                    </div>
-
-                    <div className="border rounded-lg p-3">
-                      <h4 className="font-semibold mb-2 flex items-center gap-2">
-                        <Code className="h-4 w-4" />
-                        label
-                      </h4>
-                      <p className="text-sm text-muted-foreground">
-                        Display label shown above field (required).
-                      </p>
-                      <code className="text-xs bg-muted px-1 rounded">label: 'Email Address'</code>
-                    </div>
-
-                    <div className="border rounded-lg p-3">
-                      <h4 className="font-semibold mb-2 flex items-center gap-2">
-                        <Code className="h-4 w-4" />
-                        type
-                      </h4>
-                      <p className="text-sm text-muted-foreground">
-                        Input type (required): text, email, password, number, textarea, select, multiselect, date, checkbox, tel, url
-                      </p>
-                    </div>
-
-                    <div className="border rounded-lg p-3">
-                      <h4 className="font-semibold mb-2 flex items-center gap-2">
-                        <Code className="h-4 w-4" />
-                        required
-                      </h4>
-                      <p className="text-sm text-muted-foreground">
-                        Whether field is required. Shows red asterisk.
-                      </p>
-                      <code className="text-xs bg-muted px-1 rounded">required: true</code>
-                    </div>
-
-                    <div className="border rounded-lg p-3">
-                      <h4 className="font-semibold mb-2 flex items-center gap-2">
-                        <Code className="h-4 w-4" />
-                        placeholder
-                      </h4>
-                      <p className="text-sm text-muted-foreground">
-                        Placeholder text shown when empty.
-                      </p>
-                      <code className="text-xs bg-muted px-1 rounded">placeholder: 'Enter email...'</code>
-                    </div>
-
-                    <div className="border rounded-lg p-3">
-                      <h4 className="font-semibold mb-2 flex items-center gap-2">
-                        <Code className="h-4 w-4" />
-                        defaultValue
-                      </h4>
-                      <p className="text-sm text-muted-foreground">
-                        Initial value for field.
-                      </p>
-                      <code className="text-xs bg-muted px-1 rounded">defaultValue: true</code>
-                    </div>
-
-                    <div className="border rounded-lg p-3">
-                      <h4 className="font-semibold mb-2 flex items-center gap-2">
-                        <Code className="h-4 w-4" />
-                        options
-                      </h4>
-                      <p className="text-sm text-muted-foreground">
-                        Options for select/multiselect fields.
-                      </p>
-                      <code className="text-xs bg-muted px-1 rounded">{'options: [{ label: "Admin", value: "admin" }]'}</code>
-                    </div>
-
-                    <div className="border rounded-lg p-3">
-                      <h4 className="font-semibold mb-2 flex items-center gap-2">
-                        <Code className="h-4 w-4" />
-                        validation
-                      </h4>
-                      <p className="text-sm text-muted-foreground">
-                        Custom validation function.
-                      </p>
-                      <code className="text-xs bg-muted px-1 rounded">{'validation: (val) => val.length > 5 || "Too short"'}</code>
-                    </div>
-                  </div>
+              <CardContent>
+                <div className="space-y-2 text-sm">
+                  <p>
+                    <strong>Supported types:</strong> text, email, tel, number,
+                    select, multiselect, textarea, date, checkbox, password
+                  </p>
+                  <p className="text-muted-foreground">
+                    See formFields prop in <strong>Props API</strong> tab for
+                    examples.
+                  </p>
                 </div>
               </CardContent>
             </Card>
           </TabsContent>
 
-          {/* ==================== SEARCH ==================== */}
-          <TabsContent value="search" className="space-y-4">
+          <TabsContent value="search" className="space-y-6">
             <Card>
               <CardHeader>
                 <CardTitle>Search Configuration</CardTitle>
-                <CardDescription>Multi-field search with automatic debouncing</CardDescription>
+                <CardDescription>
+                  Multi-field search with debouncing
+                </CardDescription>
               </CardHeader>
-              <CardContent className="space-y-6">
-                <div>
-                  <h3 className="text-lg font-semibold mb-3">Basic Search Setup</h3>
-                  <div className="bg-muted p-4 rounded-lg">
-                    <pre className="text-sm overflow-x-auto">
-{`<DynamicServerTable
-  // Enable search
-  searchable={true}
-
-  // Custom placeholder
-  searchPlaceholder="Search users by name, email, or phone..."
-
-  // Fields to search in (searches all if not specified)
-  searchFields={['name', 'email', 'phone', 'company', 'department']}
-/>`}
-                    </pre>
-                  </div>
-                </div>
-
-                <Separator />
-
-                <div>
-                  <h3 className="text-lg font-semibold mb-3">Search Features</h3>
-                  <ul className="space-y-3">
-                    <li className="flex items-start gap-3">
-                      <CheckCircle className="h-5 w-5 text-green-600 mt-0.5 flex-shrink-0" />
-                      <div>
-                        <strong className="block">Multi-field search</strong>
-                        <p className="text-sm text-muted-foreground">
-                          Searches across all specified fields simultaneously. Returns results matching ANY field.
-                        </p>
-                      </div>
-                    </li>
-                    <li className="flex items-start gap-3">
-                      <CheckCircle className="h-5 w-5 text-green-600 mt-0.5 flex-shrink-0" />
-                      <div>
-                        <strong className="block">Automatic debouncing</strong>
-                        <p className="text-sm text-muted-foreground">
-                          Waits 500ms after user stops typing before searching. Prevents excessive API calls.
-                        </p>
-                      </div>
-                    </li>
-                    <li className="flex items-start gap-3">
-                      <CheckCircle className="h-5 w-5 text-green-600 mt-0.5 flex-shrink-0" />
-                      <div>
-                        <strong className="block">Clear button</strong>
-                        <p className="text-sm text-muted-foreground">
-                          X button appears when search has text. Clears search and refreshes data.
-                        </p>
-                      </div>
-                    </li>
-                    <li className="flex items-start gap-3">
-                      <CheckCircle className="h-5 w-5 text-green-600 mt-0.5 flex-shrink-0" />
-                      <div>
-                        <strong className="block">State persistence</strong>
-                        <p className="text-sm text-muted-foreground">
-                          Search query is maintained when navigating between pages or applying filters.
-                        </p>
-                      </div>
-                    </li>
-                    <li className="flex items-start gap-3">
-                      <CheckCircle className="h-5 w-5 text-green-600 mt-0.5 flex-shrink-0" />
-                      <div>
-                        <strong className="block">Case-insensitive</strong>
-                        <p className="text-sm text-muted-foreground">
-                          Searches are case-insensitive by default. "john" matches "John", "JOHN", etc.
-                        </p>
-                      </div>
-                    </li>
-                    <li className="flex items-start gap-3">
-                      <CheckCircle className="h-5 w-5 text-green-600 mt-0.5 flex-shrink-0" />
-                      <div>
-                        <strong className="block">Partial matching</strong>
-                        <p className="text-sm text-muted-foreground">
-                          Finds partial matches. "joh" matches "John", "Johnson", etc.
-                        </p>
-                      </div>
-                    </li>
-                  </ul>
-                </div>
-
-                <Separator />
-
-                <div>
-                  <h3 className="text-lg font-semibold mb-3">Search Examples</h3>
-                  <div className="space-y-3">
-                    <div className="border rounded-lg p-3">
-                      <h4 className="font-semibold mb-2">Example 1: Simple Search</h4>
-                      <div className="bg-muted p-3 rounded text-sm">
-                        <code>searchable={'{true}'}</code>
-                      </div>
-                      <p className="text-sm text-muted-foreground mt-2">
-                        Enables search across all columns
-                      </p>
-                    </div>
-
-                    <div className="border rounded-lg p-3">
-                      <h4 className="font-semibold mb-2">Example 2: Specific Fields</h4>
-                      <div className="bg-muted p-3 rounded text-sm">
-                        <code>searchFields={'{["name", "email"]}'}</code>
-                      </div>
-                      <p className="text-sm text-muted-foreground mt-2">
-                        Only searches name and email fields
-                      </p>
-                    </div>
-
-                    <div className="border rounded-lg p-3">
-                      <h4 className="font-semibold mb-2">Example 3: Custom Placeholder</h4>
-                      <div className="bg-muted p-3 rounded text-sm">
-                        <code>searchPlaceholder="Find a customer..."</code>
-                      </div>
-                      <p className="text-sm text-muted-foreground mt-2">
-                        Helpful hint for users about what they can search
-                      </p>
-                    </div>
-                  </div>
-                </div>
+              <CardContent className="space-y-4">
+                <pre className="bg-muted p-4 rounded text-sm">
+                  {`searchable={true}
+searchPlaceholder="Search..."
+searchFields={['name', 'email', 'phone']}`}
+                </pre>
+                <p className="text-sm text-muted-foreground">
+                  Search is debounced (500ms) to prevent excessive API calls.
+                </p>
               </CardContent>
             </Card>
           </TabsContent>
 
-          {/* ==================== FILTERS ==================== */}
-          <TabsContent value="filters" className="space-y-4">
+          <TabsContent value="filters" className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle>Advanced Filtering</CardTitle>
-                <CardDescription>Select and multiselect filters with active badges</CardDescription>
+                <CardTitle>Filter Configuration</CardTitle>
+                <CardDescription>
+                  Select and multiselect filters
+                </CardDescription>
               </CardHeader>
-              <CardContent className="space-y-6">
-                <div>
-                  <h3 className="text-lg font-semibold mb-3">Complete Filter Examples</h3>
-                  <div className="bg-muted p-4 rounded-lg">
-                    <pre className="text-sm overflow-x-auto">
-{`filters={[
-  // ========== SINGLE SELECT FILTER ==========
-  {
-    field: 'department',
-    label: 'Department',
-    type: 'select',
-    options: [
-      { label: 'All Departments', value: '' },  // Empty value = no filter
-      { label: 'Engineering', value: 'engineering' },
-      { label: 'Sales', value: 'sales' },
-      { label: 'Marketing', value: 'marketing' },
-      { label: 'Support', value: 'support' }
-    ]
-  },
-
-  // ========== MULTISELECT FILTER ==========
+              <CardContent>
+                <pre className="bg-muted p-4 rounded text-sm whitespace-pre-wrap">
+                  {`filters={[
   {
     field: 'status',
     label: 'Status',
     type: 'multiselect',
     options: [
       { label: 'Active', value: 'active' },
-      { label: 'Inactive', value: 'inactive' },
-      { label: 'Pending', value: 'pending' },
-      { label: 'Suspended', value: 'suspended' }
-    ]
-  },
-
-  // ========== ROLE FILTER ==========
-  {
-    field: 'role',
-    label: 'User Role',
-    type: 'multiselect',
-    options: [
-      { label: 'Admin', value: 'admin' },
-      { label: 'Manager', value: 'manager' },
-      { label: 'User', value: 'user' },
-      { label: 'Guest', value: 'guest' }
-    ]
-  },
-
-  // ========== BOOLEAN FILTER ==========
-  {
-    field: 'isVerified',
-    label: 'Verification',
-    type: 'select',
-    options: [
-      { label: 'All', value: '' },
-      { label: 'Verified Only', value: 'true' },
-      { label: 'Unverified Only', value: 'false' }
-    ]
-  },
-
-  // ========== DATE RANGE FILTER ==========
-  {
-    field: 'createdAt',
-    label: 'Created',
-    type: 'select',
-    options: [
-      { label: 'All Time', value: '' },
-      { label: 'Today', value: 'today' },
-      { label: 'This Week', value: 'week' },
-      { label: 'This Month', value: 'month' },
-      { label: 'This Year', value: 'year' }
-    ]
-  }
-]}`}
-                    </pre>
-                  </div>
-                </div>
-
-                <Separator />
-
-                <div>
-                  <h3 className="text-lg font-semibold mb-3">Filter Types Explained</h3>
-                  <div className="grid gap-4 md:grid-cols-2">
-                    <div className="border rounded-lg p-4">
-                      <h4 className="font-semibold mb-2 flex items-center gap-2">
-                        <Filter className="h-4 w-4 text-blue-600" />
-                        Single Select
-                      </h4>
-                      <p className="text-sm text-muted-foreground mb-2">
-                        User can select ONE option from dropdown. Previous selection is replaced.
-                      </p>
-                      <div className="bg-muted p-2 rounded text-xs">
-                        <code>type: 'select'</code>
-                      </div>
-                      <p className="text-xs text-muted-foreground mt-2">
-                        <strong>Use case:</strong> Department, Priority, Category
-                      </p>
-                    </div>
-
-                    <div className="border rounded-lg p-4">
-                      <h4 className="font-semibold mb-2 flex items-center gap-2">
-                        <Filter className="h-4 w-4 text-purple-600" />
-                        Multi-Select
-                      </h4>
-                      <p className="text-sm text-muted-foreground mb-2">
-                        User can select MULTIPLE options. Results match ANY selected value (OR logic).
-                      </p>
-                      <div className="bg-muted p-2 rounded text-xs">
-                        <code>type: 'multiselect'</code>
-                      </div>
-                      <p className="text-xs text-muted-foreground mt-2">
-                        <strong>Use case:</strong> Status, Role, Tags
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                <Separator />
-
-                <div>
-                  <h3 className="text-lg font-semibold mb-3">Filter Behavior</h3>
-                  <ul className="space-y-3">
-                    <li className="flex items-start gap-3">
-                      <Badge variant="outline" className="flex-shrink-0 mt-0.5">1</Badge>
-                      <div>
-                        <strong className="block">Active filter badges</strong>
-                        <p className="text-sm text-muted-foreground">
-                          Selected filters appear as badges above the table with X button to remove
-                        </p>
-                      </div>
-                    </li>
-                    <li className="flex items-start gap-3">
-                      <Badge variant="outline" className="flex-shrink-0 mt-0.5">2</Badge>
-                      <div>
-                        <strong className="block">Multiple filters combine with AND</strong>
-                        <p className="text-sm text-muted-foreground">
-                          If you select "Status: Active" AND "Role: Admin", results must match BOTH
-                        </p>
-                      </div>
-                    </li>
-                    <li className="flex items-start gap-3">
-                      <Badge variant="outline" className="flex-shrink-0 mt-0.5">3</Badge>
-                      <div>
-                        <strong className="block">Multiselect uses OR within same filter</strong>
-                        <p className="text-sm text-muted-foreground">
-                          Selecting "Active" and "Pending" in Status filter shows items that are Active OR Pending
-                        </p>
-                      </div>
-                    </li>
-                    <li className="flex items-start gap-3">
-                      <Badge variant="outline" className="flex-shrink-0 mt-0.5">4</Badge>
-                      <div>
-                        <strong className="block">Filters persist during pagination</strong>
-                        <p className="text-sm text-muted-foreground">
-                          Applied filters remain active when moving between pages
-                        </p>
-                      </div>
-                    </li>
-                    <li className="flex items-start gap-3">
-                      <Badge variant="outline" className="flex-shrink-0 mt-0.5">5</Badge>
-                      <div>
-                        <strong className="block">Works with search</strong>
-                        <p className="text-sm text-muted-foreground">
-                          Can combine search query with filters for precise results
-                        </p>
-                      </div>
-                    </li>
-                  </ul>
-                </div>
-
-                <Separator />
-
-                <div>
-                  <h3 className="text-lg font-semibold mb-3">Real-World Filter Examples</h3>
-                  <div className="space-y-3">
-                    <div className="border rounded-lg p-3">
-                      <h4 className="font-semibold mb-2">User Management Table</h4>
-                      <div className="bg-muted p-3 rounded text-sm">
-                        <pre>
-{`filters={[
-  { field: 'status', label: 'Status', type: 'multiselect',
-    options: [
-      { label: 'Active', value: 'active' },
       { label: 'Inactive', value: 'inactive' }
     ]
-  },
-  { field: 'role', label: 'Role', type: 'multiselect',
-    options: [
-      { label: 'Admin', value: 'admin' },
-      { label: 'User', value: 'user' }
-    ]
   }
 ]}`}
-                        </pre>
-                      </div>
-                    </div>
-
-                    <div className="border rounded-lg p-3">
-                      <h4 className="font-semibold mb-2">Booking Management Table</h4>
-                      <div className="bg-muted p-3 rounded text-sm">
-                        <pre>
-{`filters={[
-  { field: 'status', label: 'Booking Status', type: 'multiselect',
-    options: [
-      { label: 'Confirmed', value: 'confirmed' },
-      { label: 'Pending', value: 'pending' },
-      { label: 'Cancelled', value: 'cancelled' }
-    ]
-  },
-  { field: 'paymentStatus', label: 'Payment', type: 'select',
-    options: [
-      { label: 'All', value: '' },
-      { label: 'Paid', value: 'paid' },
-      { label: 'Unpaid', value: 'unpaid' }
-    ]
-  }
-]}`}
-                        </pre>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                </pre>
               </CardContent>
             </Card>
           </TabsContent>
 
-          {/* ==================== BULK ACTIONS ==================== */}
-          <TabsContent value="bulk" className="space-y-4">
+          <TabsContent value="bulk" className="space-y-6">
             <Card>
               <CardHeader>
                 <CardTitle>Bulk Actions</CardTitle>
-                <CardDescription>Perform actions on multiple selected rows with ALL button variants</CardDescription>
+                <CardDescription>
+                  Perform actions on selected rows
+                </CardDescription>
               </CardHeader>
-              <CardContent className="space-y-6">
-                <div>
-                  <h3 className="text-lg font-semibold mb-3">Complete Bulk Actions Example</h3>
-                  <div className="bg-muted p-4 rounded-lg">
-                    <pre className="text-sm overflow-x-auto">
-{`// Enable selection and define bulk actions
-<DynamicServerTable
-  // Enable row selection checkboxes
-  selectable={true}
-
-  // Track selection changes
-  onSelectionChange={(selectedRows) => {
-    console.log('Selected:', selectedRows);
-    setSelectedItems(selectedRows);
-  }}
-
-  // Define bulk action buttons (ALL VARIANTS)
-  bulkActions={[
-    // ========== DEFAULT VARIANT (Blue) ==========
-    {
-      label: 'Send Email',
-      icon: <Mail className="h-4 w-4" />,
-      onClick: (selectedRows) => {
-        console.log('Emailing:', selectedRows);
-        sendBulkEmail(selectedRows);
-      },
-      variant: 'default'  // Blue button
+              <CardContent>
+                <pre className="bg-muted p-4 rounded text-sm whitespace-pre-wrap">
+                  {`selectable={true}
+bulkActions={[
+  {
+    label: 'Send Email',
+    icon: <Mail className="h-4 w-4" />,
+    onClick: (selectedRows) => {
+      // Your bulk logic
     },
-
-    // ========== SECONDARY VARIANT (Gray) ==========
-    {
-      label: 'Export Selected',
-      icon: <Download className="h-4 w-4" />,
-      onClick: (selectedRows) => {
-        exportToCSV(selectedRows);
-      },
-      variant: 'secondary'  // Gray button
-    },
-
-    // ========== OUTLINE VARIANT (Border only) ==========
-    {
-      label: 'Archive',
-      icon: <Archive className="h-4 w-4" />,
-      onClick: (selectedRows) => {
-        archiveMultiple(selectedRows);
-      },
-      variant: 'outline'  // Border button
-    },
-
-    // ========== GHOST VARIANT (Transparent) ==========
-    {
-      label: 'Print',
-      icon: <Printer className="h-4 w-4" />,
-      onClick: (selectedRows) => {
-        printSelected(selectedRows);
-      },
-      variant: 'ghost'  // Transparent button
-    },
-
-    // ========== DESTRUCTIVE VARIANT (Red) ==========
-    {
-      label: 'Delete Selected',
-      icon: <Trash2 className="h-4 w-4" />,
-      onClick: async (selectedRows) => {
-        // Show confirmation
-        const confirmed = await confirm(
-          \`Delete \${selectedRows.length} items?\`
-        );
-
-        if (confirmed) {
-          await deleteMultiple(selectedRows);
-          toast.success(\`Deleted \${selectedRows.length} items\`);
-        }
-      },
-      variant: 'destructive'  // Red button
-    },
-
-    // ========== LINK VARIANT (Underlined) ==========
-    {
-      label: 'View Details',
-      icon: <Eye className="h-4 w-4" />,
-      onClick: (selectedRows) => {
-        if (selectedRows.length === 1) {
-          router.push(\`/details/\${selectedRows[0].id}\`);
-        } else {
-          toast.error('Select only one item');
-        }
-      },
-      variant: 'link'  // Link-style button
-    }
-  ]}
-/>`}
-                    </pre>
-                  </div>
-                </div>
-
-                <Separator />
-
-                <div>
-                  <h3 className="text-lg font-semibold mb-3">Button Variants Visual Guide</h3>
-                  <div className="grid gap-3 md:grid-cols-2">
-                    <div className="border rounded-lg p-4">
-                      <div className="flex items-center gap-2 mb-2">
-                        <div className="h-8 w-8 rounded bg-primary"></div>
-                        <Badge>default</Badge>
-                      </div>
-                      <p className="text-sm text-muted-foreground">
-                        <strong>Primary actions:</strong> Send Email, Create Report, Assign To
-                      </p>
-                      <code className="text-xs bg-muted px-1 rounded">variant: 'default'</code>
-                    </div>
-
-                    <div className="border rounded-lg p-4">
-                      <div className="flex items-center gap-2 mb-2">
-                        <div className="h-8 w-8 rounded bg-secondary"></div>
-                        <Badge>secondary</Badge>
-                      </div>
-                      <p className="text-sm text-muted-foreground">
-                        <strong>Secondary actions:</strong> Export, Download, Copy
-                      </p>
-                      <code className="text-xs bg-muted px-1 rounded">variant: 'secondary'</code>
-                    </div>
-
-                    <div className="border rounded-lg p-4">
-                      <div className="flex items-center gap-2 mb-2">
-                        <div className="h-8 w-8 rounded border-2"></div>
-                        <Badge>outline</Badge>
-                      </div>
-                      <p className="text-sm text-muted-foreground">
-                        <strong>Low-priority:</strong> Archive, Move, Tag
-                      </p>
-                      <code className="text-xs bg-muted px-1 rounded">variant: 'outline'</code>
-                    </div>
-
-                    <div className="border rounded-lg p-4">
-                      <div className="flex items-center gap-2 mb-2">
-                        <div className="h-8 w-8 rounded bg-gray-100"></div>
-                        <Badge>ghost</Badge>
-                      </div>
-                      <p className="text-sm text-muted-foreground">
-                        <strong>Minimal:</strong> Print, Refresh, More Options
-                      </p>
-                      <code className="text-xs bg-muted px-1 rounded">variant: 'ghost'</code>
-                    </div>
-
-                    <div className="border rounded-lg p-4">
-                      <div className="flex items-center gap-2 mb-2">
-                        <div className="h-8 w-8 rounded bg-destructive"></div>
-                        <Badge variant="destructive">destructive</Badge>
-                      </div>
-                      <p className="text-sm text-muted-foreground">
-                        <strong>Dangerous:</strong> Delete, Remove, Disable
-                      </p>
-                      <code className="text-xs bg-muted px-1 rounded">variant: 'destructive'</code>
-                    </div>
-
-                    <div className="border rounded-lg p-4">
-                      <div className="flex items-center gap-2 mb-2">
-                        <div className="h-8 w-8 rounded underline"></div>
-                        <Badge>link</Badge>
-                      </div>
-                      <p className="text-sm text-muted-foreground">
-                        <strong>Navigation:</strong> View All, Open, Navigate
-                      </p>
-                      <code className="text-xs bg-muted px-1 rounded">variant: 'link'</code>
-                    </div>
-                  </div>
-                </div>
-
-                <Separator />
-
-                <div>
-                  <h3 className="text-lg font-semibold mb-3">Bulk Action Properties</h3>
-                  <div className="space-y-3">
-                    <PropDoc
-                      name="label"
-                      type="string"
-                      required
-                      description="Button text displayed to user"
-                      example="'Send Email' or 'Delete Selected'"
-                    />
-                    <PropDoc
-                      name="icon"
-                      type="ReactNode"
-                      description="Icon component shown before label"
-                      example="<Mail className='h-4 w-4' />"
-                    />
-                    <PropDoc
-                      name="onClick"
-                      type="(selectedRows: T[]) => void"
-                      required
-                      description="Function called when button clicked. Receives array of selected rows."
-                      example="(rows) => deleteMultiple(rows)"
-                    />
-                    <PropDoc
-                      name="variant"
-                      type="'default' | 'secondary' | 'outline' | 'ghost' | 'destructive' | 'link'"
-                      defaultValue="'default'"
-                      description="Button style variant"
-                      example="'destructive'"
-                    />
-                  </div>
-                </div>
-
-                <Separator />
-
-                <div>
-                  <h3 className="text-lg font-semibold mb-3">Advanced Bulk Action Examples</h3>
-                  <div className="space-y-3">
-                    <div className="border rounded-lg p-3">
-                      <h4 className="font-semibold mb-2">Bulk Status Change</h4>
-                      <div className="bg-muted p-3 rounded text-sm">
-                        <pre>
-{`{
-  label: 'Mark as Active',
-  icon: <CheckCircle className="h-4 w-4" />,
-  onClick: async (rows) => {
-    await Promise.all(
-      rows.map(row => updateStatus(row.id, 'active'))
-    );
-    toast.success(\`Updated \${rows.length} users\`);
-    refreshTable();
-  },
-  variant: 'default'
-}`}
-                        </pre>
-                      </div>
-                    </div>
-
-                    <div className="border rounded-lg p-3">
-                      <h4 className="font-semibold mb-2">Conditional Bulk Action</h4>
-                      <div className="bg-muted p-3 rounded text-sm">
-                        <pre>
-{`{
-  label: 'Send Notification',
-  icon: <Bell className="h-4 w-4" />,
-  onClick: (rows) => {
-    // Filter rows
-    const activeUsers = rows.filter(r => r.status === 'active');
-
-    if (activeUsers.length === 0) {
-      toast.error('No active users selected');
-      return;
-    }
-
-    sendNotifications(activeUsers);
-    toast.success(\`Sent to \${activeUsers.length} users\`);
-  },
-  variant: 'default'
-}`}
-                        </pre>
-                      </div>
-                    </div>
-
-                    <div className="border rounded-lg p-3">
-                      <h4 className="font-semibold mb-2">Bulk Action with Progress</h4>
-                      <div className="bg-muted p-3 rounded text-sm">
-                        <pre>
-{`{
-  label: 'Process All',
-  icon: <Zap className="h-4 w-4" />,
-  onClick: async (rows) => {
-    let processed = 0;
-
-    for (const row of rows) {
-      await processItem(row);
-      processed++;
-
-      // Update progress
-      toast.loading(\`Processing \${processed}/\${rows.length}\`);
-    }
-
-    toast.success('All items processed!');
-  },
-  variant: 'default'
-}`}
-                        </pre>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+    variant: 'default'
+  }
+]}`}
+                </pre>
               </CardContent>
             </Card>
           </TabsContent>
 
-          {/* ==================== EXPORT ==================== */}
-          <TabsContent value="export" className="space-y-4">
+          <TabsContent value="export" className="space-y-6">
             <Card>
               <CardHeader>
                 <CardTitle>Data Export</CardTitle>
-                <CardDescription>Export to CSV, Excel, PDF, or Print with complete control</CardDescription>
+                <CardDescription>CSV, Excel, PDF, Print</CardDescription>
               </CardHeader>
-              <CardContent className="space-y-6">
-                <div>
-                  <h3 className="text-lg font-semibold mb-3">Complete Export Configuration</h3>
-                  <div className="bg-muted p-4 rounded-lg">
-                    <pre className="text-sm overflow-x-auto">
-{`<DynamicServerTable
-  // Enable export dropdown
-  exportable={true}
-
-  // Custom filename (timestamp added automatically)
-  exportFileName="users-report"
-  // Results in: users-report-2024-11-18-14-30-45.csv
-
-  // Enable specific formats (all true by default)
-  exportConfig={{
-    csv: true,      // Export to CSV
-    excel: true,    // Export to XLSX
-    pdf: true,      // Export to PDF
-    print: true     // Open print dialog
-  }}
-/>`}
-                    </pre>
-                  </div>
-                </div>
-
-                <Separator />
-
-                <div>
-                  <h3 className="text-lg font-semibold mb-3">Export Format Details</h3>
-                  <div className="grid gap-4 md:grid-cols-2">
-                    <div className="border rounded-lg p-4">
-                      <div className="flex items-center gap-2 mb-3">
-                        <FileText className="h-5 w-5 text-green-600" />
-                        <h4 className="font-semibold">CSV Export</h4>
-                      </div>
-                      <p className="text-sm text-muted-foreground mb-2">
-                        Plain text format with comma-separated values
-                      </p>
-                      <div className="space-y-1 text-xs text-muted-foreground">
-                        <p>✓ Compatible with Excel, Google Sheets</p>
-                        <p>✓ Opens in any text editor</p>
-                        <p>✓ Small file size</p>
-                        <p>✓ UTF-8 encoded (supports emojis)</p>
-                      </div>
-                      <code className="text-xs bg-muted px-1 rounded block mt-2">
-                        users-report-2024-11-18.csv
-                      </code>
-                    </div>
-
-                    <div className="border rounded-lg p-4">
-                      <div className="flex items-center gap-2 mb-3">
-                        <Download className="h-5 w-5 text-blue-600" />
-                        <h4 className="font-semibold">Excel Export</h4>
-                      </div>
-                      <p className="text-sm text-muted-foreground mb-2">
-                        Native Microsoft Excel format with formatting
-                      </p>
-                      <div className="space-y-1 text-xs text-muted-foreground">
-                        <p>✓ Opens directly in Excel</p>
-                        <p>✓ Preserves data types</p>
-                        <p>✓ Formatted numbers</p>
-                        <p>✓ Column widths auto-sized</p>
-                      </div>
-                      <code className="text-xs bg-muted px-1 rounded block mt-2">
-                        users-report-2024-11-18.xlsx
-                      </code>
-                    </div>
-
-                    <div className="border rounded-lg p-4">
-                      <div className="flex items-center gap-2 mb-3">
-                        <FileText className="h-5 w-5 text-red-600" />
-                        <h4 className="font-semibold">PDF Export</h4>
-                      </div>
-                      <p className="text-sm text-muted-foreground mb-2">
-                        Professional PDF document with table formatting
-                      </p>
-                      <div className="space-y-1 text-xs text-muted-foreground">
-                        <p>✓ Professional appearance</p>
-                        <p>✓ Paginated automatically</p>
-                        <p>✓ Header on each page</p>
-                        <p>✓ Ready for printing/sharing</p>
-                      </div>
-                      <code className="text-xs bg-muted px-1 rounded block mt-2">
-                        users-report-2024-11-18.pdf
-                      </code>
-                    </div>
-
-                    <div className="border rounded-lg p-4">
-                      <div className="flex items-center gap-2 mb-3">
-                        <Printer className="h-5 w-5 text-purple-600" />
-                        <h4 className="font-semibold">Print</h4>
-                      </div>
-                      <p className="text-sm text-muted-foreground mb-2">
-                        Opens browser print dialog for direct printing
-                      </p>
-                      <div className="space-y-1 text-xs text-muted-foreground">
-                        <p>✓ Print directly or save as PDF</p>
-                        <p>✓ Optimized layout</p>
-                        <p>✓ Page breaks handled</p>
-                        <p>✓ No extra files created</p>
-                      </div>
-                      <code className="text-xs bg-muted px-1 rounded block mt-2">
-                        Opens: Browser Print Dialog
-                      </code>
-                    </div>
-                  </div>
-                </div>
-
-                <Separator />
-
-                <div>
-                  <h3 className="text-lg font-semibold mb-3">Export Behavior</h3>
-                  <ul className="space-y-3">
-                    <li className="flex items-start gap-3">
-                      <Info className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
-                      <div>
-                        <strong className="block">Exports current view only</strong>
-                        <p className="text-sm text-muted-foreground">
-                          Only visible data is exported. If you have search/filters applied, only matching results are exported.
-                        </p>
-                      </div>
-                    </li>
-                    <li className="flex items-start gap-3">
-                      <Info className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
-                      <div>
-                        <strong className="block">All columns included</strong>
-                        <p className="text-sm text-muted-foreground">
-                          All table columns are included in export, even if hidden via column visibility toggle.
-                        </p>
-                      </div>
-                    </li>
-                    <li className="flex items-start gap-3">
-                      <Info className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
-                      <div>
-                        <strong className="block">Formatted values</strong>
-                        <p className="text-sm text-muted-foreground">
-                          Exports formatted values (e.g., "₹1,234" instead of "1234", "Active" badge exports as "Active")
-                        </p>
-                      </div>
-                    </li>
-                    <li className="flex items-start gap-3">
-                      <Info className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
-                      <div>
-                        <strong className="block">Automatic timestamps</strong>
-                        <p className="text-sm text-muted-foreground">
-                          Filename includes date and time (users-report-2024-11-18-14-30-45.xlsx)
-                        </p>
-                      </div>
-                    </li>
-                    <li className="flex items-start gap-3">
-                      <Info className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
-                      <div>
-                        <strong className="block">Client-side processing</strong>
-                        <p className="text-sm text-muted-foreground">
-                          Export happens in browser. No server-side processing required.
-                        </p>
-                      </div>
-                    </li>
-                  </ul>
-                </div>
-
-                <Separator />
-
-                <div>
-                  <h3 className="text-lg font-semibold mb-3">Export Configuration Examples</h3>
-                  <div className="space-y-3">
-                    <div className="border rounded-lg p-3">
-                      <h4 className="font-semibold mb-2">CSV and Excel Only</h4>
-                      <div className="bg-muted p-3 rounded text-sm">
-                        <pre>
-{`exportable={true}
-exportFileName="users"
-exportConfig={{
-  csv: true,
-  excel: true,
-  pdf: false,
-  print: false
-}}`}
-                        </pre>
-                      </div>
-                      <p className="text-xs text-muted-foreground mt-2">
-                        Good for data analysis use cases
-                      </p>
-                    </div>
-
-                    <div className="border rounded-lg p-3">
-                      <h4 className="font-semibold mb-2">PDF and Print Only</h4>
-                      <div className="bg-muted p-3 rounded text-sm">
-                        <pre>
-{`exportable={true}
-exportFileName="invoice-report"
-exportConfig={{
-  csv: false,
-  excel: false,
-  pdf: true,
-  print: true
-}}`}
-                        </pre>
-                      </div>
-                      <p className="text-xs text-muted-foreground mt-2">
-                        Good for documents and reports
-                      </p>
-                    </div>
-
-                    <div className="border rounded-lg p-3">
-                      <h4 className="font-semibold mb-2">All Formats Enabled</h4>
-                      <div className="bg-muted p-3 rounded text-sm">
-                        <pre>
-{`exportable={true}
-exportFileName="complete-data"
+              <CardContent>
+                <pre className="bg-muted p-4 rounded text-sm">
+                  {`exportable={true}
+exportFileName="data-export"
 exportConfig={{
   csv: true,
   excel: true,
   pdf: true,
   print: true
 }}`}
-                        </pre>
-                      </div>
-                      <p className="text-xs text-muted-foreground mt-2">
-                        Maximum flexibility for users
-                      </p>
-                    </div>
-                  </div>
-                </div>
+                </pre>
               </CardContent>
             </Card>
           </TabsContent>
 
-          {/* ==================== CUSTOM ==================== */}
-          <TabsContent value="custom" className="space-y-4">
+          <TabsContent value="custom" className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle>Custom Components</CardTitle>
-                <CardDescription>Complete customization with custom forms, viewers, and field configs</CardDescription>
+                <CardTitle>Advanced Customization</CardTitle>
+                <CardDescription>
+                  Custom forms, viewers, and handlers
+                </CardDescription>
               </CardHeader>
-              <CardContent className="space-y-6">
+              <CardContent className="space-y-4">
                 <div>
-                  <h3 className="text-lg font-semibold mb-3">1. Custom Row Viewer</h3>
-                  <p className="text-sm text-muted-foreground mb-3">
-                    Create a completely custom detail view for rows:
-                  </p>
-                  <div className="bg-muted p-4 rounded-lg">
-                    <pre className="text-sm overflow-x-auto">
-{`<DynamicServerTable
-  customRowViewer={(user) => (
-    <div className="space-y-6 p-4">
-      {/* Header with Avatar */}
-      <div className="flex items-start gap-4">
-        <Avatar className="h-20 w-20">
-          <AvatarImage src={user.avatar} />
-          <AvatarFallback>{user.name[0]}</AvatarFallback>
-        </Avatar>
-        <div className="flex-1">
-          <h2 className="text-2xl font-bold">{user.name}</h2>
-          <p className="text-muted-foreground">{user.email}</p>
-          <div className="flex gap-2 mt-2">
-            <Badge>{user.role}</Badge>
-            <Badge variant={user.status === 'active' ? 'default' : 'destructive'}>
-              {user.status}
-            </Badge>
-          </div>
-        </div>
-      </div>
-
-      <Separator />
-
-      {/* Details Grid */}
-      <div className="grid grid-cols-2 gap-6">
-        <div>
-          <label className="text-sm text-muted-foreground">Phone</label>
-          <p className="font-medium">
-            <a href={\`tel:\${user.phone}\`} className="hover:underline">
-              {user.phone}
-            </a>
-          </p>
-        </div>
-
-        <div>
-          <label className="text-sm text-muted-foreground">Department</label>
-          <p className="font-medium">{user.department}</p>
-        </div>
-
-        <div>
-          <label className="text-sm text-muted-foreground">Joined</label>
-          <p className="font-medium">
-            {new Date(user.createdAt).toLocaleDateString()}
-          </p>
-        </div>
-
-        <div>
-          <label className="text-sm text-muted-foreground">Last Login</label>
-          <p className="font-medium">
-            {formatDistanceToNow(new Date(user.lastLogin))} ago
-          </p>
-        </div>
-      </div>
-
-      <Separator />
-
-      {/* Action Buttons */}
-      <div className="flex gap-2">
-        <Button onClick={() => sendEmail(user)}>
-          <Mail className="mr-2 h-4 w-4" />
-          Send Email
-        </Button>
-        <Button variant="outline" onClick={() => call(user)}>
-          <Phone className="mr-2 h-4 w-4" />
-          Call
-        </Button>
-        <Button variant="outline" onClick={() => viewProfile(user)}>
-          <Eye className="mr-2 h-4 w-4" />
-          Full Profile
-        </Button>
-      </div>
-
-      {/* Activity Timeline */}
-      <div>
-        <h3 className="font-semibold mb-3">Recent Activity</h3>
-        <div className="space-y-3">
-          {user.recentActivity.map((activity, i) => (
-            <div key={i} className="flex gap-3 items-start">
-              <div className="h-2 w-2 rounded-full bg-primary mt-2" />
-              <div>
-                <p className="text-sm">{activity.description}</p>
-                <p className="text-xs text-muted-foreground">
-                  {formatDistanceToNow(new Date(activity.timestamp))} ago
-                </p>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  )}
-/>`}
-                    </pre>
-                  </div>
+                  <h4 className="font-bold mb-2">Custom Forms</h4>
+                  <pre className="bg-muted p-3 rounded text-sm">
+                    {`customAddForm={<MyCustomForm />}
+customEditForm={(data) => <MyEditForm data={data} />}`}
+                  </pre>
                 </div>
-
-                <Separator />
-
                 <div>
-                  <h3 className="text-lg font-semibold mb-3">2. Custom Add Form</h3>
-                  <div className="bg-muted p-4 rounded-lg">
-                    <pre className="text-sm overflow-x-auto">
-{`<DynamicServerTable
-  customAddForm={
-    <div className="space-y-6 p-4">
-      <div>
-        <h2 className="text-2xl font-bold">Create New User</h2>
-        <p className="text-muted-foreground">
-          Fill out the form to add a new team member
-        </p>
-      </div>
-
-      <Separator />
-
-      {/* Personal Info Section */}
-      <div className="space-y-4">
-        <h3 className="font-semibold text-lg">Personal Information</h3>
-
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <Label>First Name *</Label>
-            <Input placeholder="John" {...register('firstName')} />
-          </div>
-          <div>
-            <Label>Last Name *</Label>
-            <Input placeholder="Doe" {...register('lastName')} />
-          </div>
-        </div>
-
-        <div>
-          <Label>Email Address *</Label>
-          <Input type="email" placeholder="john@company.com" {...register('email')} />
-        </div>
-
-        <div>
-          <Label>Phone Number</Label>
-          <Input type="tel" placeholder="+1 (555) 123-4567" {...register('phone')} />
-        </div>
-      </div>
-
-      <Separator />
-
-      {/* Work Info Section */}
-      <div className="space-y-4">
-        <h3 className="font-semibold text-lg">Work Information</h3>
-
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <Label>Department *</Label>
-            <Select {...register('department')}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select department" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="eng">Engineering</SelectItem>
-                <SelectItem value="sales">Sales</SelectItem>
-                <SelectItem value="marketing">Marketing</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div>
-            <Label>Role *</Label>
-            <Select {...register('role')}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select role" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="admin">Admin</SelectItem>
-                <SelectItem value="manager">Manager</SelectItem>
-                <SelectItem value="user">User</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-
-        <div>
-          <Label>Start Date *</Label>
-          <Input type="date" {...register('startDate')} />
-        </div>
-      </div>
-
-      <Separator />
-
-      {/* Permissions Section */}
-      <div className="space-y-4">
-        <h3 className="font-semibold text-lg">Permissions</h3>
-
-        <div className="space-y-2">
-          <div className="flex items-center gap-2">
-            <Checkbox id="canEdit" {...register('canEdit')} />
-            <Label htmlFor="canEdit" className="cursor-pointer">
-              Can edit data
-            </Label>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <Checkbox id="canDelete" {...register('canDelete')} />
-            <Label htmlFor="canDelete" className="cursor-pointer">
-              Can delete records
-            </Label>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <Checkbox id="canExport" {...register('canExport')} />
-            <Label htmlFor="canExport" className="cursor-pointer">
-              Can export data
-            </Label>
-          </div>
-        </div>
-      </div>
-
-      {/* Submit Buttons */}
-      <div className="flex justify-end gap-2 pt-4">
-        <Button variant="outline" onClick={onCancel}>
-          Cancel
-        </Button>
-        <Button onClick={handleSubmit}>
-          <UserPlus className="mr-2 h-4 w-4" />
-          Create User
-        </Button>
-      </div>
-    </div>
-  }
-/>`}
-                    </pre>
-                  </div>
-                </div>
-
-                <Separator />
-
-                <div>
-                  <h3 className="text-lg font-semibold mb-3">3. Custom Edit Form</h3>
-                  <div className="bg-muted p-4 rounded-lg">
-                    <pre className="text-sm overflow-x-auto">
-{`<DynamicServerTable
-  customEditForm={(user) => (
-    <div className="space-y-6 p-4">
-      <div className="flex items-center gap-4">
-        <Avatar className="h-16 w-16">
-          <AvatarImage src={user.avatar} />
-          <AvatarFallback>{user.name[0]}</AvatarFallback>
-        </Avatar>
-        <div>
-          <h2 className="text-2xl font-bold">Edit: {user.name}</h2>
-          <p className="text-sm text-muted-foreground">
-            Last updated {formatDistanceToNow(new Date(user.updatedAt))} ago
-          </p>
-        </div>
-      </div>
-
-      <Separator />
-
-      <Tabs defaultValue="personal">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="personal">Personal</TabsTrigger>
-          <TabsTrigger value="work">Work</TabsTrigger>
-          <TabsTrigger value="permissions">Permissions</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="personal" className="space-y-4">
-          <div>
-            <Label>Name</Label>
-            <Input defaultValue={user.name} {...register('name')} />
-          </div>
-
-          <div>
-            <Label>Email</Label>
-            <Input defaultValue={user.email} {...register('email')} />
-          </div>
-
-          <div>
-            <Label>Phone</Label>
-            <Input defaultValue={user.phone} {...register('phone')} />
-          </div>
-        </TabsContent>
-
-        <TabsContent value="work" className="space-y-4">
-          <div>
-            <Label>Department</Label>
-            <Select defaultValue={user.department}>
-              {/* Options */}
-            </Select>
-          </div>
-
-          <div>
-            <Label>Role</Label>
-            <Select defaultValue={user.role}>
-              {/* Options */}
-            </Select>
-          </div>
-
-          <div>
-            <Label>Status</Label>
-            <div className="flex items-center gap-2">
-              <Switch defaultChecked={user.status === 'active'} />
-              <span className="text-sm">
-                {user.status === 'active' ? 'Active' : 'Inactive'}
-              </span>
-            </div>
-          </div>
-        </TabsContent>
-
-        <TabsContent value="permissions" className="space-y-4">
-          {/* Permission checkboxes */}
-        </TabsContent>
-      </Tabs>
-
-      <Alert>
-        <AlertCircle className="h-4 w-4" />
-        <AlertDescription>
-          Changes will be logged in the audit trail
-        </AlertDescription>
-      </Alert>
-
-      <div className="flex justify-end gap-2">
-        <Button variant="outline" onClick={onCancel}>
-          Cancel
-        </Button>
-        <Button onClick={handleSave}>
-          <CheckCircle className="mr-2 h-4 w-4" />
-          Save Changes
-        </Button>
-      </div>
-    </div>
-  )}
-/>`}
-                    </pre>
-                  </div>
-                </div>
-
-                <Separator />
-
-                <div>
-                  <h3 className="text-lg font-semibold mb-3">4. Viewer Field Config (Simpler Alternative)</h3>
-                  <p className="text-sm text-muted-foreground mb-3">
-                    If you don't need a fully custom viewer, use viewerFieldConfig for per-field customization:
-                  </p>
-                  <div className="bg-muted p-4 rounded-lg">
-                    <pre className="text-sm overflow-x-auto">
-{`<DynamicServerTable
-  viewerFieldConfig={{
-    // Hide fields
-    id: { hidden: true },
-    password: { hidden: true },
-    internalNotes: { hidden: true },
-
-    // Custom labels
-    createdAt: {
-      label: 'Account Created',
-      format: (value) => new Date(value).toLocaleDateString('en-US', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric'
-      })
-    },
-
-    // Clickable email
-    email: {
-      format: (value) => (
-        <a
-          href={\`mailto:\${value}\`}
-          className="text-blue-600 hover:underline flex items-center gap-2"
-        >
-          <Mail className="h-4 w-4" />
-          {value}
-        </a>
-      )
-    },
-
-    // Clickable phone
-    phone: {
-      format: (value) => (
-        <a
-          href={\`tel:\${value}\`}
-          className="text-blue-600 hover:underline flex items-center gap-2"
-        >
-          <Phone className="h-4 w-4" />
-          {value}
-        </a>
-      )
-    },
-
-    // Formatted money
-    salary: {
-      label: 'Annual Salary',
-      format: (value) => (
-        <span className="text-2xl font-bold text-green-600">
-          ₹{value.toLocaleString('en-IN')}
-        </span>
-      )
-    },
-
-    // Badge for status
-    status: {
-      format: (value) => {
-        const variants = {
-          active: 'default',
-          inactive: 'secondary',
-          suspended: 'destructive'
-        };
-        return (
-          <Badge variant={variants[value] || 'outline'}>
-            {value}
-          </Badge>
-        );
-      }
-    },
-
-    // Progress bar
-    completionRate: {
-      label: 'Profile Completion',
-      format: (value) => (
-        <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <span className="text-sm font-medium">{value}%</span>
-          </div>
-          <Progress value={value} className="h-2" />
-        </div>
-      )
-    },
-
-    // Array as list
-    tags: {
-      format: (value) => (
-        <div className="flex flex-wrap gap-1">
-          {value.map((tag, i) => (
-            <Badge key={i} variant="outline">
-              {tag}
-            </Badge>
-          ))}
-        </div>
-      )
-    },
-
-    // Boolean as icon
-    isVerified: {
-      label: 'Verified',
-      format: (value) => (
-        value ? (
-          <CheckCircle className="h-5 w-5 text-green-600" />
-        ) : (
-          <XCircle className="h-5 w-5 text-red-600" />
-        )
-      )
-    }
-  }}
-/>`}
-                    </pre>
-                  </div>
+                  <h4 className="font-bold mb-2">Custom Row Viewer</h4>
+                  <pre className="bg-muted p-3 rounded text-sm">
+                    {`customRowViewer={(data) => <MyViewer data={data} />}`}
+                  </pre>
                 </div>
               </CardContent>
             </Card>
           </TabsContent>
         </Tabs>
 
-        {/* Footer */}
-        <Card className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950 dark:to-purple-950 border-2">
-          <CardContent className="pt-6">
-            <div className="text-center space-y-4">
+        {/* ==================== FOOTER ==================== */}
+        <Card className="relative overflow-hidden bg-gradient-to-br from-blue-600 via-purple-600 to-pink-600 text-white border-0 shadow-2xl">
+          <div className="absolute inset-0 bg-black/20"></div>
+          <CardContent className="relative pt-12 pb-12">
+            <div className="text-center space-y-6">
               <div className="flex justify-center">
-                <Rocket className="h-12 w-12 text-primary" />
+                <div className="p-4 rounded-full bg-white/20 backdrop-blur-sm animate-bounce">
+                  <Rocket className="h-16 w-16 text-white" />
+                </div>
               </div>
-              <h3 className="text-2xl font-bold">Ready to Build Amazing Tables!</h3>
-              <p className="text-muted-foreground max-w-2xl mx-auto">
-                This documentation covers EVERY single feature, prop, and configuration option available in DynamicServerTable.
-                Use the examples as templates and customize them for your needs.
-              </p>
-              <div className="flex justify-center gap-4 pt-2">
-                <Badge variant="outline" className="text-sm py-1">
-                  <Code className="h-3 w-3 mr-1" />
-                  TypeScript First
-                </Badge>
-                <Badge variant="outline" className="text-sm py-1">
-                  <Rocket className="h-3 w-3 mr-1" />
-                  Production Ready
-                </Badge>
-                <Badge variant="outline" className="text-sm py-1">
-                  <Smartphone className="h-3 w-3 mr-1" />
-                  Mobile Responsive
-                </Badge>
-                <Badge variant="outline" className="text-sm py-1">
-                  <Zap className="h-3 w-3 mr-1" />
-                  Blazing Fast
-                </Badge>
+              <div>
+                <h3 className="text-4xl font-bold mb-3">
+                  You're Ready to Build! 🚀
+                </h3>
+                <p className="text-white/90 max-w-3xl mx-auto text-lg leading-relaxed">
+                  This documentation covers all features, props, and
+                  configurations in DynamicServerTable v2.0. Check out{" "}
+                  <strong>Bookings</strong> and <strong>Flights</strong> pages
+                  for live implementations!
+                </p>
               </div>
-              <p className="text-sm text-muted-foreground pt-2">
-                Check out the <strong>bookings</strong> and <strong>flights</strong> tables for real-world implementations!
-              </p>
+              <div className="flex flex-wrap justify-center gap-3 pt-6">
+                {[
+                  { icon: Globe, text: "URL State" },
+                  { icon: History, text: "Browser Nav" },
+                  { icon: Rocket, text: "Production Ready" },
+                  { icon: Smartphone, text: "Mobile First" },
+                  { icon: Zap, text: "Lightning Fast" },
+                  { icon: Lock, text: "Type Safe" },
+                ].map((badge, i) => (
+                  <Badge
+                    key={i}
+                    variant="secondary"
+                    className="text-sm py-2.5 px-5 bg-white/20 text-white border-white/30 hover:bg-white/30 transition-colors"
+                  >
+                    <badge.icon className="h-4 w-4 mr-2" />
+                    {badge.text}
+                  </Badge>
+                ))}
+              </div>
+              <Separator className="my-8 bg-white/20" />
+              <div className="space-y-3">
+                <p className="text-white/90 text-sm font-semibold">
+                  💡 Pro Tips
+                </p>
+                <div className="grid gap-2 md:grid-cols-3 text-sm">
+                  <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4">
+                    <strong>Shareable Links:</strong> All table state is in the
+                    URL
+                  </div>
+                  <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4">
+                    <strong>Custom Forms:</strong> Use
+                    customAddForm/customEditForm
+                  </div>
+                  <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4">
+                    <strong>Bulk Actions:</strong> Enable selection for batch
+                    ops
+                  </div>
+                </div>
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -2341,7 +1491,9 @@ exportConfig={{
   );
 }
 
-// Helper component for prop documentation
+{
+  /* ==================== HELPER COMPONENT ==================== */
+}
 function PropDoc({
   name,
   type,
@@ -2358,24 +1510,43 @@ function PropDoc({
   example?: string;
 }) {
   return (
-    <div className="border rounded-lg p-4 space-y-2">
-      <div className="flex items-start justify-between gap-4">
-        <div className="flex items-center gap-2 flex-wrap">
-          <code className="text-sm font-mono bg-muted px-2 py-1 rounded">{name}</code>
-          {required && <Badge variant="destructive" className="text-xs">Required</Badge>}
+    <div className="border-2 rounded-lg p-5 space-y-4 hover:border-primary/50 hover:shadow-lg transition-all">
+      <div className="flex items-start justify-between gap-4 flex-wrap">
+        <div className="flex items-center gap-3 flex-wrap">
+          <code className="text-sm font-mono bg-gradient-to-r from-blue-600 to-purple-600 text-white px-4 py-2 rounded-lg font-bold shadow-md">
+            {name}
+          </code>
+          {required && (
+            <Badge
+              variant="destructive"
+              className="text-xs font-semibold shadow-md"
+            >
+              REQUIRED
+            </Badge>
+          )}
         </div>
-        <code className="text-xs text-muted-foreground whitespace-nowrap">{type}</code>
+        <code className="text-xs text-muted-foreground bg-muted px-3 py-1.5 rounded-md border whitespace-nowrap font-mono">
+          {type}
+        </code>
       </div>
-      <p className="text-sm text-muted-foreground">{description}</p>
+      <p className="text-sm text-foreground leading-relaxed">{description}</p>
       {defaultValue && (
-        <p className="text-xs text-muted-foreground">
-          Default: <code className="bg-muted px-1 rounded">{defaultValue}</code>
-        </p>
+        <div className="flex items-center gap-2">
+          <Badge variant="outline" className="text-xs">
+            Default
+          </Badge>
+          <code className="text-xs bg-muted px-3 py-1.5 rounded border font-mono">
+            {defaultValue}
+          </code>
+        </div>
       )}
       {example && (
-        <div className="mt-2">
-          <p className="text-xs font-semibold mb-1">Example:</p>
-          <pre className="text-xs bg-muted p-2 rounded overflow-x-auto">
+        <div className="mt-4 space-y-2">
+          <div className="flex items-center gap-2">
+            <Code className="h-4 w-4 text-primary" />
+            <p className="text-xs font-semibold text-primary">Example:</p>
+          </div>
+          <pre className="text-xs bg-gradient-to-br from-muted to-muted/50 p-4 rounded-lg border-2 overflow-x-auto font-mono leading-relaxed shadow-inner whitespace-pre-wrap">
             {example}
           </pre>
         </div>

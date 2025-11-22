@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 import {
   useReactTable,
@@ -6,7 +6,7 @@ import {
   getSortedRowModel,
   ColumnDef,
   flexRender,
-} from '@tanstack/react-table';
+} from "@tanstack/react-table";
 import {
   Table,
   TableBody,
@@ -14,21 +14,32 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
-import { Button } from '@/components/ui/button';
+} from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { Loader2, ArrowUpDown, Search, ChevronLeft, ChevronRight, ChevronsLeft, Eye, Pencil,Trash2 } from 'lucide-react';
-import { TableParams, TableResponse } from '@/app/actions/table-data';
-import { useState } from 'react';
-import * as XLSX from 'xlsx';
-import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
+} from "@/components/ui/select";
+import {
+  Loader2,
+  ArrowUpDown,
+  Search,
+  ChevronLeft,
+  ChevronRight,
+  ChevronsLeft,
+  Eye,
+  Pencil,
+  Trash2,
+} from "lucide-react";
+import { TableParams, TableResponse } from "@/app/actions/table-data";
+import { useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import * as XLSX from "xlsx";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -38,15 +49,19 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
-import { FormDialog } from '@/components/forms/form-dialog';
-import { FormFieldConfig } from '@/components/forms/auto-form-generator';
-import { toast } from 'sonner';
-import { createRecord, updateRecord, deleteRecord } from '@/app/actions/table-data';
-import { RowViewerDialog, RowViewerFieldConfig } from './row-viewer-dialog';
-import { MobileCardView } from './mobile-card-view';
-import { TableToolbar } from './table-toolbar';
-import { useTableState } from './hooks/use-table-state';
+} from "@/components/ui/alert-dialog";
+import { FormDialog } from "@/components/forms/form-dialog";
+import { FormFieldConfig } from "@/components/forms/auto-form-generator";
+import { toast } from "sonner";
+import {
+  createRecord,
+  updateRecord,
+  deleteRecord,
+} from "@/app/actions/table-data";
+import { RowViewerDialog, RowViewerFieldConfig } from "./row-viewer-dialog";
+import { MobileCardView } from "./mobile-card-view";
+import { TableToolbar } from "./table-toolbar";
+import { useTableState } from "./hooks/use-table-state";
 
 interface DynamicServerTableProps<T> {
   initialData: TableResponse<T>;
@@ -58,11 +73,11 @@ interface DynamicServerTableProps<T> {
   filters?: {
     field: string;
     label: string;
-    type: 'select' | 'multiselect';
+    type: "select" | "multiselect";
     options?: { label: string; value: string }[];
   }[];
   defaultSortBy?: string;
-  defaultSortOrder?: 'asc' | 'desc';
+  defaultSortOrder?: "asc" | "desc";
   pageSize?: number;
   pageSizeOptions?: number[];
   onRowClick?: (row: T) => void;
@@ -80,7 +95,13 @@ interface DynamicServerTableProps<T> {
     label: string;
     icon?: React.ReactNode;
     onClick: (selectedRows: T[]) => void;
-    variant?: 'default' | 'destructive' | 'outline' | 'secondary' | 'ghost' | 'link';
+    variant?:
+      | "default"
+      | "destructive"
+      | "outline"
+      | "secondary"
+      | "ghost"
+      | "link";
   }[];
   rowIdField?: string;
   viewerTitle?: string;
@@ -107,25 +128,25 @@ export function DynamicServerTable<T extends Record<string, any>>({
   columns,
   fetchData,
   searchable = true,
-  searchPlaceholder = 'Search...',
+  searchPlaceholder = "Search...",
   searchFields = [],
   filters = [],
   defaultSortBy,
-  defaultSortOrder = 'asc',
+  defaultSortOrder = "asc",
   pageSize = 10,
   pageSizeOptions = [10, 25, 50, 100],
   onRowClick,
   exportable = false,
-  exportFileName = 'data',
+  exportFileName = "data",
   exportConfig = { csv: true, excel: true, pdf: true, print: true },
   selectable = false,
   onSelectionChange,
   bulkActions = [],
-  rowIdField = 'id',
-  viewerTitle = 'Details',
+  rowIdField = "id",
+  viewerTitle = "Details",
   viewerSubtitle,
   viewerFieldConfig = {},
-  tableKey = 'default-table',
+  tableKey = "default-table",
   apiEndpoint,
   formFields = [],
   customAddForm,
@@ -134,12 +155,15 @@ export function DynamicServerTable<T extends Record<string, any>>({
   onUpdateRecord,
   onDeleteRecord,
   showAddButton = true,
-  addButtonLabel = 'Add New',
+  addButtonLabel = "Add New",
   showEditButton = true,
   showDeleteButton = true,
   customRowViewer,
   renderRowViewer,
 }: DynamicServerTableProps<T>) {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
   // Use custom hook for state management
   const {
     data,
@@ -150,6 +174,8 @@ export function DynamicServerTable<T extends Record<string, any>>({
     setCurrentPage,
     currentPageSize,
     setCurrentPageSize,
+    cursorHistory,
+    setCursorHistory,
     searchInput,
     setSearchInput,
     debouncedSearch,
@@ -178,37 +204,101 @@ export function DynamicServerTable<T extends Record<string, any>>({
     searchFields,
   });
 
+  // URL-based dialog state
+  const action = searchParams.get("action");
+  const actionId = searchParams.get("actionId");
+
   // CRUD State
-  const [viewerOpen, setViewerOpen] = useState(false);
   const [viewerData, setViewerData] = useState<T | null>(null);
-  const [isAddFormOpen, setIsAddFormOpen] = useState(false);
-  const [isEditFormOpen, setIsEditFormOpen] = useState(false);
   const [editingRecord, setEditingRecord] = useState<T | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [recordToDelete, setRecordToDelete] = useState<T | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Derived dialog state from URL
+  const viewerOpen = action === "view";
+  const isAddFormOpen = action === "add";
+  const isEditFormOpen = action === "edit";
+  const deleteConfirmOpen = action === "delete";
+
+  // Helper to update dialog state in URL
+  const updateDialogState = (newAction: string | null, id?: string | null) => {
+    const params = new URLSearchParams(searchParams.toString());
+
+    if (newAction === null) {
+      // Close all dialogs
+      params.delete("action");
+      params.delete("actionId");
+    } else {
+      params.set("action", newAction);
+      if (id) {
+        params.set("actionId", id);
+      } else {
+        params.delete("actionId");
+      }
+    }
+
+    const newUrl = params.toString()
+      ? `${window.location.pathname}?${params.toString()}`
+      : window.location.pathname;
+
+    router.push(newUrl, { scroll: false });
+  };
+
+  // Close dialog handler
+  const closeDialog = () => {
+    updateDialogState(null);
+    setViewerData(null);
+    setEditingRecord(null);
+    setRecordToDelete(null);
+  };
+
+  // Load data when URL changes (for browser back/forward)
+  useEffect(() => {
+    if (action && actionId) {
+      // Find the record by ID from current data
+      const record = data.find((item) => String(item[rowIdField]) === actionId);
+
+      if (record) {
+        if (action === "view") {
+          setViewerData(record);
+        } else if (action === "edit") {
+          setEditingRecord(record);
+        } else if (action === "delete") {
+          setRecordToDelete(record);
+        }
+      }
+    } else {
+      // Clear data when no action
+      setViewerData(null);
+      setEditingRecord(null);
+      setRecordToDelete(null);
+    }
+  }, [action, actionId, data, rowIdField]);
 
   // Default CRUD handlers
   const defaultCreateHandler = async (data: Partial<T>) => {
-  	if (!apiEndpoint) throw new Error('API endpoint not configured');
-  	const response = await createRecord(apiEndpoint, data);
-  	return response;
+    if (!apiEndpoint) throw new Error("API endpoint not configured");
+    const response = await createRecord(apiEndpoint, data);
+    return response;
   };
 
-	const defaultUpdateHandler = async (id: string, data: Partial<T>) => {
-  if (!apiEndpoint) throw new Error('API endpoint not configured');
-  const response = await updateRecord(apiEndpoint, id, data);
-  return response;
-};
+  const defaultUpdateHandler = async (id: string, data: Partial<T>) => {
+    if (!apiEndpoint) throw new Error("API endpoint not configured");
+    const response = await updateRecord(apiEndpoint, id, data);
+    return response;
+  };
 
-const defaultDeleteHandler = async (id: string) => {
-  if (!apiEndpoint) throw new Error('API endpoint not configured');
-  await deleteRecord(apiEndpoint, id);
-};
+  const defaultDeleteHandler = async (id: string) => {
+    if (!apiEndpoint) throw new Error("API endpoint not configured");
+    await deleteRecord(apiEndpoint, id);
+  };
 
-  const createHandler = onCreateRecord || (apiEndpoint ? defaultCreateHandler : undefined);
-  const updateHandler = onUpdateRecord || (apiEndpoint ? defaultUpdateHandler : undefined);
-  const deleteHandler = onDeleteRecord || (apiEndpoint ? defaultDeleteHandler : undefined);
+  const createHandler =
+    onCreateRecord || (apiEndpoint ? defaultCreateHandler : undefined);
+  const updateHandler =
+    onUpdateRecord || (apiEndpoint ? defaultUpdateHandler : undefined);
+  const deleteHandler =
+    onDeleteRecord || (apiEndpoint ? defaultDeleteHandler : undefined);
 
   // CRUD Handlers
   const handleCreate = async (formData: Partial<T>) => {
@@ -216,12 +306,14 @@ const defaultDeleteHandler = async (id: string) => {
     try {
       if (createHandler) {
         await createHandler(formData);
-        toast.success('Record created successfully');
-        setIsAddFormOpen(false);
+        toast.success("Record created successfully");
+        closeDialog();
         performFetch(undefined, 1);
       }
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Failed to create record');
+      toast.error(
+        error instanceof Error ? error.message : "Failed to create record",
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -233,26 +325,26 @@ const defaultDeleteHandler = async (id: string) => {
     try {
       if (updateHandler) {
         await updateHandler(String(editingRecord[rowIdField]), formData);
-        toast.success('Record updated successfully');
-        setIsEditFormOpen(false);
-        setEditingRecord(null);
-        performFetch(pagination.previousCursor || undefined, currentPage);
+        toast.success("Record updated successfully");
+        closeDialog();
+        const currentCursor = cursorHistory[cursorHistory.length - 1];
+        performFetch(currentCursor, currentPage);
       }
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Failed to update record');
+      toast.error(
+        error instanceof Error ? error.message : "Failed to update record",
+      );
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const handleEditClick = (row: T) => {
-    setEditingRecord(row);
-    setIsEditFormOpen(true);
+    updateDialogState("edit", String(row[rowIdField]));
   };
 
   const handleDeleteClick = (row: T) => {
-    setRecordToDelete(row);
-    setDeleteConfirmOpen(true);
+    updateDialogState("delete", String(row[rowIdField]));
   };
 
   const confirmDelete = async () => {
@@ -260,37 +352,45 @@ const defaultDeleteHandler = async (id: string) => {
     setIsSubmitting(true);
     try {
       await deleteHandler(String(recordToDelete[rowIdField]));
-      toast.success('Record deleted successfully');
-      setDeleteConfirmOpen(false);
-      setRecordToDelete(null);
-      performFetch(pagination.previousCursor || undefined, currentPage);
+      toast.success("Record deleted successfully");
+      closeDialog();
+      const currentCursor = cursorHistory[cursorHistory.length - 1];
+      performFetch(currentCursor, currentPage);
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Failed to delete record');
+      toast.error(
+        error instanceof Error ? error.message : "Failed to delete record",
+      );
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const handleViewRow = (row: T) => {
-    setViewerData(row);
-    setViewerOpen(true);
+    updateDialogState("view", String(row[rowIdField]));
   };
 
   // Pagination handlers
   const handleNextPage = () => {
     if (pagination.hasNextPage && pagination.nextCursor) {
+      setCursorHistory((prev) => [...prev, pagination.nextCursor]);
       performFetch(pagination.nextCursor, currentPage + 1);
     }
   };
 
   const handlePrevPage = () => {
-    if (pagination.hasPreviousPage && pagination.previousCursor) {
-      performFetch(pagination.previousCursor, currentPage - 1);
+    if (currentPage > 1) {
+      const newHistory = [...cursorHistory];
+      newHistory.pop();
+      const prevCursor = newHistory[newHistory.length - 1];
+
+      setCursorHistory(newHistory);
+      performFetch(prevCursor, currentPage - 1);
     }
   };
 
   const handleFirstPage = () => {
     if (currentPage !== 1) {
+      setCursorHistory([undefined]);
       performFetch(undefined, 1);
     }
   };
@@ -298,7 +398,8 @@ const defaultDeleteHandler = async (id: string) => {
   const handlePageSizeChange = (newSize: number) => {
     setCurrentPageSize(newSize);
     setCurrentPage(1);
-    performFetch(undefined, 1);
+    setCursorHistory([undefined]);
+    performFetch(undefined, 1, newSize);
   };
 
   // Selection handlers
@@ -311,7 +412,9 @@ const defaultDeleteHandler = async (id: string) => {
     }
     setSelectedRows(newSelection);
     if (onSelectionChange) {
-      const selectedData = data.filter((row) => newSelection.has(String(row[rowIdField])));
+      const selectedData = data.filter((row) =>
+        newSelection.has(String(row[rowIdField])),
+      );
       onSelectionChange(selectedData);
     }
   };
@@ -341,21 +444,26 @@ const defaultDeleteHandler = async (id: string) => {
     const dataToExport = selectedOnly ? getSelectedData() : data;
     const visibleColumns = table
       .getAllColumns()
-      .filter((col) => col.getIsVisible() && col.id !== 'select' && col.id !== 'actions');
+      .filter(
+        (col) =>
+          col.getIsVisible() && col.id !== "select" && col.id !== "actions",
+      );
 
     const headers = visibleColumns.map((col) => String(col.columnDef.header));
     const rows = dataToExport.map((row) =>
       visibleColumns.map((col) => {
         const value = row[col.id as keyof T];
-        return value !== null && value !== undefined ? String(value) : '';
-      })
+        return value !== null && value !== undefined ? String(value) : "";
+      }),
     );
 
-    const csv = [headers, ...rows].map((row) => row.map((cell) => `"${cell}"`).join(',')).join('\n');
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
+    const csv = [headers, ...rows]
+      .map((row) => row.map((cell) => `"${cell}"`).join(","))
+      .join("\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
     link.href = URL.createObjectURL(blob);
-    link.download = `${exportFileName}_${new Date().toISOString().split('T')[0]}.csv`;
+    link.download = `${exportFileName}_${new Date().toISOString().split("T")[0]}.csv`;
     link.click();
   };
 
@@ -363,35 +471,44 @@ const defaultDeleteHandler = async (id: string) => {
     const dataToExport = selectedOnly ? getSelectedData() : data;
     const visibleColumns = table
       .getAllColumns()
-      .filter((col) => col.getIsVisible() && col.id !== 'select' && col.id !== 'actions');
+      .filter(
+        (col) =>
+          col.getIsVisible() && col.id !== "select" && col.id !== "actions",
+      );
 
     const headers = visibleColumns.map((col) => String(col.columnDef.header));
     const rows = dataToExport.map((row) =>
       visibleColumns.map((col) => {
         const value = row[col.id as keyof T];
-        return value !== null && value !== undefined ? value : '';
-      })
+        return value !== null && value !== undefined ? value : "";
+      }),
     );
 
     const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'Data');
-    XLSX.writeFile(wb, `${exportFileName}_${new Date().toISOString().split('T')[0]}.xlsx`);
+    XLSX.utils.book_append_sheet(wb, ws, "Data");
+    XLSX.writeFile(
+      wb,
+      `${exportFileName}_${new Date().toISOString().split("T")[0]}.xlsx`,
+    );
   };
 
   const exportToPDF = (selectedOnly: boolean = false) => {
     const dataToExport = selectedOnly ? getSelectedData() : data;
     const visibleColumns = table
       .getAllColumns()
-      .filter((col) => col.getIsVisible() && col.id !== 'select' && col.id !== 'actions');
+      .filter(
+        (col) =>
+          col.getIsVisible() && col.id !== "select" && col.id !== "actions",
+      );
 
     const doc = new jsPDF();
     const headers = visibleColumns.map((col) => String(col.columnDef.header));
     const rows = dataToExport.map((row) =>
       visibleColumns.map((col) => {
         const value = row[col.id as keyof T];
-        return value !== null && value !== undefined ? String(value) : '';
-      })
+        return value !== null && value !== undefined ? String(value) : "";
+      }),
     );
 
     autoTable(doc, {
@@ -401,24 +518,27 @@ const defaultDeleteHandler = async (id: string) => {
       headStyles: { fillColor: [66, 66, 66] },
     });
 
-    doc.save(`${exportFileName}_${new Date().toISOString().split('T')[0]}.pdf`);
+    doc.save(`${exportFileName}_${new Date().toISOString().split("T")[0]}.pdf`);
   };
 
   const handlePrint = (selectedOnly: boolean = false) => {
     const dataToExport = selectedOnly ? getSelectedData() : data;
     const visibleColumns = table
       .getAllColumns()
-      .filter((col) => col.getIsVisible() && col.id !== 'select' && col.id !== 'actions');
+      .filter(
+        (col) =>
+          col.getIsVisible() && col.id !== "select" && col.id !== "actions",
+      );
 
-    const printWindow = window.open('', '_blank');
+    const printWindow = window.open("", "_blank");
     if (!printWindow) return;
 
     const headers = visibleColumns.map((col) => String(col.columnDef.header));
     const rows = dataToExport.map((row) =>
       visibleColumns.map((col) => {
         const value = row[col.id as keyof T];
-        return value !== null && value !== undefined ? String(value) : '';
-      })
+        return value !== null && value !== undefined ? String(value) : "";
+      }),
     );
 
     const html = `
@@ -440,10 +560,10 @@ const defaultDeleteHandler = async (id: string) => {
           <p>Generated on ${new Date().toLocaleDateString()}</p>
           <table>
             <thead>
-              <tr>${headers.map((h) => `<th>${h}</th>`).join('')}</tr>
+              <tr>${headers.map((h) => `<th>${h}</th>`).join("")}</tr>
             </thead>
             <tbody>
-              ${rows.map((row) => `<tr>${row.map((cell) => `<td>${cell}</td>`).join('')}</tr>`).join('')}
+              ${rows.map((row) => `<tr>${row.map((cell) => `<td>${cell}</td>`).join("")}</tr>`).join("")}
             </tbody>
           </table>
         </body>
@@ -463,7 +583,7 @@ const defaultDeleteHandler = async (id: string) => {
   const tableColumns = selectable
     ? [
         {
-          id: 'select',
+          id: "select",
           header: ({ table }: any) => (
             <input
               type="checkbox"
@@ -476,7 +596,9 @@ const defaultDeleteHandler = async (id: string) => {
             <input
               type="checkbox"
               checked={selectedRows.has(String(row.original[rowIdField]))}
-              onChange={() => toggleRowSelection(String(row.original[rowIdField]))}
+              onChange={() =>
+                toggleRowSelection(String(row.original[rowIdField]))
+              }
               onClick={(e) => e.stopPropagation()}
               aria-label="Select row"
             />
@@ -489,7 +611,7 @@ const defaultDeleteHandler = async (id: string) => {
     : columns;
 
   const finalColumns: ColumnDef<T>[] = tableColumns.map((col) =>
-    col.id === 'actions'
+    col.id === "actions"
       ? {
           ...col,
           cell: (ctx) => (
@@ -538,7 +660,7 @@ const defaultDeleteHandler = async (id: string) => {
             </div>
           ),
         }
-      : col
+      : col,
   );
 
   const table = useReactTable({
@@ -557,7 +679,10 @@ const defaultDeleteHandler = async (id: string) => {
   });
 
   const startRecord = (currentPage - 1) * currentPageSize + 1;
-  const endRecord = Math.min(currentPage * currentPageSize, pagination.totalCount || 0);
+  const endRecord = Math.min(
+    currentPage * currentPageSize,
+    pagination.totalCount || 0,
+  );
 
   return (
     <div className="space-y-4">
@@ -588,7 +713,13 @@ const defaultDeleteHandler = async (id: string) => {
         showAddButton={showAddButton}
         createHandler={createHandler}
         addButtonLabel={addButtonLabel}
-        setIsAddFormOpen={setIsAddFormOpen}
+        setIsAddFormOpen={(open) => {
+          if (open) {
+            updateDialogState("add");
+          } else {
+            closeDialog();
+          }
+        }}
       />
 
       {/* Table Content */}
@@ -608,7 +739,7 @@ const defaultDeleteHandler = async (id: string) => {
           handleViewRow={handleViewRow}
           handleEditClick={handleEditClick}
           handleDeleteClick={handleDeleteClick}
-		  columns={columns}
+          columns={columns}
         />
       ) : (
         <div className="rounded-md border overflow-x-auto">
@@ -622,13 +753,18 @@ const defaultDeleteHandler = async (id: string) => {
                         <div
                           className={
                             header.column.getCanSort()
-                              ? 'flex items-center gap-2 cursor-pointer select-none hover:text-foreground'
-                              : ''
+                              ? "flex items-center gap-2 cursor-pointer select-none hover:text-foreground"
+                              : ""
                           }
                           onClick={header.column.getToggleSortingHandler()}
                         >
-                          {flexRender(header.column.columnDef.header, header.getContext())}
-                          {header.column.getCanSort() && <ArrowUpDown className="h-4 w-4" />}
+                          {flexRender(
+                            header.column.columnDef.header,
+                            header.getContext(),
+                          )}
+                          {header.column.getCanSort() && (
+                            <ArrowUpDown className="h-4 w-4" />
+                          )}
                         </div>
                       )}
                     </TableHead>
@@ -639,10 +775,15 @@ const defaultDeleteHandler = async (id: string) => {
             <TableBody>
               {isPending ? (
                 <TableRow>
-                  <TableCell colSpan={finalColumns.length} className="h-24 text-center">
+                  <TableCell
+                    colSpan={finalColumns.length}
+                    className="h-24 text-center"
+                  >
                     <div className="flex flex-col items-center justify-center gap-2">
                       <Loader2 className="h-6 w-6 animate-spin text-primary" />
-                      <span className="text-sm text-muted-foreground">Loading...</span>
+                      <span className="text-sm text-muted-foreground">
+                        Loading...
+                      </span>
                     </div>
                   </TableCell>
                 </TableRow>
@@ -650,23 +791,31 @@ const defaultDeleteHandler = async (id: string) => {
                 table.getRowModel().rows.map((row) => (
                   <TableRow
                     key={row.id}
-                    data-state={row.getIsSelected() && 'selected'}
+                    data-state={row.getIsSelected() && "selected"}
                     onClick={() => onRowClick?.(row.original)}
-                    className={onRowClick ? 'cursor-pointer' : ''}
+                    className={onRowClick ? "cursor-pointer" : ""}
                   >
                     {row.getVisibleCells().map((cell) => (
                       <TableCell key={cell.id}>
-                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                        {flexRender(
+                          cell.column.columnDef.cell,
+                          cell.getContext(),
+                        )}
                       </TableCell>
                     ))}
                   </TableRow>
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={finalColumns.length} className="h-24 text-center">
+                  <TableCell
+                    colSpan={finalColumns.length}
+                    className="h-24 text-center"
+                  >
                     <div className="flex flex-col items-center justify-center gap-2">
                       <Search className="h-8 w-8 text-muted-foreground" />
-                      <span className="text-sm font-medium">No results found</span>
+                      <span className="text-sm font-medium">
+                        No results found
+                      </span>
                       <span className="text-xs text-muted-foreground">
                         Try adjusting your search or filters
                       </span>
@@ -683,19 +832,33 @@ const defaultDeleteHandler = async (id: string) => {
       <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-2">
         <div className="flex flex-col sm:flex-row items-center gap-4 order-2 sm:order-1 w-full sm:w-auto">
           <div className="text-sm text-muted-foreground text-center sm:text-left">
-            {pagination.totalCount !== undefined && pagination.totalCount > 0 ? (
+            {pagination.totalCount !== undefined &&
+            pagination.totalCount > 0 ? (
               <span>
-                Showing <span className="font-medium text-foreground">{startRecord}</span> to{' '}
-                <span className="font-medium text-foreground">{endRecord}</span> of{' '}
-                <span className="font-medium text-foreground">{pagination.totalCount}</span> results
+                Showing{" "}
+                <span className="font-medium text-foreground">
+                  {startRecord}
+                </span>{" "}
+                to{" "}
+                <span className="font-medium text-foreground">{endRecord}</span>{" "}
+                of{" "}
+                <span className="font-medium text-foreground">
+                  {pagination.totalCount}
+                </span>{" "}
+                results
               </span>
             ) : (
               <span>No results</span>
             )}
           </div>
           <div className="flex items-center gap-2">
-            <span className="text-sm text-muted-foreground whitespace-nowrap">Rows:</span>
-            <Select value={currentPageSize.toString()} onValueChange={(value) => handlePageSizeChange(parseInt(value))}>
+            <span className="text-sm text-muted-foreground whitespace-nowrap">
+              Rows:
+            </span>
+            <Select
+              value={currentPageSize.toString()}
+              onValueChange={(value) => handlePageSizeChange(parseInt(value))}
+            >
               <SelectTrigger className="h-8 w-[70px]">
                 <SelectValue />
               </SelectTrigger>
@@ -724,7 +887,7 @@ const defaultDeleteHandler = async (id: string) => {
             variant="outline"
             size="sm"
             onClick={handlePrevPage}
-            disabled={!pagination.hasPreviousPage || isPending}
+            disabled={currentPage === 1 || isPending}
             className="h-9 px-3"
             title="Previous page"
           >
@@ -751,7 +914,9 @@ const defaultDeleteHandler = async (id: string) => {
       {/* Dialogs */}
       <FormDialog
         open={isAddFormOpen}
-        onOpenChange={setIsAddFormOpen}
+        onOpenChange={(open) => {
+          if (!open) closeDialog();
+        }}
         title={`Add New ${viewerTitle}`}
         description="Fill in the information below to create a new record"
         fields={formFields}
@@ -764,8 +929,7 @@ const defaultDeleteHandler = async (id: string) => {
       <FormDialog
         open={isEditFormOpen}
         onOpenChange={(open) => {
-          setIsEditFormOpen(open);
-          if (!open) setEditingRecord(null);
+          if (!open) closeDialog();
         }}
         title={`Edit ${viewerTitle}`}
         description="Update the information below"
@@ -777,22 +941,32 @@ const defaultDeleteHandler = async (id: string) => {
         customForm={customEditForm ? customEditForm(editingRecord!) : undefined}
       />
 
-      <AlertDialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
+      <AlertDialog
+        open={deleteConfirmOpen}
+        onOpenChange={(open) => {
+          if (!open) closeDialog();
+        }}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Are you sure?</AlertDialogTitle>
             <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete the record.
+              This action cannot be undone. This will permanently delete the
+              record.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={isSubmitting}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel disabled={isSubmitting}>
+              Cancel
+            </AlertDialogCancel>
             <AlertDialogAction
               onClick={confirmDelete}
               disabled={isSubmitting}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {isSubmitting && (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              )}
               Delete
             </AlertDialogAction>
           </AlertDialogFooter>
@@ -800,11 +974,13 @@ const defaultDeleteHandler = async (id: string) => {
       </AlertDialog>
 
       {renderRowViewer ? (
-        viewerOpen && viewerData && renderRowViewer(viewerData, () => setViewerOpen(false))
+        viewerOpen && viewerData && renderRowViewer(viewerData, closeDialog)
       ) : (
         <RowViewerDialog
           open={viewerOpen}
-          onOpenChange={setViewerOpen}
+          onOpenChange={(open) => {
+            if (!open) closeDialog();
+          }}
           data={viewerData}
           title={viewerTitle}
           subtitle={viewerSubtitle}

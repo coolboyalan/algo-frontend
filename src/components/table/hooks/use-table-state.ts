@@ -1,15 +1,20 @@
-'use client';
+"use client";
 
-import { useState, useRef, useEffect, useTransition } from 'react';
-import { SortingState, VisibilityState } from '@tanstack/react-table';
-import { TableFilter, TableParams, TableResponse } from '@/app/actions/table-data';
+import { useRouter, useSearchParams, usePathname } from "next/navigation";
+import { useState, useRef, useEffect, useTransition } from "react";
+import { SortingState, VisibilityState } from "@tanstack/react-table";
+import {
+  TableFilter,
+  TableParams,
+  TableResponse,
+} from "@/app/actions/table-data";
 
 interface UseTableStateProps<T> {
   initialData: TableResponse<T>;
   fetchData: (params: TableParams) => Promise<TableResponse<T>>;
   tableKey: string;
   defaultSortBy?: string;
-  defaultSortOrder?: 'asc' | 'desc';
+  defaultSortOrder?: "asc" | "desc";
   pageSize: number;
   searchFields: string[];
 }
@@ -19,24 +24,39 @@ export function useTableState<T extends Record<string, any>>({
   fetchData,
   tableKey,
   defaultSortBy,
-  defaultSortOrder = 'asc',
+  defaultSortOrder = "asc",
   pageSize,
   searchFields,
 }: UseTableStateProps<T>) {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
+  // Initialize from URL params
+  const getInitialSearch = () => searchParams.get("search") || "";
+  const getInitialPage = () => parseInt(searchParams.get("page") || "1");
+  const getInitialPageSize = () =>
+    parseInt(searchParams.get("pageSize") || String(pageSize));
+
   // Data & Pagination
   const [data, setData] = useState<T[]>(initialData.data);
   const [pagination, setPagination] = useState(initialData.pagination);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [currentPageSize, setCurrentPageSize] = useState(pageSize);
+  const [currentPage, setCurrentPage] = useState(getInitialPage());
+  const [currentPageSize, setCurrentPageSize] = useState(getInitialPageSize());
+  const [cursorHistory, setCursorHistory] = useState<(string | undefined)[]>([
+    undefined,
+  ]);
 
   // Search & Filters
-  const [searchInput, setSearchInput] = useState('');
-  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [searchInput, setSearchInput] = useState(getInitialSearch());
+  const [debouncedSearch, setDebouncedSearch] = useState(getInitialSearch());
   const [activeFilters, setActiveFilters] = useState<TableFilter[]>([]);
 
   // Sorting
   const [sorting, setSorting] = useState<SortingState>(
-    defaultSortBy ? [{ id: defaultSortBy, desc: defaultSortOrder === 'desc' }] : []
+    defaultSortBy
+      ? [{ id: defaultSortBy, desc: defaultSortOrder === "desc" }]
+      : [],
   );
 
   // Selection
@@ -59,7 +79,7 @@ export function useTableState<T extends Record<string, any>>({
   const storageKey = `table-column-visibility-${tableKey}`;
 
   const getInitialColumnVisibility = (): VisibilityState => {
-    if (typeof window === 'undefined') return {};
+    if (typeof window === "undefined") return {};
     try {
       const stored = localStorage.getItem(storageKey);
       return stored ? JSON.parse(stored) : {};
@@ -69,16 +89,42 @@ export function useTableState<T extends Record<string, any>>({
   };
 
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>(
-    getInitialColumnVisibility
+    getInitialColumnVisibility,
   );
+
+  // Update URL - FIXED to use router.push and handle undefined
+  const updateURL = (updates: Record<string, string | null | undefined>) => {
+    const params = new URLSearchParams(searchParams.toString());
+
+    Object.entries(updates).forEach(([key, value]) => {
+      // Remove param if value is null, undefined, empty string, or "1" (default page)
+      if (
+        value === null ||
+        value === undefined ||
+        value === "" ||
+        (key === "page" && value === "1")
+      ) {
+        params.delete(key);
+      } else {
+        params.set(key, value);
+      }
+    });
+
+    const newUrl = params.toString()
+      ? `${pathname}?${params.toString()}`
+      : pathname;
+
+    // Use router.push instead of router.replace to create history entries
+    router.push(newUrl, { scroll: false });
+  };
 
   // Save column visibility to localStorage
   useEffect(() => {
-    if (typeof window !== 'undefined') {
+    if (typeof window !== "undefined") {
       try {
         localStorage.setItem(storageKey, JSON.stringify(columnVisibility));
       } catch (error) {
-        console.error('Failed to save column visibility:', error);
+        console.error("Failed to save column visibility:", error);
       }
     }
   }, [columnVisibility, storageKey]);
@@ -87,9 +133,38 @@ export function useTableState<T extends Record<string, any>>({
   useEffect(() => {
     const checkMobile = () => setIsMobile(window.innerWidth < 768);
     checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
   }, []);
+
+  // Update URL when page changes - FIXED
+  useEffect(() => {
+    if (!isFirstRender.current) {
+      updateURL({
+        page: currentPage > 1 ? currentPage.toString() : null,
+      });
+    }
+  }, [currentPage]);
+
+  // Update URL when search changes - FIXED
+  useEffect(() => {
+    if (!isFirstRender.current && debouncedSearch !== getInitialSearch()) {
+      updateURL({
+        search: debouncedSearch || null,
+        page: null, // Reset to page 1 when search changes
+      });
+    }
+  }, [debouncedSearch]);
+
+  // Update URL when page size changes - FIXED
+  useEffect(() => {
+    if (!isFirstRender.current && currentPageSize !== pageSize) {
+      updateURL({
+        pageSize: currentPageSize.toString(),
+        page: null, // Reset to page 1 when page size changes
+      });
+    }
+  }, [currentPageSize]);
 
   // Debounce search input
   useEffect(() => {
@@ -117,10 +192,13 @@ export function useTableState<T extends Record<string, any>>({
     }
 
     const shouldResetToFirstPage =
-      hasSearchChanged.current || hasFiltersChanged.current || hasSortingChanged.current;
+      hasSearchChanged.current ||
+      hasFiltersChanged.current ||
+      hasSortingChanged.current;
 
     if (shouldResetToFirstPage) {
       setCurrentPage(1);
+      setCursorHistory([undefined]);
       performFetch(undefined, 1);
       hasSearchChanged.current = false;
       hasFiltersChanged.current = false;
@@ -128,14 +206,18 @@ export function useTableState<T extends Record<string, any>>({
     }
   }, [debouncedSearch, activeFilters, sorting]);
 
-  // Fetch function
-  const performFetch = (cursor: string | undefined, targetPage: number) => {
+  // Fetch function with optional pageSize parameter
+  const performFetch = (
+    cursor: string | undefined,
+    targetPage: number,
+    pageSize?: number,
+  ) => {
     startTransition(async () => {
       try {
         const params: TableParams = {
-          limit: currentPageSize,
+          limit: pageSize ?? currentPageSize,
           sortBy: sorting[0]?.id,
-          sortOrder: sorting[0]?.desc ? 'desc' : 'asc',
+          sortOrder: sorting[0]?.desc ? "desc" : "asc",
           cursor,
           search: debouncedSearch || undefined,
           searchFields: searchFields.length > 0 ? searchFields : undefined,
@@ -147,28 +229,32 @@ export function useTableState<T extends Record<string, any>>({
         setPagination(result.pagination);
         setCurrentPage(targetPage);
       } catch (error) {
-        console.error('Failed to fetch data:', error);
+        console.error("Failed to fetch data:", error);
       }
     });
   };
 
   // Filter handlers
   const handleFilterChange = (field: string, value: string) => {
-    if (value === 'all') {
+    if (value === "all") {
       setActiveFilters((prev) => prev.filter((f) => f.field !== field));
     } else {
       setActiveFilters((prev) => {
         const existing = prev.filter((f) => f.field !== field);
-        return [...existing, { field, value, operator: 'equals' }];
+        return [...existing, { field, value, operator: "equals" }];
       });
     }
     hasFiltersChanged.current = true;
   };
 
-  const handleMultiSelectChange = (field: string, value: string, checked: boolean) => {
+  const handleMultiSelectChange = (
+    field: string,
+    value: string,
+    checked: boolean,
+  ) => {
     setActiveFilters((prev) => {
       if (checked) {
-        return [...prev, { field, value, operator: 'equals' }];
+        return [...prev, { field, value, operator: "equals" }];
       } else {
         return prev.filter((f) => !(f.field === field && f.value === value));
       }
@@ -182,7 +268,9 @@ export function useTableState<T extends Record<string, any>>({
 
   const removeFilter = (field: string, value?: string) => {
     if (value) {
-      setActiveFilters((prev) => prev.filter((f) => !(f.field === field && f.value === value)));
+      setActiveFilters((prev) =>
+        prev.filter((f) => !(f.field === field && f.value === value)),
+      );
     } else {
       setActiveFilters((prev) => prev.filter((f) => f.field !== field));
     }
@@ -204,6 +292,10 @@ export function useTableState<T extends Record<string, any>>({
     setCurrentPage,
     currentPageSize,
     setCurrentPageSize,
+
+    // Cursor History
+    cursorHistory,
+    setCursorHistory,
 
     // Search
     searchInput,
