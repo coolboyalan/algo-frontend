@@ -1,6 +1,7 @@
 // lib/api-client.ts
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+const API_BASE_URL =
+  process.env.NEXT_PUBLIC_API_URL1 || "http://localhost:4000";
 
 export interface ApiSuccessResponse<T = any> {
   success: true;
@@ -26,11 +27,31 @@ export class ApiError extends Error {
     public code: string,
     message: string,
     public statusCode: number,
-    public details?: any
+    public details?: any,
   ) {
     super(message);
-    this.name = 'ApiError';
+    this.name = "ApiError";
   }
+}
+
+// Helper to determine if string is a full URL
+function isFullUrl(url: string): boolean {
+  return url.startsWith("http://") || url.startsWith("https://");
+}
+
+// Helper to build the full URL
+function buildUrl(endpoint: string): string {
+  return isFullUrl(endpoint) ? endpoint : `${API_BASE_URL}${endpoint}`;
+}
+
+// Helper to get auth token (works on both client and server)
+function getAuthToken(): string | null {
+  // Client-side: get from localStorage
+  if (typeof window !== "undefined") {
+    return localStorage.getItem("token");
+  }
+  // Server-side: would need to get from cookies or headers
+  return null;
 }
 
 async function handleResponse<T>(response: Response): Promise<T> {
@@ -41,7 +62,7 @@ async function handleResponse<T>(response: Response): Promise<T> {
       data.error.code,
       data.error.message,
       response.status,
-      data.error.details
+      data.error.details,
     );
   }
 
@@ -51,9 +72,11 @@ async function handleResponse<T>(response: Response): Promise<T> {
 // GET request
 export async function apiGet<T = any>(
   endpoint: string,
-  params?: Record<string, any>
+  params?: Record<string, any>,
+  options?: RequestInit,
 ): Promise<T> {
-  const url = new URL(`${API_BASE_URL}${endpoint}`);
+  const fullUrl = buildUrl(endpoint);
+  const url = new URL(fullUrl);
 
   if (params) {
     Object.entries(params).forEach(([key, value]) => {
@@ -67,12 +90,18 @@ export async function apiGet<T = any>(
     });
   }
 
+  const token = getAuthToken();
+  const headers: HeadersInit = {
+    "Content-Type": "application/json",
+    ...(token && { Authorization: `Bearer ${token}` }),
+    ...options?.headers,
+  };
+
   const response = await fetch(url.toString(), {
-    method: 'GET',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    cache: 'no-store',
+    method: "GET",
+    headers,
+    cache: "no-store",
+    ...options,
   });
 
   return handleResponse<T>(response);
@@ -81,14 +110,23 @@ export async function apiGet<T = any>(
 // POST request
 export async function apiPost<T = any>(
   endpoint: string,
-  body?: any
+  body?: any,
+  options?: RequestInit,
 ): Promise<T> {
-  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
+  const fullUrl = buildUrl(endpoint);
+  const token = getAuthToken();
+
+  const headers: HeadersInit = {
+    "Content-Type": "application/json",
+    ...(token && { Authorization: `Bearer ${token}` }),
+    ...options?.headers,
+  };
+
+  const response = await fetch(fullUrl, {
+    method: "POST",
+    headers,
     body: body ? JSON.stringify(body) : undefined,
+    ...options,
   });
 
   return handleResponse<T>(response);
@@ -97,14 +135,23 @@ export async function apiPost<T = any>(
 // PUT request
 export async function apiPut<T = any>(
   endpoint: string,
-  body?: any
+  body?: any,
+  options?: RequestInit,
 ): Promise<T> {
-  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-    method: 'PUT',
-    headers: {
-      'Content-Type': 'application/json',
-    },
+  const fullUrl = buildUrl(endpoint);
+  const token = getAuthToken();
+
+  const headers: HeadersInit = {
+    "Content-Type": "application/json",
+    ...(token && { Authorization: `Bearer ${token}` }),
+    ...options?.headers,
+  };
+
+  const response = await fetch(fullUrl, {
+    method: "PUT",
+    headers,
     body: body ? JSON.stringify(body) : undefined,
+    ...options,
   });
 
   return handleResponse<T>(response);
@@ -113,14 +160,23 @@ export async function apiPut<T = any>(
 // PATCH request
 export async function apiPatch<T = any>(
   endpoint: string,
-  body?: any
+  body?: any,
+  options?: RequestInit,
 ): Promise<T> {
-  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-    method: 'PATCH',
-    headers: {
-      'Content-Type': 'application/json',
-    },
+  const fullUrl = buildUrl(endpoint);
+  const token = getAuthToken();
+
+  const headers: HeadersInit = {
+    "Content-Type": "application/json",
+    ...(token && { Authorization: `Bearer ${token}` }),
+    ...options?.headers,
+  };
+
+  const response = await fetch(fullUrl, {
+    method: "PATCH",
+    headers,
     body: body ? JSON.stringify(body) : undefined,
+    ...options,
   });
 
   return handleResponse<T>(response);
@@ -128,13 +184,22 @@ export async function apiPatch<T = any>(
 
 // DELETE request
 export async function apiDelete<T = any>(
-  endpoint: string
+  endpoint: string,
+  options?: RequestInit,
 ): Promise<T> {
-  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-    method: 'DELETE',
-    headers: {
-      'Content-Type': 'application/json',
-    },
+  const fullUrl = buildUrl(endpoint);
+  const token = getAuthToken();
+
+  const headers: HeadersInit = {
+    "Content-Type": "application/json",
+    ...(token && { Authorization: `Bearer ${token}` }),
+    ...options?.headers,
+  };
+
+  const response = await fetch(fullUrl, {
+    method: "DELETE",
+    headers,
+    ...options,
   });
 
   return handleResponse<T>(response);

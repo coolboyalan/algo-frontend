@@ -219,7 +219,7 @@ export function useTableState<T extends Record<string, any>>({
           sortBy: sorting[0]?.id,
           sortOrder: sorting[0]?.desc ? "desc" : "asc",
           cursor,
-          search: debouncedSearch || undefined,
+          searchQuery: debouncedSearch || undefined,
           searchFields: searchFields.length > 0 ? searchFields : undefined,
           filters: activeFilters.length > 0 ? activeFilters : undefined,
         };
@@ -251,12 +251,32 @@ export function useTableState<T extends Record<string, any>>({
     field: string,
     value: string,
     checked: boolean,
+    operator:
+      | "equals"
+      | "contains"
+      | "gt"
+      | "lt"
+      | "gte"
+      | "lte"
+      | "in" = "equals",
   ) => {
     setActiveFilters((prev) => {
       if (checked) {
-        return [...prev, { field, value, operator: "equals" }];
+        const exists = prev.some(
+          (f) =>
+            f.field === field && f.value === value && f.operator === operator,
+        );
+        if (exists) return prev; // avoid duplicate
+        return [...prev, { field, value, operator }];
       } else {
-        return prev.filter((f) => !(f.field === field && f.value === value));
+        return prev.filter(
+          (f) =>
+            !(
+              f.field === field &&
+              f.value === value &&
+              f.operator === operator
+            ),
+        );
       }
     });
     hasFiltersChanged.current = true;

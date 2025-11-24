@@ -1,8 +1,9 @@
+// app/layout.tsx (KEEP AS SERVER COMPONENT)
 import type { Metadata } from 'next';
 import './globals.css';
 import { ThemeProvider } from '@/components/providers/theme-provider';
 import { ToastProvider } from '@/components/providers/toast-provider';
-import { LayoutWrapper } from '@/components/layout/layout-wrapper';
+import { ConditionalLayout } from '@/components/layout/conditional-layout';
 import { inter, poppins, raleway, plusJakarta, workSans, dmSans, spaceGrotesk } from '@/lib/fonts';
 
 export const metadata: Metadata = {
@@ -34,9 +35,9 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange={false}
         >
-          <LayoutWrapper>
+          <ConditionalLayout>
             {children}
-          </LayoutWrapper>
+          </ConditionalLayout>
           <ToastProvider />
         </ThemeProvider>
       </body>

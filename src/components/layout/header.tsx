@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
-import React from 'react';
-import { Menu, Search, Bell, Settings, User, LogOut } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import React, { useEffect, useState } from "react";
+import { Menu, Search, Bell, Settings, User, LogOut } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -10,14 +10,16 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { Input } from '@/components/ui/input';
-import { useSettingsStore } from '@/store/settings-store';
-import Image from 'next/image';
+} from "@/components/ui/dropdown-menu";
+import { Input } from "@/components/ui/input";
+import { useSettingsStore } from "@/store/settings-store";
+import Image from "next/image";
+import Cookies from "js-cookie"; // npm install js-cookie
+import { logoutAction } from "@/lib/actions/auth";
 
 export interface HeaderConfig {
   logo?: {
-    type: 'image' | 'text';
+    type: "image" | "text";
     src?: string;
     text?: string;
     alt?: string;
@@ -43,12 +45,40 @@ interface HeaderProps {
 export function Header({ config }: HeaderProps) {
   const { toggleSidebar } = useSettingsStore();
   const {
-    logo = { type: 'text', text: 'Admin Panel' },
+    logo = { type: "text", text: "Admin Panel" },
     menuItems = [],
-    user = { name: 'Admin User', email: 'admin@example.com' },
     showSearch = true,
     showNotifications = true,
   } = config;
+
+  const [user, setUser] = useState<HeaderConfig["user"] | null>(null);
+
+  useEffect(() => {
+    // Read user info from cookie
+    const userCookie = Cookies.get("user");
+
+    if (userCookie) {
+      try {
+        const parsedUser = JSON.parse(userCookie);
+        setUser({
+          name: parsedUser.name,
+          email: parsedUser.email,
+          avatar: parsedUser.avatar,
+        });
+      } catch (e) {
+        console.error("Failed to parse user cookie", e);
+      }
+    }
+  }, []);
+
+  async function handleLogout() {
+    // Call server action to logout, then clear client cookies and redirect
+    await logoutAction();
+    Cookies.remove("user");
+    Cookies.remove("token");
+    Cookies.remove("userRole");
+    window.location.href = "/login";
+  }
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-header-bg backdrop-blur supports-[backdrop-filter]:bg-header-bg/60">
@@ -65,10 +95,10 @@ export function Header({ config }: HeaderProps) {
 
         {/* Logo */}
         <div className="flex items-center gap-2">
-          {logo.type === 'image' && logo.src ? (
+          {logo.type === "image" && logo.src ? (
             <Image
               src={logo.src}
-              alt={logo.alt || 'Logo'}
+              alt={logo.alt || "Logo"}
               width={32}
               height={32}
               className="h-8 w-8"
@@ -121,7 +151,7 @@ export function Header({ config }: HeaderProps) {
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="flex items-center gap-2">
                 <div className="h-8 w-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground">
-                  {user.avatar ? (
+                  {user?.avatar ? (
                     <Image
                       src={user.avatar}
                       alt={user.name}
@@ -134,15 +164,19 @@ export function Header({ config }: HeaderProps) {
                   )}
                 </div>
                 <div className="hidden lg:flex flex-col items-start text-sm">
-                  <span className="font-medium text-heading">{user.name}</span>
+                  <span className="font-medium text-heading">
+                    {user?.name || "Guest"}
+                  </span>
                 </div>
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56">
               <DropdownMenuLabel>
                 <div className="flex flex-col space-y-1">
-                  <p className="text-sm font-medium">{user.name}</p>
-                  <p className="text-xs text-muted-foreground">{user.email}</p>
+                  <p className="text-sm font-medium">{user?.name || "Guest"}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {user?.email || ""}
+                  </p>
                 </div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
@@ -155,7 +189,10 @@ export function Header({ config }: HeaderProps) {
                 Settings
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem className="text-destructive">
+              <DropdownMenuItem
+                className="text-destructive"
+                onSelect={handleLogout}
+              >
                 <LogOut className="mr-2 h-4 w-4" />
                 Logout
               </DropdownMenuItem>
