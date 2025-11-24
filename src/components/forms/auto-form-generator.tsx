@@ -1,34 +1,52 @@
-'use client';
+"use client";
 
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Loader2 } from 'lucide-react';
+} from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Loader2 } from "lucide-react";
+import { SearchableSelect } from "./searchable-select";
 
 export interface FormFieldConfig {
   name: string;
   label: string;
-  type: 'text' | 'email' | 'number' | 'textarea' | 'select' | 'checkbox' | 'date' | 'datetime-local' | 'hidden';
+  type:
+    | "text"
+    | "email"
+    | "number"
+    | "textarea"
+    | "select"
+    | "searchable-select"
+    | "checkbox"
+    | "date"
+    | "datetime-local"
+    | "hidden";
   placeholder?: string;
   defaultValue?: any;
-  options?: { label: string; value: string }[];
+  options?: { label: string; value: string | number }[];
   validation?: z.ZodType<any>;
   required?: boolean;
   disabled?: boolean;
   hidden?: boolean;
   description?: string;
+
+  // For searchable-select
+  searchEndpoint?: string;
+  searchFields?: string[];
+  searchResultLabelKey?: string;
+  searchResultValueKey?: string;
+  searchLimit?: number;
 }
 
 interface AutoFormGeneratorProps {
@@ -42,7 +60,7 @@ interface AutoFormGeneratorProps {
 export function AutoFormGenerator({
   fields,
   onSubmit,
-  submitLabel = 'Submit',
+  submitLabel = "Submit",
   isLoading = false,
   defaultValues = {},
 }: AutoFormGeneratorProps) {
@@ -50,7 +68,7 @@ export function AutoFormGenerator({
     const schemaFields: Record<string, z.ZodType<any>> = {};
 
     fields.forEach((field) => {
-      if (field.hidden || field.type === 'hidden') return;
+      if (field.hidden || field.type === "hidden") return;
 
       let fieldSchema: z.ZodType<any>;
 
@@ -58,30 +76,48 @@ export function AutoFormGenerator({
         fieldSchema = field.validation;
       } else {
         switch (field.type) {
-          case 'email':
-            fieldSchema = z.string().email('Invalid email address');
+          case "email":
+            fieldSchema = z.string().email("Invalid email address");
             break;
-          case 'number':
-            fieldSchema = z.coerce.number({ invalid_type_error: 'Must be a number' });
+          case "number":
+            fieldSchema = z.coerce.number({
+              invalid_type_error: "Must be a number",
+            });
             break;
-          case 'checkbox':
+          case "checkbox":
             fieldSchema = z.boolean();
             break;
-          case 'date':
-          case 'datetime-local':
+          case "date":
+          case "datetime-local":
             fieldSchema = z.string();
+            break;
+          case "searchable-select":
+            fieldSchema = z.union([z.string(), z.number()]);
             break;
           default:
             fieldSchema = z.string();
         }
 
         if (field.required) {
-          if (field.type === 'checkbox') {
-            fieldSchema = (fieldSchema as z.ZodBoolean).refine((val) => val === true, {
-              message: `${field.label} is required`,
-            });
+          if (field.type === "checkbox") {
+            fieldSchema = (fieldSchema as z.ZodBoolean).refine(
+              (val) => val === true,
+              {
+                message: `${field.label} is required`,
+              },
+            );
+          } else if (field.type === "searchable-select") {
+            fieldSchema = fieldSchema.refine(
+              (val) => val !== undefined && val !== "",
+              {
+                message: `${field.label} is required`,
+              },
+            );
           } else {
-            fieldSchema = (fieldSchema as z.ZodString).min(1, `${field.label} is required`);
+            fieldSchema = (fieldSchema as z.ZodString).min(
+              1,
+              `${field.label} is required`,
+            );
           }
         } else {
           fieldSchema = fieldSchema.optional();
@@ -106,10 +142,14 @@ export function AutoFormGenerator({
   } = useForm({
     resolver: zodResolver(schema),
     defaultValues: {
-      ...fields.reduce((acc, field) => {
-        acc[field.name] = field.defaultValue ?? (field.type === 'checkbox' ? false : '');
-        return acc;
-      }, {} as Record<string, any>),
+      ...fields.reduce(
+        (acc, field) => {
+          acc[field.name] =
+            field.defaultValue ?? (field.type === "checkbox" ? false : "");
+          return acc;
+        },
+        {} as Record<string, any>,
+      ),
       ...defaultValues,
     },
   });
@@ -126,63 +166,117 @@ export function AutoFormGenerator({
     const value = watch(field.name);
 
     switch (field.type) {
-      case 'textarea':
+      case "searchable-select":
+        if (!field.searchEndpoint || !field.searchFields) {
+          console.error(
+            `searchEndpoint and searchFields required for field: ${field.name}`,
+          );
+          return null;
+        }
+
         return (
           <div key={field.name} className="space-y-2">
             <Label htmlFor={field.name}>
               {field.label}
-              {field.required && <span className="text-destructive ml-1">*</span>}
+              {field.required && (
+                <span className="text-destructive ml-1">*</span>
+              )}
             </Label>
             {field.description && (
-              <p className="text-sm text-muted-foreground">{field.description}</p>
+              <p className="text-sm text-muted-foreground">
+                {field.description}
+              </p>
+            )}
+            <SearchableSelect
+              value={value}
+              onValueChange={(val) => setValue(field.name, val)}
+              endpoint={field.searchEndpoint}
+              searchFields={field.searchFields}
+              labelKey={field.searchResultLabelKey || "name"}
+              valueKey={field.searchResultValueKey || "id"}
+              limit={field.searchLimit || 20}
+              placeholder={field.placeholder || `Search ${field.label}...`}
+              disabled={field.disabled || isLoading}
+            />
+            {error && (
+              <p className="text-sm text-destructive">
+                {error.message as string}
+              </p>
+            )}
+          </div>
+        );
+
+      case "textarea":
+        return (
+          <div key={field.name} className="space-y-2">
+            <Label htmlFor={field.name}>
+              {field.label}
+              {field.required && (
+                <span className="text-destructive ml-1">*</span>
+              )}
+            </Label>
+            {field.description && (
+              <p className="text-sm text-muted-foreground">
+                {field.description}
+              </p>
             )}
             <Textarea
               id={field.name}
               placeholder={field.placeholder}
               disabled={field.disabled || isLoading}
               {...register(field.name)}
-              className={error ? 'border-destructive' : ''}
+              className={error ? "border-destructive" : ""}
               rows={4}
             />
             {error && (
-              <p className="text-sm text-destructive">{error.message as string}</p>
+              <p className="text-sm text-destructive">
+                {error.message as string}
+              </p>
             )}
           </div>
         );
 
-      case 'select':
+      case "select":
         return (
           <div key={field.name} className="space-y-2">
             <Label htmlFor={field.name}>
               {field.label}
-              {field.required && <span className="text-destructive ml-1">*</span>}
+              {field.required && (
+                <span className="text-destructive ml-1">*</span>
+              )}
             </Label>
             {field.description && (
-              <p className="text-sm text-muted-foreground">{field.description}</p>
+              <p className="text-sm text-muted-foreground">
+                {field.description}
+              </p>
             )}
             <Select
-              value={value || ''}
+              value={value || ""}
               onValueChange={(val) => setValue(field.name, val)}
               disabled={field.disabled || isLoading}
             >
-              <SelectTrigger className={error ? 'border-destructive' : ''}>
-                <SelectValue placeholder={field.placeholder || `Select ${field.label}`} />
+              <SelectTrigger className={error ? "border-destructive" : ""}>
+                <SelectValue
+                  placeholder={field.placeholder || `Select ${field.label}`}
+                />
               </SelectTrigger>
               <SelectContent>
                 {field.options?.map((option) => (
-                  <SelectItem key={option.value} value={option.value}>
+                  <SelectItem key={option.value} value={String(option.value)}>
                     {option.label}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
             {error && (
-              <p className="text-sm text-destructive">{error.message as string}</p>
+              <p className="text-sm text-destructive">
+                {error.message as string}
+              </p>
             )}
           </div>
         );
 
-      case 'checkbox':
+      case "checkbox":
         return (
           <div key={field.name} className="space-y-2">
             <div className="flex items-center space-x-2">
@@ -197,30 +291,42 @@ export function AutoFormGenerator({
                 className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
               >
                 {field.label}
-                {field.required && <span className="text-destructive ml-1">*</span>}
+                {field.required && (
+                  <span className="text-destructive ml-1">*</span>
+                )}
               </Label>
             </div>
             {field.description && (
-              <p className="text-sm text-muted-foreground ml-6">{field.description}</p>
+              <p className="text-sm text-muted-foreground ml-6">
+                {field.description}
+              </p>
             )}
             {error && (
-              <p className="text-sm text-destructive ml-6">{error.message as string}</p>
+              <p className="text-sm text-destructive ml-6">
+                {error.message as string}
+              </p>
             )}
           </div>
         );
 
-      case 'hidden':
-        return <input key={field.name} type="hidden" {...register(field.name)} />;
+      case "hidden":
+        return (
+          <input key={field.name} type="hidden" {...register(field.name)} />
+        );
 
       default:
         return (
           <div key={field.name} className="space-y-2">
             <Label htmlFor={field.name}>
               {field.label}
-              {field.required && <span className="text-destructive ml-1">*</span>}
+              {field.required && (
+                <span className="text-destructive ml-1">*</span>
+              )}
             </Label>
             {field.description && (
-              <p className="text-sm text-muted-foreground">{field.description}</p>
+              <p className="text-sm text-muted-foreground">
+                {field.description}
+              </p>
             )}
             <Input
               id={field.name}
@@ -228,10 +334,12 @@ export function AutoFormGenerator({
               placeholder={field.placeholder}
               disabled={field.disabled || isLoading}
               {...register(field.name)}
-              className={error ? 'border-destructive' : ''}
+              className={error ? "border-destructive" : ""}
             />
             {error && (
-              <p className="text-sm text-destructive">{error.message as string}</p>
+              <p className="text-sm text-destructive">
+                {error.message as string}
+              </p>
             )}
           </div>
         );

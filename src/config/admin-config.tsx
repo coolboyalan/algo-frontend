@@ -1,4 +1,3 @@
-// config/admin-config.tsx
 "use client";
 
 import {
@@ -21,6 +20,12 @@ import {
   RefreshCw,
   FileEdit,
   UserCog,
+  StoreIcon,
+  Folder,
+  CalendarDays,
+  Cpu,
+  Columns,
+  Key,
 } from "lucide-react";
 import { ROLES } from "@/lib/rbac/permissions";
 
@@ -28,7 +33,7 @@ export const adminConfig = {
   header: {
     logo: {
       type: "text" as const,
-      text: "Flyomint Admin",
+      text: "The Algoman",
     },
     menuItems: [],
     user: null,
@@ -38,7 +43,6 @@ export const adminConfig = {
 
   sidebar: {
     tabs: [
-      // ==================== CORE OPERATIONS ====================
       {
         id: "dashboard",
         label: "Dashboard",
@@ -48,151 +52,59 @@ export const adminConfig = {
         roles: [ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.MANAGER, ROLES.AGENT],
       },
       {
-        id: "bookings",
-        label: "Booking Management",
-        icon: <Ticket className="h-5 w-5" />,
-        href: "/bookings",
-        badge: "24",
-        description: "View, search, modify bookings",
-        roles: [ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.MANAGER, ROLES.AGENT],
-      },
-
-      // ==================== FLIGHT OPERATIONS ====================
-      {
-        id: "flights",
-        label: "Flight Search API",
-        icon: <Plane className="h-5 w-5" />,
-        href: "/flights",
-        description: "API integration, markup rules",
+        id: "assets",
+        label: "Asset",
+        icon: <Folder className="h-5 w-5" />,
+        href: "/assets",
+        description: "Manage assets",
         roles: [ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.MANAGER],
       },
       {
-        id: "api-monitoring",
-        label: "API Monitoring",
-        icon: <Globe className="h-5 w-5" />,
-        href: "/api-monitoring",
-        description: "Logs, latency, retry management",
+        id: "dailyAsset",
+        label: "Daily Asset",
+        icon: <CalendarDays className="h-5 w-5" />,
+        href: "/daily-asset",
+        description: "Daily asset tracking",
+        roles: [ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.MANAGER],
+      },
+      {
+        id: "optionBuffer",
+        label: "Option Buffer",
+        icon: <Cpu className="h-5 w-5" />,
+        href: "/option-buffer",
+        description: "Options buffer overview",
+        roles: [ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.MANAGER],
+      },
+      {
+        id: "trades",
+        label: "Trades",
+        icon: <Columns className="h-5 w-5" />,
+        href: "/trades",
+        description: "Manage trade history",
+        roles: [ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.MANAGER],
+      },
+      {
+        id: "brokerKeys",
+        label: "Broker Keys",
+        icon: <Key className="h-5 w-5" />,
+        href: "/broker-keys",
+        description: "Manage API keys",
         roles: [ROLES.SUPER_ADMIN, ROLES.ADMIN],
       },
-
-      // ==================== FINANCIAL ====================
       {
-        id: "payments",
-        label: "Payment Management",
-        icon: <CreditCard className="h-5 w-5" />,
-        href: "/payments",
-        description: "Transactions, gateway logs",
-        roles: [ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.MANAGER],
-      },
-      {
-        id: "refunds",
-        label: "Cancellation & Refunds",
-        icon: <RefreshCw className="h-5 w-5" />,
-        href: "/refunds",
-        badge: "8",
-        description: "Refund requests, approval workflow",
-        roles: [ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.MANAGER],
-      },
-      {
-        id: "invoices",
-        label: "Invoices & Tickets",
-        icon: <FileText className="h-5 w-5" />,
-        href: "/invoices",
-        description: "Generate, customize, download PDFs",
+        id: "brokers",
+        label: "Brokers",
+        icon: <StoreIcon className="h-5 w-5" />,
+        href: "/brokers",
+        description: "View and edit brokers",
         roles: [ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.MANAGER, ROLES.AGENT],
       },
-
-      // ==================== USER MANAGEMENT ====================
       {
         id: "users",
-        label: "User Management",
+        label: "Users",
         icon: <Users className="h-5 w-5" />,
         href: "/users",
-        badge: "1.2k",
-        description: "View users, reset password, suspend",
-        roles: [ROLES.SUPER_ADMIN, ROLES.ADMIN],
-      },
-      {
-        id: "passengers",
-        label: "Passenger Profiles",
-        icon: <UserCog className="h-5 w-5" />,
-        href: "/passengers",
-        description: "Saved profiles, documents",
-        roles: [ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.MANAGER, ROLES.AGENT],
-      },
-
-      // ==================== SERVICES & ADD-ONS ====================
-      {
-        id: "addons",
-        label: "Add-On Services",
-        icon: <Package className="h-5 w-5" />,
-        href: "/addons",
-        description: "Insurance, meals, baggage, seats",
-        roles: [ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.MANAGER],
-      },
-
-      // ==================== COMMUNICATION ====================
-      {
-        id: "notifications",
-        label: "Notifications & Email",
-        icon: <Mail className="h-5 w-5" />,
-        href: "/notifications",
-        badge: "12",
-        description: "Email templates, triggers, logs",
-        roles: [ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.MANAGER],
-      },
-      {
-        id: "feedback",
-        label: "Customer Feedback",
-        icon: <MessageSquare className="h-5 w-5" />,
-        href: "/feedback",
-        description: "Reviews, complaints, support",
-        roles: [ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.MANAGER, ROLES.AGENT],
-      },
-
-      // ==================== CONTENT & MARKETING ====================
-      {
-        id: "cms",
-        label: "CMS & Static Pages",
-        icon: <FileEdit className="h-5 w-5" />,
-        href: "/cms",
-        description: "FAQs, T&C, policies, SEO",
-        roles: [ROLES.SUPER_ADMIN, ROLES.ADMIN],
-      },
-      {
-        id: "promotions",
-        label: "Promotions & Deals",
-        icon: <Tag className="h-5 w-5" />,
-        href: "/promotions",
-        description: "Discount codes, offers",
-        roles: [ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.MANAGER],
-      },
-
-      // ==================== ANALYTICS & REPORTS ====================
-      {
-        id: "reports",
-        label: "Reports & Analytics",
-        icon: <TrendingUp className="h-5 w-5" />,
-        href: "/reports",
-        description: "Revenue, bookings, route analytics",
-        roles: [ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.MANAGER],
-      },
-
-      // ==================== SECURITY & SETTINGS ====================
-      {
-        id: "roles",
-        label: "Roles & Permissions",
-        icon: <Shield className="h-5 w-5" />,
-        href: "/roles",
-        description: "Admin access control, activity logs",
-        roles: [ROLES.SUPER_ADMIN],
-      },
-      {
-        id: "settings",
-        label: "System Settings",
-        icon: <Settings className="h-5 w-5" />,
-        href: "/settings",
-        description: "API config, payment gateway, general",
+        description: "User management",
         roles: [ROLES.SUPER_ADMIN, ROLES.ADMIN],
       },
     ],

@@ -1,10 +1,8 @@
-// src/middleware.ts
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
-export function middleware(request: NextRequest) {
-  // Get token from cookies instead of localStorage
-  const token = request.cookies.get("token")?.value;
+export async function proxy(request: NextRequest) {
+  const token = (await request.cookies).get("token")?.value;
   const { pathname } = request.nextUrl;
 
   // Public routes that don't require authentication
@@ -38,15 +36,6 @@ export function middleware(request: NextRequest) {
   return NextResponse.next();
 }
 
-// IMPORTANT: Specify which routes to run middleware on
 export const config = {
-  matcher: [
-    /*
-     * Match all request paths except for the ones starting with:
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     */
-    "/((?!_next/static|_next/image|favicon.ico).*)",
-  ],
+  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
 };

@@ -1,6 +1,6 @@
-// app/actions/table-data.ts
 "use server";
 
+import { cookies } from "next/headers";
 import { ApiError } from "@/lib/api-error";
 
 export type SortOrder = "asc" | "desc";
@@ -34,7 +34,6 @@ export interface TableResponse<T> {
   pagination: TablePagination;
 }
 
-// API Response Types (matching backend)
 interface ApiSuccessResponse<T = any> {
   success: true;
   message: string;
@@ -83,6 +82,18 @@ async function handleApiResponse<T>(response: Response): Promise<T> {
 }
 
 /**
+ * Read auth token from cookies and return Authorization header
+ */
+async function getAuthHeaders() {
+  const cookieStore = await cookies();
+  const token = cookieStore.get("token")?.value;
+  if (!token) return {};
+  return {
+    Authorization: `Bearer ${token}`,
+  };
+}
+
+/**
  * Auto-seed collection if it doesn't exist (Development Only)
  */
 async function ensureCollectionExists<T>(
@@ -114,7 +125,7 @@ async function ensureCollectionExists<T>(
       });
 
       if (!seedResponse.ok) {
-        const errorData = await handleApiResponse(seedResponse);
+        await handleApiResponse(seedResponse);
         throw new Error(`Failed to seed collection: ${seedResponse.status}`);
       }
 
@@ -148,7 +159,6 @@ export async function fetchTableData<T>(
   sampleRecord?: T,
 ): Promise<TableResponse<T>> {
   try {
-    // Auto-seed if sample record provided (only in development)
     if (sampleRecord && process.env.NODE_ENV === "development") {
       await ensureCollectionExists(endpoint, sampleRecord);
     }
@@ -175,7 +185,6 @@ export async function fetchTableData<T>(
       queryParams.append("searchFields", searchFields.join(","));
     }
 
-    // Add filters
     filters.forEach((filter, idx) => {
       queryParams.append(`filters[${idx}][field]`, filter.field);
       queryParams.append(`filters[${idx}][operator]`, filter.operator);
@@ -184,18 +193,20 @@ export async function fetchTableData<T>(
 
     const baseUrl =
       process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:4000";
-    const url = `${baseUrl}${endpoint}?${queryParams}`;
+    const url = `${baseUrl}${endpoint}?${queryParams.toString()}`;
 
     console.log(`🔄 Fetching table data: ${url}`);
 
+    const headers = {
+      "Content-Type": "application/json",
+      ...(await getAuthHeaders()),
+    };
+
     const response = await fetch(url, {
       cache: "no-store",
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers,
     });
 
-    // Handle response with standardized error handling
     const result = await handleApiResponse<TableResponse<T>>(response);
 
     console.log(`✅ Fetched ${result.data.length} records from ${endpoint}`);
@@ -214,7 +225,6 @@ export async function fetchTableData<T>(
     if (error instanceof ApiError) {
       console.error(`❌ API Error [${error.code}]:`, error.message);
 
-      // Provide user-friendly error messages
       if (error.code === "NOT_FOUND") {
         throw new Error(`Collection not found: ${endpoint}`);
       }
@@ -245,11 +255,14 @@ export async function fetchRecordById<T>(
 
     console.log(`🔄 Fetching record: ${url}`);
 
+    const headers = {
+      "Content-Type": "application/json",
+      ...(await getAuthHeaders()),
+    };
+
     const response = await fetch(url, {
       cache: "no-store",
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers,
     });
 
     const result = await handleApiResponse<T>(response);
@@ -286,11 +299,14 @@ export async function createRecord<T>(
 
     console.log(`🔄 Creating record: ${url}`);
 
+    const headers = {
+      "Content-Type": "application/json",
+      ...(await getAuthHeaders()),
+    };
+
     const response = await fetch(url, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers,
       body: JSON.stringify(data),
     });
 
@@ -333,11 +349,14 @@ export async function updateRecord<T>(
 
     console.log(`🔄 Updating record: ${url}`);
 
+    const headers = {
+      "Content-Type": "application/json",
+      ...(await getAuthHeaders()),
+    };
+
     const response = await fetch(url, {
       method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers,
       body: JSON.stringify(data),
     });
 
@@ -379,11 +398,14 @@ export async function deleteRecord(
 
     console.log(`🔄 Deleting record: ${url}`);
 
+    const headers = {
+      "Content-Type": "application/json",
+      ...(await getAuthHeaders()),
+    };
+
     const response = await fetch(url, {
       method: "DELETE",
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers,
     });
 
     await handleApiResponse<void>(response);

@@ -610,58 +610,119 @@ export function DynamicServerTable<T extends Record<string, any>>({
       ]
     : columns;
 
-  const finalColumns: ColumnDef<T>[] = tableColumns.map((col) =>
-    col.id === "actions"
-      ? {
-          ...col,
-          cell: (ctx) => (
-            <div className="flex items-center gap-1">
+  const finalColumns: ColumnDef<T>[] = (() => {
+    // Check if actions column already exists
+    const hasActionsColumn = tableColumns.some((col) => col.id === "actions");
+
+    // If actions column exists, merge with defaults
+    if (hasActionsColumn) {
+      return tableColumns.map((col) => {
+        return col.id === "actions"
+          ? {
+              ...col,
+              cell: (ctx) => (
+                <div className="flex items-center gap-1">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    title="View Details"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleViewRow(ctx.row.original);
+                    }}
+                  >
+                    <Eye className="h-4 w-4" />
+                  </Button>
+
+                  {updateHandler && showEditButton && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      title="Edit"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleEditClick(ctx.row.original);
+                      }}
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                  )}
+
+                  {deleteHandler && showDeleteButton && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      title="Delete"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDeleteClick(ctx.row.original);
+                      }}
+                    >
+                      <Trash2 className="h-4 w-4 text-destructive" />
+                    </Button>
+                  )}
+
+                  {/* Render any custom actions from the original column */}
+                  {col.cell ? col.cell(ctx) : null}
+                </div>
+              ),
+            }
+          : col;
+      });
+    }
+
+    // If no actions column exists, auto-inject it at the end
+    return [
+      ...tableColumns,
+      {
+        id: "actions",
+        header: "Actions",
+        cell: (ctx) => (
+          <div className="flex items-center gap-1">
+            <Button
+              variant="ghost"
+              size="icon"
+              title="View Details"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleViewRow(ctx.row.original);
+              }}
+            >
+              <Eye className="h-4 w-4" />
+            </Button>
+
+            {updateHandler && showEditButton && (
               <Button
                 variant="ghost"
                 size="icon"
-                title="View Details"
+                title="Edit"
                 onClick={(e) => {
                   e.stopPropagation();
-                  handleViewRow(ctx.row.original);
+                  handleEditClick(ctx.row.original);
                 }}
               >
-                <Eye className="h-4 w-4" />
+                <Pencil className="h-4 w-4" />
               </Button>
+            )}
 
-              {updateHandler && showEditButton && (
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  title="Edit"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleEditClick(ctx.row.original);
-                  }}
-                >
-                  <Pencil className="h-4 w-4" />
-                </Button>
-              )}
-
-              {deleteHandler && showDeleteButton && (
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  title="Delete"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleDeleteClick(ctx.row.original);
-                  }}
-                >
-                  <Trash2 className="h-4 w-4 text-destructive" />
-                </Button>
-              )}
-
-              {col.cell ? col.cell(ctx) : null}
-            </div>
-          ),
-        }
-      : col,
-  );
+            {deleteHandler && showDeleteButton && (
+              <Button
+                variant="ghost"
+                size="icon"
+                title="Delete"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleDeleteClick(ctx.row.original);
+                }}
+              >
+                <Trash2 className="h-4 w-4 text-destructive" />
+              </Button>
+            )}
+          </div>
+        ),
+      } as ColumnDef<T>,
+    ];
+  })();
 
   const table = useReactTable({
     data,

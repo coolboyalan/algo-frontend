@@ -27,7 +27,7 @@ export async function loginAction(
 
   try {
     // Call your backend API
-    const response = await apiPost("/user/login", {
+    const response = await apiPost("/api/user/login", {
       email,
       password,
     });
@@ -96,7 +96,7 @@ export async function signupAction(
   }
 
   try {
-    const response = await apiPost("/auth/signup", {
+    const response = await apiPost("/api/auth/signup", {
       name,
       email,
       password,

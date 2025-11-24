@@ -1,7 +1,7 @@
 // lib/api-client.ts
 
 const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL1 || "http://localhost:4000";
+  process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:4000";
 
 export interface ApiSuccessResponse<T = any> {
   success: true;
