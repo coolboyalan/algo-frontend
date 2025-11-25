@@ -3,25 +3,12 @@ import { UserTable, UserItem } from "./users-table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Users, Shield, User, Calendar } from "lucide-react";
 
-const sampleUser: UserItem = {
-  id: "1",
-  name: "Alice Admin",
-  email: "alice@example.com",
-  password: "",
-  role: "admin",
-  createdAt: new Date().toISOString(),
-};
-
 export default async function UserPage() {
-  const initialData = await fetchTableData<UserItem>(
-    "/api/user",
-    {
-      limit: 10,
-      sortBy: "createdAt",
-      sortOrder: "desc",
-    },
-    sampleUser,
-  );
+  const initialData = await fetchTableData<UserItem>("/api/user", {
+    limit: 10,
+    sortBy: "createdAt",
+    sortOrder: "desc",
+  });
 
   async function fetchUserData(params: TableParams) {
     "use server";

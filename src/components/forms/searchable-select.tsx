@@ -1,6 +1,6 @@
-// components/forms/searchable-select.tsx
 "use client";
 
+import { fetchRecordById } from "@/app/actions/table-data";
 import * as React from "react";
 import { Check, ChevronsUpDown, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -37,6 +37,7 @@ interface SearchableSelectProps {
   placeholder?: string;
   emptyText?: string;
   disabled?: boolean;
+  widthClass?: string; // Allow easy style override
 }
 
 export function SearchableSelect({
@@ -50,83 +51,149 @@ export function SearchableSelect({
   placeholder = "Select...",
   emptyText = "No results found.",
   disabled = false,
+  widthClass = "w-full max-w-lg min-w-[240px]",
 }: SearchableSelectProps) {
   const [open, setOpen] = React.useState(false);
   const [searchQuery, setSearchQuery] = React.useState("");
   const [options, setOptions] = React.useState<Option[]>([]);
   const [isLoading, setIsLoading] = React.useState(false);
+  const [selectedLabel, setSelectedLabel] = React.useState<string>("");
 
-  const debouncedSearch = useDebounce(searchQuery, 300);
+  const debouncedSearch = useDebounce(searchQuery, 250);
 
   React.useEffect(() => {
-    async function fetchOptions() {
-      if (debouncedSearch.length < 1) {
-        setOptions([]);
-        return;
-      }
+    let ignore = false;
 
+    async function fetchInitialOption() {
+      if (!value || options.find((o) => o.value === value)) return;
+      setIsLoading(true);
+      try {
+        // Direct lookup by id
+        const record = await fetchRecordById(endpoint, String(value));
+        if (!ignore && record) {
+          setOptions((old) => [
+            {
+              label: record[labelKey] ?? String(record[valueKey]),
+              value: record[valueKey],
+            },
+            ...old.filter((o) => o.value !== value),
+          ]);
+          setSelectedLabel(record[labelKey] ?? String(record[valueKey]));
+        }
+      } catch {
+        // ignore errors
+      } finally {
+        if (!ignore) setIsLoading(false);
+      }
+    }
+
+    if (value && !options.find((o) => o.value === value)) {
+      fetchInitialOption();
+    }
+
+    return () => {
+      ignore = true;
+    };
+    // eslint-disable-next-line
+  }, [value, endpoint, labelKey, valueKey]);
+
+  // eslint-disable-next-line
+
+  // On search/change/open, fetch options as normal
+  React.useEffect(() => {
+    let ignore = false;
+    async function fetchOptions(query: string) {
       setIsLoading(true);
       try {
         const results = await searchRecords({
           endpoint,
-          query: debouncedSearch,
+          query: query || undefined,
           searchFields,
           labelKey,
           valueKey,
           limit,
         });
-        setOptions(results);
-      } catch (error) {
-        console.error("Search failed:", error);
-        setOptions([]);
+        if (!ignore) setOptions(results);
+      } catch {
+        if (!ignore) setOptions([]);
       } finally {
-        setIsLoading(false);
+        if (!ignore) setIsLoading(false);
       }
     }
+    if (open) fetchOptions(debouncedSearch);
+    return () => {
+      ignore = true;
+    };
+    // eslint-disable-next-line
+  }, [
+    debouncedSearch,
+    open,
+    endpoint,
+    searchFields,
+    labelKey,
+    valueKey,
+    limit,
+  ]);
 
-    fetchOptions();
-  }, [debouncedSearch, endpoint, searchFields, labelKey, valueKey, limit]);
-
-  const selectedOption = options.find((option) => option.value === value);
+  const selectedOption = options.find((o) => o.value === value);
+  const displayLabel = selectedOption?.label || selectedLabel || placeholder;
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <Button
+          type="button"
           variant="outline"
-          role="combobox"
+          className={cn(
+            widthClass,
+            "justify-between px-3 py-2 text-left font-normal focus:ring-2 aria-expanded:ring-2",
+          )}
           aria-expanded={open}
           disabled={disabled}
-          className="w-full justify-between"
         >
-          {selectedOption ? selectedOption.label : placeholder}
-          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+          <span className={cn(!value && "text-muted-foreground")}>
+            {value ? displayLabel : placeholder}
+          </span>
+          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-60" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-full p-0" align="start">
+      <PopoverContent
+        className={cn(widthClass, "p-0 z-[2000] mt-2")}
+        align="start"
+      >
         <Command shouldFilter={false}>
           <CommandInput
             placeholder="Type to search..."
             value={searchQuery}
             onValueChange={setSearchQuery}
+            autoFocus={open}
+            className="h-10 px-3"
           />
-          <CommandList>
+          <CommandList className="max-h-56 overflow-auto">
             {isLoading ? (
-              <div className="py-6 text-center text-sm flex items-center justify-center gap-2">
+              <div className="py-8 text-center text-sm flex items-center justify-center gap-2">
                 <Loader2 className="h-4 w-4 animate-spin" />
                 Searching...
               </div>
             ) : (
               <>
-                <CommandEmpty>{emptyText}</CommandEmpty>
+                <CommandEmpty>
+                  <span className="text-muted-foreground">{emptyText}</span>
+                </CommandEmpty>
                 <CommandGroup>
                   {options.map((option) => (
                     <CommandItem
                       key={option.value}
                       value={String(option.value)}
+                      className={cn(
+                        "flex items-center cursor-pointer px-3 py-2 rounded hover:bg-accent focus:bg-accent",
+                        value === option.value && "bg-primary/10 font-semibold",
+                      )}
                       onSelect={() => {
                         onValueChange(option.value);
                         setOpen(false);
+                        setSearchQuery("");
+                        setSelectedLabel(option.label);
                       }}
                     >
                       <Check
@@ -135,7 +202,7 @@ export function SearchableSelect({
                           value === option.value ? "opacity-100" : "opacity-0",
                         )}
                       />
-                      {option.label}
+                      <span>{option.label}</span>
                     </CommandItem>
                   ))}
                 </CommandGroup>

@@ -28,12 +28,7 @@ export default function OptionsTradePanel() {
     "bullish" | "bearish" | null
   >(null);
   const [atmStrike, setAtmStrike] = useState<number>(45000);
-  const [otmStrikes, setOtmStrikes] = useState<{
-    call1: number;
-    call2: number;
-    put1: number;
-    put2: number;
-  }>({
+  const [otmStrikes, setOtmStrikes] = useState({
     call1: 45050,
     call2: 45100,
     put1: 44950,
@@ -157,51 +152,55 @@ export default function OptionsTradePanel() {
     : "0.0";
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 p-4">
-      <div className="max-w-5xl mx-auto">
+    <div className="min-h-screen bg-white px-4 py-6">
+      <div className="max-w-5xl mx-auto w-full space-y-8">
         {/* Header */}
-        <div className="bg-gradient-to-r from-purple-600 to-blue-600 rounded-2xl p-6 mb-6 text-white shadow-2xl">
+        <div className="rounded-xl p-6 mb-4 bg-white border shadow">
           <div className="flex justify-between items-center">
             <div>
-              <h1 className="text-3xl font-bold mb-1">Options Trading Panel</h1>
-              <p className="text-sm opacity-90">
+              <h1 className="text-2xl font-bold mb-1 text-gray-900">
+                Options Trading Panel
+              </h1>
+              <p className="text-sm text-gray-500">
                 Bullish/Bearish Strategy Execution
               </p>
             </div>
             <div className="text-right">
-              <label className="text-xs opacity-80">Spot Price</label>
+              <label className="text-xs text-gray-400">Spot Price</label>
               <input
                 type="number"
                 value={spotPrice}
                 onChange={(e) =>
                   setSpotPrice(parseFloat(e.target.value) || 45000)
                 }
-                className="text-2xl font-bold bg-white/20 rounded-lg px-4 py-2 mt-1 w-36 text-right"
+                className="text-xl font-bold bg-gray-50 border rounded px-3 py-2 mt-1 w-32 text-right focus:outline-none focus:border-blue-400"
               />
             </div>
           </div>
         </div>
         {/* Strategy + Lots */}
-        <div className="grid md:grid-cols-2 gap-8 mb-8">
-          <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-6 text-white">
-            <h2 className="text-xl font-bold mb-6">Strategy</h2>
+        <div className="grid md:grid-cols-2 gap-6">
+          <div className="rounded-xl p-6 bg-white border shadow">
+            <h2 className="text-lg font-semibold mb-4 text-gray-900">
+              Strategy
+            </h2>
             <div className="flex gap-3 mb-4">
               <button
                 onClick={() => setSelectedStrategy("bullish")}
-                className={`px-6 py-4 rounded-xl font-bold text-lg transition ${
+                className={`px-6 py-3 rounded font-semibold transition border ${
                   selectedStrategy === "bullish"
-                    ? "bg-green-600 text-white shadow-lg"
-                    : "bg-green-400/30 hover:bg-green-500/30 text-green-100"
+                    ? "bg-green-50 border-green-500 text-green-700"
+                    : "bg-gray-100 border-gray-200 text-gray-500 hover:border-green-400"
                 }`}
               >
                 📈 Bullish
               </button>
               <button
                 onClick={() => setSelectedStrategy("bearish")}
-                className={`px-6 py-4 rounded-xl font-bold text-lg transition ${
+                className={`px-6 py-3 rounded font-semibold transition border ${
                   selectedStrategy === "bearish"
-                    ? "bg-red-600 text-white shadow-lg"
-                    : "bg-red-400/30 hover:bg-red-500/30 text-red-100"
+                    ? "bg-red-50 border-red-500 text-red-700"
+                    : "bg-gray-100 border-gray-200 text-gray-500 hover:border-red-400"
                 }`}
               >
                 📉 Bearish
@@ -209,15 +208,17 @@ export default function OptionsTradePanel() {
             </div>
             {selectedStrategy && (
               <button
-                className="w-full mt-4 py-4 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg text-xl shadow transition"
+                className="w-full mt-4 py-3 bg-gray-900 hover:bg-gray-800 text-white font-medium rounded-lg transition"
                 onClick={() => executeStrategy(selectedStrategy)}
               >
                 Execute {selectedStrategy.toUpperCase()} Strategy
               </button>
             )}
           </div>
-          <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-6 text-white">
-            <h2 className="text-xl font-bold mb-6">Lot Size</h2>
+          <div className="rounded-xl p-6 bg-white border shadow">
+            <h2 className="text-lg font-semibold mb-4 text-gray-900">
+              Lot Size
+            </h2>
             <input
               type="number"
               value={lots}
@@ -226,14 +227,14 @@ export default function OptionsTradePanel() {
               }
               min={2}
               step={2}
-              className="bg-white/20 w-full mx-auto text-4xl rounded-xl py-4 text-center font-bold"
+              className="bg-gray-100 w-full text-3xl rounded py-3 text-center font-semibold border focus:outline-none focus:border-blue-400"
             />
             <div className="flex mt-4 gap-4">
               {[2, 4, 6, 10, 20].map((n) => (
                 <button
                   key={n}
                   onClick={() => setLots(n)}
-                  className={`flex-1 px-0 py-2 rounded-lg text-center ${lots === n ? "bg-blue-500 text-white" : "bg-white/20 text-white"}`}
+                  className={`flex-1 py-2 rounded ${lots === n ? "bg-gray-900 text-white" : "bg-gray-100 text-gray-800"}`}
                 >
                   {n} lots
                 </button>
@@ -242,42 +243,44 @@ export default function OptionsTradePanel() {
           </div>
         </div>
         {/* Summary, Strikes, Stats */}
-        <div className="grid md:grid-cols-3 gap-8 mb-8">
-          <div className="bg-white/10 rounded-2xl p-6 text-white min-h-[120px]">
-            <h3 className="font-bold mb-3 text-blue-200">Current Strikes</h3>
-            <div className="space-y-2">
-              {[
-                <div key="atm">
-                  ATM: <span className="font-bold">{atmStrike}</span>
-                </div>,
-                <div key="c">
-                  OTM Calls: {otmStrikes.call1}, {otmStrikes.call2}
-                </div>,
-                <div key="p">
-                  OTM Puts: {otmStrikes.put1}, {otmStrikes.put2}
-                </div>,
-              ]}
+        <div className="grid md:grid-cols-3 gap-6">
+          <div className="rounded-xl p-6 bg-white border shadow">
+            <h3 className="font-semibold mb-2 text-gray-700">
+              Current Strikes
+            </h3>
+            <div className="space-y-2 text-sm">
+              <div>
+                ATM: <span className="font-medium">{atmStrike}</span>
+              </div>
+              <div>
+                OTM Calls: {otmStrikes.call1}, {otmStrikes.call2}
+              </div>
+              <div>
+                OTM Puts: {otmStrikes.put1}, {otmStrikes.put2}
+              </div>
             </div>
           </div>
-          <div className="bg-white/10 rounded-2xl p-6 text-white min-h-[120px] flex flex-col justify-center">
-            <h3 className="font-bold mb-2 text-green-200">Net P&L</h3>
-            <div className="font-bold text-2xl">
+          <div className="rounded-xl p-6 bg-white border shadow flex flex-col justify-center">
+            <h3 className="font-semibold mb-2 text-gray-700">Net P&L</h3>
+            <div
+              className={`font-bold text-2xl ${totalPnL >= 0 ? "text-green-600" : "text-red-600"}`}
+            >
               {totalPnL >= 0 ? "+" : ""}₹{totalPnL.toFixed(2)}
             </div>
           </div>
-          <div className="bg-white/10 rounded-2xl p-6 text-white min-h-[120px] flex flex-col justify-center">
-            <h3 className="font-bold mb-2 text-purple-200">Win Rate</h3>
+          <div className="rounded-xl p-6 bg-white border shadow flex flex-col justify-center">
+            <h3 className="font-semibold mb-2 text-gray-700">Win Rate</h3>
             <div className="font-bold text-2xl">{winRate}%</div>
           </div>
         </div>
         {/* Confirmation Modal */}
         {showConfirmation && pendingTrade && (
-          <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center">
-            <div className="bg-white rounded-xl p-8 max-w-lg w-full shadow-2xl">
-              <h2 className="text-2xl font-bold mb-4 text-slate-900">
+          <div className="fixed inset-0 bg-black/30 z-50 flex items-center justify-center">
+            <div className="bg-white rounded-lg p-8 max-w-lg w-full shadow-2xl">
+              <h2 className="text-xl font-bold mb-4 text-gray-900">
                 Confirm Trade
               </h2>
-              <div className="mb-4">
+              <div className="mb-4 text-gray-600">
                 <p className="mb-2">
                   <strong>Sell:</strong> {pendingTrade.soldOption.strikePrice}{" "}
                   {pendingTrade.soldOption.type} × {pendingTrade.lots} lots @ ₹
@@ -291,7 +294,7 @@ export default function OptionsTradePanel() {
                     </p>
                   ),
                 )}
-                <div className="flex justify-between mt-3">
+                <div className="flex justify-between mt-3 text-gray-700">
                   <div>
                     Credit:{" "}
                     <span className="font-bold text-green-600">
@@ -317,7 +320,7 @@ export default function OptionsTradePanel() {
               </div>
               <div className="flex gap-4">
                 <button
-                  className="flex-1 py-2 rounded-lg bg-gray-200 hover:bg-gray-300 text-gray-900 font-bold"
+                  className="flex-1 py-2 rounded bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold"
                   onClick={() => {
                     setShowConfirmation(false);
                     setPendingTrade(null);
@@ -326,7 +329,7 @@ export default function OptionsTradePanel() {
                   Cancel
                 </button>
                 <button
-                  className="flex-1 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-bold"
+                  className="flex-1 py-2 rounded bg-gray-900 hover:bg-gray-800 text-white font-semibold"
                   onClick={confirmTrade}
                 >
                   Confirm
@@ -336,32 +339,34 @@ export default function OptionsTradePanel() {
           </div>
         )}
         {/* History */}
-        <div className="bg-white/10 rounded-2xl p-6 mt-10 text-white">
-          <h2 className="font-bold text-xl mb-4">Trade History</h2>
+        <div className="rounded-xl p-6 mt-10 bg-white border shadow">
+          <h2 className="font-semibold text-lg mb-4 text-gray-900">
+            Trade History
+          </h2>
           {trades.length === 0 ? (
-            <div className="text-center opacity-60 py-10">No trades yet.</div>
+            <div className="text-center text-gray-400 py-8">No trades yet.</div>
           ) : (
             <div className="space-y-4 max-h-96 overflow-y-auto">
               {trades.map((trade) => (
                 <div
                   key={trade.id}
-                  className={`rounded-lg p-4 ${trade.strategy === "bearish" ? "bg-red-500/20" : "bg-green-500/20"}`}
+                  className={`rounded p-4 border ${trade.strategy === "bearish" ? "border-red-200" : "border-green-200"} bg-gray-50`}
                 >
                   <div className="flex justify-between mb-1">
-                    <span className="font-bold uppercase">
+                    <span className="font-semibold text-gray-700 uppercase">
                       {trade.strategy}
                     </span>
                     <span
-                      className={`font-bold ${trade.netCredit > 0 ? "text-green-400" : "text-red-400"}`}
+                      className={`font-bold ${trade.netCredit > 0 ? "text-green-600" : "text-red-600"}`}
                     >
                       {trade.netCredit > 0 ? "+" : ""}₹
                       {trade.netCredit.toFixed(2)}
                     </span>
                   </div>
-                  <div className="text-xs opacity-80 mb-1">
+                  <div className="text-xs text-gray-400 mb-1">
                     {new Date(trade.timestamp).toLocaleString()}
                   </div>
-                  <div className="text-xs space-y-1 opacity-90">
+                  <div className="text-xs space-y-1 text-gray-600">
                     <div>
                       Sold: {trade.soldOption.strikePrice}{" "}
                       {trade.soldOption.type} @ ₹{trade.soldOption.premium}

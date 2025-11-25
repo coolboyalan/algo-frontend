@@ -76,10 +76,10 @@ export const adminConfig = {
         roles: [ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.MANAGER],
       },
       {
-        id: "trades",
-        label: "Trades",
+        id: "option-trades",
+        label: "Option Trades",
         icon: <Columns className="h-5 w-5" />,
-        href: "/trades",
+        href: "/option-trades",
         description: "Manage trade history",
         roles: [ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.MANAGER],
       },

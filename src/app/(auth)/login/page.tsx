@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Eye, EyeOff } from "lucide-react";
 import { loginAction } from "@/lib/actions/auth";
 import { useState } from "react";
+import { adminConfig } from "@/config/admin-config";
 
 export default function LoginPage() {
   const [state, formAction, isPending] = useActionState(loginAction, undefined);
@@ -18,11 +19,11 @@ export default function LoginPage() {
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 sm:w-12 sm:h-12 bg-primary rounded-lg flex items-center justify-center">
               <span className="text-primary-foreground font-bold text-xl sm:text-2xl">
-                F
+                A
               </span>
             </div>
             <h2 className="text-xl sm:text-2xl font-bold text-foreground">
-              Flyomint
+              {adminConfig.header.logo.text}
             </h2>
           </div>
         </div>

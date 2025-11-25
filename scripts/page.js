@@ -62,15 +62,6 @@ export type ${pageName}Item = {
   amount: number;
 };
 
-const sample${pageName}: ${pageName}Item = {
-  id: '1',
-  name: 'John Doe',
-  email: 'john@example.com',
-  status: 'active',
-  createdAt: new Date().toISOString(),
-  amount: 1000,
-};
-
 export default async function ${pageName}Page() {
   const initialData = await fetchTableData<${pageName}Item>(
     '/api/${pageNameLower}',
@@ -79,7 +70,6 @@ export default async function ${pageName}Page() {
       sortBy: 'createdAt',
       sortOrder: 'desc',
     },
-    sample${pageName}
   );
 
   async function fetch${pageName}Data(params: TableParams) {

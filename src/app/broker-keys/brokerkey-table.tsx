@@ -33,18 +33,26 @@ export type BrokerKeyItem = {
   timeFrame: number;
   type: "buying" | "selling";
   createdAt: string;
+  user: {
+    name: string;
+    id: number;
+  };
+  broker: {
+    name: string;
+    id: number;
+  };
 };
 
 const columns: ColumnDef<BrokerKeyItem>[] = [
   {
-    accessorKey: "userId",
-    header: "User ID",
-    cell: ({ row }) => <span>{row.original.userId}</span>,
+    accessorKey: "user.name",
+    header: "User Name",
+    cell: ({ row }) => <span>{row.original.user.name}</span>,
   },
   {
-    accessorKey: "brokerId",
-    header: "Broker ID",
-    cell: ({ row }) => <span>{row.original.brokerId}</span>,
+    accessorKey: "broker.name",
+    header: "Broker Name",
+    cell: ({ row }) => <span>{row.original.broker.name}</span>,
   },
   {
     accessorKey: "type",
@@ -140,8 +148,30 @@ const columns: ColumnDef<BrokerKeyItem>[] = [
 ];
 
 const formFields: FormFieldConfig[] = [
-  { name: "userId", label: "User ID", type: "number", required: true },
-  { name: "brokerId", label: "Broker ID", type: "number", required: true },
+  {
+    name: "userId",
+    label: "User Name",
+    type: "searchable-select",
+    required: true,
+    searchEndpoint: "/api/user",
+    searchFields: ["name"],
+    searchResultLabelKey: "name",
+    searchResultValueKey: "id",
+    searchLimit: 20,
+    placeholder: "Search for an user...",
+  },
+  {
+    name: "brokerId",
+    label: "Broker",
+    type: "searchable-select",
+    required: true,
+    searchEndpoint: "/api/broker",
+    searchFields: ["name"],
+    searchResultLabelKey: "name",
+    searchResultValueKey: "id",
+    searchLimit: 20,
+    placeholder: "Search for a broker...",
+  },
   { name: "apiKey", label: "API Key", type: "text", required: true },
   { name: "apiSecret", label: "API Secret", type: "text", required: true },
   {
@@ -154,19 +184,6 @@ const formFields: FormFieldConfig[] = [
       { label: "Selling", value: "selling" },
     ],
   },
-  {
-    name: "status",
-    label: "Status",
-    type: "select",
-    required: true,
-    options: [
-      { label: "Active", value: "true" },
-      { label: "Inactive", value: "false" },
-    ],
-  },
-  { name: "balance", label: "Balance", type: "text" },
-  { name: "loginUrl", label: "Login URL", type: "text" },
-  { name: "redirectUrl", label: "Redirect URL", type: "text" },
   {
     name: "profitLimit",
     label: "Profit Limit",
@@ -198,8 +215,6 @@ const formFields: FormFieldConfig[] = [
     required: true,
     // min: 0,
   },
-  { name: "token", label: "Token", type: "text" },
-  { name: "tokenDate", label: "Token Date", type: "date" },
 ];
 
 export function BrokerKeyTable({

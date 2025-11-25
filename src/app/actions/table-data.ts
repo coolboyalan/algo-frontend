@@ -94,75 +94,14 @@ async function getAuthHeaders() {
 }
 
 /**
- * Auto-seed collection if it doesn't exist (Development Only)
- */
-async function ensureCollectionExists<T>(
-  endpoint: string,
-  sampleRecord: T,
-): Promise<void> {
-  try {
-    const baseUrl =
-      process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:4000";
-
-    // Check if collection exists by trying to fetch
-    const checkResponse = await fetch(`${baseUrl}${endpoint}?limit=1`, {
-      cache: "no-store",
-      headers: {
-        "Content-Type": "application/json",
-      },
-    });
-
-    if (checkResponse.status === 404) {
-      console.log(`🌱 Collection not found, auto-seeding: ${endpoint}`);
-
-      // Seed the collection
-      const seedResponse = await fetch(`${baseUrl}${endpoint}`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(sampleRecord),
-      });
-
-      if (!seedResponse.ok) {
-        await handleApiResponse(seedResponse);
-        throw new Error(`Failed to seed collection: ${seedResponse.status}`);
-      }
-
-      const result = await handleApiResponse<{ count: number; sample: T }>(
-        seedResponse,
-      );
-      console.log(`✅ Auto-seeded ${result.count} records for ${endpoint}`);
-    } else if (checkResponse.ok) {
-      console.log(`✓ Collection exists: ${endpoint}`);
-    } else {
-      // Handle other errors
-      await handleApiResponse(checkResponse);
-    }
-  } catch (error) {
-    if (error instanceof ApiError) {
-      console.error(`API Error [${error.code}]:`, error.message);
-      // Don't rethrow - seeding is optional
-    } else {
-      console.error("Error ensuring collection exists:", error);
-    }
-  }
-}
-
-/**
  * Generic server-side table data fetcher with standardized API responses
  * Supports cursor pagination, search, filters, and sorting
  */
 export async function fetchTableData<T>(
   endpoint: string,
   params: TableParams,
-  sampleRecord?: T,
 ): Promise<TableResponse<T>> {
   try {
-    if (sampleRecord && process.env.NODE_ENV === "development") {
-      await ensureCollectionExists(endpoint, sampleRecord);
-    }
-
     const {
       cursor,
       limit = 10,

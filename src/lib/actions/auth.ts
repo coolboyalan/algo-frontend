@@ -96,7 +96,7 @@ export async function signupAction(
   }
 
   try {
-    const response = await apiPost("/api/auth/signup", {
+    const response = await apiPost("/api/user", {
       name,
       email,
       password,

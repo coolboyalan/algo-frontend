@@ -34,7 +34,7 @@ export interface FormFieldConfig {
     | "hidden";
   placeholder?: string;
   defaultValue?: any;
-  options?: { label: string; value: string | number }[];
+  options?: { label: string; value: string | number | boolean }[];
   validation?: z.ZodType<any>;
   required?: boolean;
   disabled?: boolean;
@@ -87,6 +87,17 @@ export function AutoFormGenerator({
           case "checkbox":
             fieldSchema = z.boolean();
             break;
+          case "select":
+            if (field.options?.every((opt) => typeof opt.value === "boolean")) {
+              fieldSchema = z.boolean();
+            } else if (
+              field.options?.every((opt) => typeof opt.value === "number")
+            ) {
+              fieldSchema = z.coerce.number();
+            } else {
+              fieldSchema = z.string();
+            }
+            break;
           case "date":
           case "datetime-local":
             fieldSchema = z.string();
@@ -113,6 +124,16 @@ export function AutoFormGenerator({
                 message: `${field.label} is required`,
               },
             );
+          } else if (
+            field.type === "select" &&
+            field.options?.every((opt) => typeof opt.value === "boolean")
+          ) {
+            // Boolean select: z.boolean().refine unnecessary, already required by default
+          } else if (
+            field.type === "select" &&
+            field.options?.every((opt) => typeof opt.value === "number")
+          ) {
+            // Number select: already required by z.coerce.number()
           } else {
             fieldSchema = (fieldSchema as z.ZodString).min(
               1,
@@ -251,8 +272,15 @@ export function AutoFormGenerator({
               </p>
             )}
             <Select
-              value={value || ""}
-              onValueChange={(val) => setValue(field.name, val)}
+              value={String(value ?? "")}
+              onValueChange={(val) => {
+                // Find the original option to get its actual type
+                const selectedOption = field.options?.find(
+                  (opt) => String(opt.value) === val,
+                );
+                // Set the actual value (boolean, number, or string)
+                setValue(field.name, selectedOption?.value ?? val);
+              }}
               disabled={field.disabled || isLoading}
             >
               <SelectTrigger className={error ? "border-destructive" : ""}>
@@ -262,7 +290,10 @@ export function AutoFormGenerator({
               </SelectTrigger>
               <SelectContent>
                 {field.options?.map((option) => (
-                  <SelectItem key={option.value} value={String(option.value)}>
+                  <SelectItem
+                    key={String(option.value)}
+                    value={String(option.value)}
+                  >
                     {option.label}
                   </SelectItem>
                 ))}
