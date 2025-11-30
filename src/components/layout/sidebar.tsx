@@ -1,13 +1,13 @@
-'use client';
+"use client";
 
-import React from 'react';
-import { cn } from '@/lib/utils';
-import { Button } from '@/components/ui/button';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { useSettingsStore } from '@/store/settings-store';
-import { Settings, X } from 'lucide-react';
-import { usePathname } from 'next/navigation';
-import Link from 'next/link';
+import React from "react";
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { useSettingsStore } from "@/store/settings-store";
+import { Settings, X } from "lucide-react";
+import { usePathname } from "next/navigation";
+import Link from "next/link";
 
 export interface SidebarTab {
   id: string;
@@ -15,13 +15,15 @@ export interface SidebarTab {
   icon: React.ReactNode;
   href: string;
   badge?: string | number;
+  roles?: string[]; // Add this
 }
 
 interface SidebarProps {
   tabs: SidebarTab[];
+  loading?: boolean; // Add this
 }
 
-export function Sidebar({ tabs }: SidebarProps) {
+export function Sidebar({ tabs, loading = false }: SidebarProps) {
   const pathname = usePathname();
   const { sidebarOpen, setSidebarOpen } = useSettingsStore();
 
@@ -38,8 +40,8 @@ export function Sidebar({ tabs }: SidebarProps) {
       {/* Sidebar */}
       <aside
         className={cn(
-          'fixed left-0 top-16 z-40 h-[calc(100vh-4rem)] w-64 bg-sidebar-bg border-r transition-transform duration-300 lg:translate-x-0',
-          sidebarOpen ? 'translate-x-0' : '-translate-x-full'
+          "fixed left-0 top-16 z-40 h-[calc(100vh-4rem)] w-64 bg-sidebar-bg border-r transition-transform duration-300 lg:translate-x-0",
+          sidebarOpen ? "translate-x-0" : "-translate-x-full",
         )}
       >
         {/* Mobile Close Button */}
@@ -56,31 +58,43 @@ export function Sidebar({ tabs }: SidebarProps) {
 
         <ScrollArea className="h-[calc(100%-5rem)] lg:h-[calc(100%-4rem)]">
           <div className="flex flex-col gap-2 p-4">
-            {/* Regular Tabs */}
-            {tabs.map((tab) => {
-              const isActive = pathname === tab.href;
-              return (
-                <Link key={tab.id} href={tab.href}>
-                  <Button
-                    variant={isActive ? 'default' : 'ghost'}
-                    className={cn(
-                      'w-full justify-start gap-3 text-left font-normal',
-                      isActive
-                        ? 'bg-tab-selected text-primary-foreground hover:bg-tab-selected/90'
-                        : 'text-subheading hover:bg-tab-hover hover:text-heading'
-                    )}
-                  >
-                    {tab.icon}
-                    <span className="flex-1">{tab.label}</span>
-                    {tab.badge && (
-                      <span className="ml-auto text-xs bg-primary text-primary-foreground px-2 py-0.5 rounded-full">
-                        {tab.badge}
-                      </span>
-                    )}
-                  </Button>
-                </Link>
-              );
-            })}
+            {/* Loading State */}
+            {loading ? (
+              <>
+                {[1, 2, 3, 4].map((i) => (
+                  <div
+                    key={i}
+                    className="h-10 bg-muted animate-pulse rounded-md"
+                  />
+                ))}
+              </>
+            ) : (
+              /* Regular Tabs */
+              tabs.map((tab) => {
+                const isActive = pathname === tab.href;
+                return (
+                  <Link key={tab.id} href={tab.href}>
+                    <Button
+                      variant={isActive ? "default" : "ghost"}
+                      className={cn(
+                        "w-full justify-start gap-3 text-left font-normal",
+                        isActive
+                          ? "bg-tab-selected text-primary-foreground hover:bg-tab-selected/90"
+                          : "text-subheading hover:bg-tab-hover hover:text-heading",
+                      )}
+                    >
+                      {tab.icon}
+                      <span className="flex-1">{tab.label}</span>
+                      {tab.badge && (
+                        <span className="ml-auto text-xs bg-primary text-primary-foreground px-2 py-0.5 rounded-full">
+                          {tab.badge}
+                        </span>
+                      )}
+                    </Button>
+                  </Link>
+                );
+              })
+            )}
           </div>
         </ScrollArea>
 
@@ -88,12 +102,12 @@ export function Sidebar({ tabs }: SidebarProps) {
         <div className="absolute bottom-0 left-0 right-0 p-4 border-t bg-sidebar-bg">
           <Link href="/settings">
             <Button
-              variant={pathname === '/settings' ? 'default' : 'ghost'}
+              variant={pathname === "/settings" ? "default" : "ghost"}
               className={cn(
-                'w-full justify-start gap-3',
-                pathname === '/settings'
-                  ? 'bg-tab-selected text-primary-foreground'
-                  : 'text-subheading hover:bg-tab-hover hover:text-heading'
+                "w-full justify-start gap-3",
+                pathname === "/settings"
+                  ? "bg-tab-selected text-primary-foreground"
+                  : "text-subheading hover:bg-tab-hover hover:text-heading",
               )}
             >
               <Settings className="h-5 w-5" />

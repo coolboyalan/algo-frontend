@@ -14,7 +14,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { useSettingsStore } from "@/store/settings-store";
 import Image from "next/image";
-import Cookies from "js-cookie"; // npm install js-cookie
+import Link from "next/link";
+import Cookies from "js-cookie";
 import { logoutAction } from "@/lib/actions/auth";
 
 export interface HeaderConfig {
@@ -180,17 +181,21 @@ export function Header({ config }: HeaderProps) {
                 </div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem>
-                <User className="mr-2 h-4 w-4" />
-                Profile
+              <DropdownMenuItem asChild>
+                <Link href="/profile" className="cursor-pointer">
+                  <User className="mr-2 h-4 w-4" />
+                  Profile
+                </Link>
               </DropdownMenuItem>
-              <DropdownMenuItem>
-                <Settings className="mr-2 h-4 w-4" />
-                Settings
+              <DropdownMenuItem asChild>
+                <Link href="/settings" className="cursor-pointer">
+                  <Settings className="mr-2 h-4 w-4" />
+                  Settings
+                </Link>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem
-                className="text-destructive"
+                className="text-destructive cursor-pointer"
                 onSelect={handleLogout}
               >
                 <LogOut className="mr-2 h-4 w-4" />

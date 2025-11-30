@@ -1,36 +1,44 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import { TAB_PERMISSIONS } from "@/config/tabs-config"; // ✅ Server-safe import
+import type { Role } from "@/lib/rbac/permissions";
 
-export async function proxy(request: NextRequest) {
-  const token = (await request.cookies).get("token")?.value;
+export default async function middleware(request: NextRequest) {
+  const token = request.cookies.get("token")?.value;
+  const userRole = request.cookies.get("userRole")?.value as Role | undefined;
   const { pathname } = request.nextUrl;
 
-  // Public routes that don't require authentication
   const publicRoutes = ["/login", "/signup", "/forgot-password"];
   const isPublicRoute = publicRoutes.some((route) =>
     pathname.startsWith(route),
   );
 
-  // Allow access to static files and API routes
   if (
     pathname.startsWith("/_next") ||
-    pathname.startsWith("/api") ||
     pathname.startsWith("/static") ||
     pathname === "/favicon.ico"
   ) {
     return NextResponse.next();
   }
 
-  // If trying to access protected route without token, redirect to login
   if (!isPublicRoute && !token) {
-    const loginUrl = new URL("/login", request.url);
-    return NextResponse.redirect(loginUrl);
+    return NextResponse.redirect(new URL("/login", request.url));
   }
 
-  // If logged in and trying to access auth pages, redirect to dashboard
   if (isPublicRoute && token) {
-    const dashboardUrl = new URL("/dashboard", request.url);
-    return NextResponse.redirect(dashboardUrl);
+    return NextResponse.redirect(new URL("/dashboard", request.url));
+  }
+
+  // 🔥 Role-based route protection
+  if (userRole) {
+    const routeSegments = pathname.split("/").filter(Boolean);
+    const route = routeSegments[0];
+
+    const allowedRoles = TAB_PERMISSIONS[route];
+
+    if (allowedRoles && !allowedRoles.includes(userRole)) {
+      return NextResponse.redirect(new URL("/unauthorized", request.url));
+    }
   }
 
   return NextResponse.next();

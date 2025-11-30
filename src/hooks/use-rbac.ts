@@ -1,4 +1,3 @@
-// hooks/use-rbac.ts
 "use client";
 import { useEffect, useState } from "react";
 import {
@@ -13,11 +12,23 @@ export function useRBAC() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Get user from localStorage
-    const userStr = localStorage.getItem("user");
+    // Get user from cookies (via document.cookie for client-side)
+    // OR fetch from a client-accessible endpoint
+    const getCookie = (name: string) => {
+      const value = `; ${document.cookie}`;
+      const parts = value.split(`; ${name}=`);
+      if (parts.length === 2) return parts.pop()?.split(";").shift();
+    };
+
+    // Since userRole is httpOnly, we need to get it from the user cookie
+    const userStr = getCookie("user");
     if (userStr) {
-      const user = JSON.parse(userStr);
-      setUserRole(user.role);
+      try {
+        const user = JSON.parse(decodeURIComponent(userStr));
+        setUserRole(user.role);
+      } catch (e) {
+        console.error("Failed to parse user cookie");
+      }
     }
     setLoading(false);
   }, []);

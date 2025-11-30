@@ -9,6 +9,13 @@ export type LoginState = {
   success?: boolean;
 };
 
+// Add helper function at the top
+export async function getUserRole(): Promise<string | null> {
+  const cookieStore = await cookies();
+  const userRole = cookieStore.get("userRole")?.value;
+  return userRole as string | null;
+}
+
 export async function loginAction(
   prevState: LoginState | undefined,
   formData: FormData,
@@ -69,7 +76,7 @@ export async function loginAction(
   if (userRole === "admin" || userRole === "super_admin") {
     redirect("/dashboard");
   } else {
-    redirect("/dashboard");
+    redirect("/user-dashboard");
   }
 }
 

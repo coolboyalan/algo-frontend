@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Card,
   CardContent,
@@ -8,30 +8,24 @@ import {
   CardTitle,
   CardDescription,
 } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   TrendingUp,
   TrendingDown,
   Clock,
   AlertCircle,
-  CheckCircle2,
   ArrowUpRight,
   ArrowDownRight,
   Activity,
   BarChart3,
   DollarSign,
   Target,
-  Zap,
-  Link as LinkIcon,
-  StopCircle,
   RefreshCw,
   Users,
-  User,
-  Eye,
   Globe,
   Award,
   CandlestickChart,
+  Zap,
 } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import {
@@ -49,142 +43,40 @@ import {
   BarChart,
   Bar,
 } from "recharts";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 
 export default function DashboardPage() {
-  const [selectedUser, setSelectedUser] = useState<string>("all");
+  const [adminName, setAdminName] = useState<string>("Admin");
+  const [loading, setLoading] = useState(true);
 
-  // Static Dashboard Data - Admin View (All Users)
+  // Get admin name from cookie
+  useEffect(() => {
+    const getCookie = (name: string) => {
+      const value = `; ${document.cookie}`;
+      const parts = value.split(`; ${name}=`);
+      if (parts.length === 2) return parts.pop()?.split(";").shift();
+    };
+
+    const userStr = getCookie("user");
+    if (userStr) {
+      try {
+        const user = JSON.parse(decodeURIComponent(userStr));
+        setAdminName(user.name || "Admin");
+      } catch (e) {
+        console.error("Failed to parse user cookie");
+      }
+    }
+    setLoading(false);
+  }, []);
+
+  // Static Dashboard Data - Trading Platform Overview
   const data = {
-    users: [
-      {
-        id: 1,
-        name: "Rahul Sharma",
-        email: "rahul@example.com",
-        totalPnl: 45000,
-        totalTrades: 120,
-        winningTrades: 78,
-        activeBrokers: 2,
-        brokerKeys: [
-          {
-            id: 1,
-            name: "Zerodha",
-            status: "active" as const,
-            pnl: 30000,
-            totalTrades: 75,
-            winningTrades: 50,
-            currency: "INR",
-            loginUrl: "https://kite.zerodha.com",
-            inactiveUrl: "/api/broker-key/stop/1",
-          },
-          {
-            id: 2,
-            name: "Upstox",
-            status: "active" as const,
-            pnl: 15000,
-            totalTrades: 45,
-            winningTrades: 28,
-            currency: "INR",
-            loginUrl: "https://login.upstox.com",
-            inactiveUrl: "/api/broker-key/stop/2",
-          },
-        ],
-      },
-      {
-        id: 2,
-        name: "Priya Patel",
-        email: "priya@example.com",
-        totalPnl: -12000,
-        totalTrades: 85,
-        winningTrades: 38,
-        activeBrokers: 1,
-        brokerKeys: [
-          {
-            id: 3,
-            name: "Angel One",
-            status: "active" as const,
-            pnl: -12000,
-            totalTrades: 85,
-            winningTrades: 38,
-            currency: "INR",
-            loginUrl: "https://trade.angelone.in",
-            inactiveUrl: "/api/broker-key/stop/3",
-          },
-        ],
-      },
-      {
-        id: 3,
-        name: "Amit Kumar",
-        email: "amit@example.com",
-        totalPnl: 67000,
-        totalTrades: 150,
-        winningTrades: 95,
-        activeBrokers: 3,
-        brokerKeys: [
-          {
-            id: 4,
-            name: "ICICI Direct",
-            status: "active" as const,
-            pnl: 40000,
-            totalTrades: 80,
-            winningTrades: 55,
-            currency: "INR",
-            loginUrl: "https://www.icicidirect.com",
-            inactiveUrl: "/api/broker-key/stop/4",
-          },
-          {
-            id: 5,
-            name: "Kotak Securities",
-            status: "active" as const,
-            pnl: 20000,
-            totalTrades: 50,
-            winningTrades: 30,
-            currency: "INR",
-            loginUrl: "https://www.kotaksecurities.com",
-            inactiveUrl: "/api/broker-key/stop/5",
-          },
-          {
-            id: 6,
-            name: "Groww",
-            status: "active" as const,
-            pnl: 7000,
-            totalTrades: 20,
-            winningTrades: 10,
-            currency: "INR",
-            loginUrl: "https://groww.in",
-            inactiveUrl: "/api/broker-key/stop/6",
-          },
-        ],
-      },
-      {
-        id: 4,
-        name: "Sneha Singh",
-        email: "sneha@example.com",
-        totalPnl: 23000,
-        totalTrades: 95,
-        winningTrades: 60,
-        activeBrokers: 1,
-        brokerKeys: [
-          {
-            id: 7,
-            name: "Zerodha",
-            status: "inactive" as const,
-            pnl: 23000,
-            totalTrades: 95,
-            winningTrades: 60,
-            currency: "INR",
-            loginUrl: "https://kite.zerodha.com",
-            inactiveUrl: "/api/broker-key/stop/7",
-          },
-        ],
-      },
-    ],
+    totalUsers: 4,
+    totalPnl: 123000,
+    totalTrades: 450,
+    totalWinningTrades: 271,
+    activeBrokers: 7,
+    avgPnlPerTrade: 273,
+
     pnlTrendData: [
       { date: "2025-10-26", pnl: 5000 },
       { date: "2025-10-27", pnl: 8000 },
@@ -217,48 +109,71 @@ export default function DashboardPage() {
       { date: "2025-11-23", pnl: 68000 },
       { date: "2025-11-24", pnl: 72000 },
     ],
+
+    userPerformanceData: [
+      { name: "Rahul", pnl: 45000, trades: 120 },
+      { name: "Priya", pnl: -12000, trades: 85 },
+      { name: "Amit", pnl: 67000, trades: 150 },
+      { name: "Sneha", pnl: 23000, trades: 95 },
+    ],
+
+    brokerDistribution: [
+      { name: "Zerodha", value: 2, color: "#3B82F6" },
+      { name: "Upstox", value: 1, color: "#10B981" },
+      { name: "Angel One", value: 1, color: "#F59E0B" },
+      { name: "ICICI", value: 1, color: "#8B5CF6" },
+      { name: "Kotak", value: 1, color: "#EC4899" },
+      { name: "Groww", value: 1, color: "#06B6D4" },
+    ],
+
+    activities: [
+      {
+        type: "trade",
+        message: "Rahul opened position in RELIANCE",
+        time: "2 mins ago",
+        status: "success",
+      },
+      {
+        type: "alert",
+        message: "Priya's stop loss triggered for HDFC",
+        time: "5 mins ago",
+        status: "warning",
+      },
+      {
+        type: "profit",
+        message: "Amit hit profit target for TCS",
+        time: "12 mins ago",
+        status: "success",
+      },
+      {
+        type: "connection",
+        message: "New Zerodha connection by Sneha",
+        time: "25 mins ago",
+        status: "info",
+      },
+      {
+        type: "trade",
+        message: "System executed auto-trade for INFY",
+        time: "45 mins ago",
+        status: "success",
+      },
+    ],
+
     lastUpdated: new Date().toISOString(),
   };
 
-  // Calculate aggregated stats
-  const totalUsers = data.users.length;
-  const totalPnl = data.users.reduce((sum, user) => sum + user.totalPnl, 0);
-  const totalTrades = data.users.reduce(
-    (sum, user) => sum + user.totalTrades,
-    0,
-  );
-  const totalWinningTrades = data.users.reduce(
-    (sum, user) => sum + user.winningTrades,
-    0,
-  );
-  const totalActiveBrokers = data.users.reduce(
-    (sum, user) => sum + user.activeBrokers,
-    0,
-  );
-  const allBrokerKeys = data.users.flatMap((user) => user.brokerKeys);
-
   const winLossData = [
-    { name: "Winning Trades", value: totalWinningTrades, color: "#10B981" },
+    {
+      name: "Winning Trades",
+      value: data.totalWinningTrades,
+      color: "#10B981",
+    },
     {
       name: "Losing Trades",
-      value: totalTrades - totalWinningTrades,
+      value: data.totalTrades - data.totalWinningTrades,
       color: "#EF4444",
     },
   ];
-
-  // User performance data for bar chart
-  const userPerformanceData = data.users.map((user) => ({
-    name: user.name.split(" ")[0],
-    pnl: user.totalPnl,
-    trades: user.totalTrades,
-  }));
-
-  // Filter data based on selected user
-  const filteredBrokers =
-    selectedUser === "all"
-      ? allBrokerKeys
-      : data.users.find((u) => u.id.toString() === selectedUser)?.brokerKeys ||
-        [];
 
   const formatCurrency = (amount: number, currency: string = "INR") => {
     return new Intl.NumberFormat("en-IN", {
@@ -274,21 +189,10 @@ export default function DashboardPage() {
   };
 
   const winRate =
-    totalTrades > 0
-      ? ((totalWinningTrades / totalTrades) * 100).toFixed(1)
+    data.totalTrades > 0
+      ? ((data.totalWinningTrades / data.totalTrades) * 100).toFixed(1)
       : "0";
 
-  const avgPnlPerTrade = totalTrades > 0 ? totalPnl / totalTrades : 0;
-
-  // Best performing broker
-  const bestBroker =
-    allBrokerKeys.length > 0
-      ? allBrokerKeys.reduce((best, current) =>
-          current.pnl > best.pnl ? current : best,
-        )
-      : null;
-
-  // Greeting logic
   const hour = new Date().getHours();
   const greeting =
     hour >= 5 && hour < 12
@@ -307,34 +211,6 @@ export default function DashboardPage() {
     "Discipline is the bridge between goals and accomplishment.",
   ];
   const randomQuote = quotes[Math.floor(Math.random() * quotes.length)];
-
-  // Recent activity
-  const activities = [
-    {
-      type: "trade",
-      message: "Rahul opened position in RELIANCE",
-      time: "2 mins ago",
-      status: "success",
-    },
-    {
-      type: "alert",
-      message: "Priya's stop loss triggered for HDFC",
-      time: "5 mins ago",
-      status: "warning",
-    },
-    {
-      type: "profit",
-      message: "Amit hit profit target for TCS",
-      time: "12 mins ago",
-      status: "success",
-    },
-    {
-      type: "connection",
-      message: "New Zerodha connection by Sneha",
-      time: "25 mins ago",
-      status: "info",
-    },
-  ];
 
   const getActivityIcon = (type: string) => {
     switch (type) {
@@ -364,6 +240,14 @@ export default function DashboardPage() {
     }
   };
 
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
   return (
     <div className="px-6 pb-6 min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
       <div className="space-y-6">
@@ -371,7 +255,7 @@ export default function DashboardPage() {
         <div className="pt-6">
           <div className="text-center mb-6">
             <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent mb-2">
-              {greeting}, Admin!
+              {greeting}, {adminName}!
             </h1>
             <p className="text-sm text-gray-600 italic max-w-2xl mx-auto">
               "{randomQuote}"
@@ -394,7 +278,7 @@ export default function DashboardPage() {
                 Platform Overview
               </h2>
               <p className="text-gray-600 mt-1">
-                Monitor all users' trading performance and broker connections
+                Monitor trading performance and system health
               </p>
             </div>
             <div className="flex items-center gap-4">
@@ -423,7 +307,7 @@ export default function DashboardPage() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-blue-600">
-                {totalUsers}
+                {data.totalUsers}
               </div>
               <p className="text-xs text-gray-500 mt-2">
                 Active traders on platform
@@ -439,12 +323,12 @@ export default function DashboardPage() {
             </CardHeader>
             <CardContent>
               <div
-                className={`text-2xl font-bold ${totalPnl >= 0 ? "text-green-600" : "text-red-600"}`}
+                className={`text-2xl font-bold ${data.totalPnl >= 0 ? "text-green-600" : "text-red-600"}`}
               >
-                {formatCurrency(totalPnl)}
+                {formatCurrency(data.totalPnl)}
               </div>
               <div className="flex items-center gap-2 mt-1">
-                {totalPnl >= 0 ? (
+                {data.totalPnl >= 0 ? (
                   <ArrowUpRight className="h-4 w-4 text-green-600" />
                 ) : (
                   <ArrowDownRight className="h-4 w-4 text-red-600" />
@@ -466,7 +350,7 @@ export default function DashboardPage() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-purple-600">
-                {formatNumber(totalTrades)}
+                {formatNumber(data.totalTrades)}
               </div>
               <div className="flex items-center gap-2 mt-1">
                 <Target className="h-4 w-4 text-purple-600" />
@@ -487,13 +371,11 @@ export default function DashboardPage() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-orange-600">
-                {totalActiveBrokers}
+                {data.activeBrokers}
               </div>
               <div className="flex items-center gap-2 mt-1">
                 <Activity className="h-4 w-4 text-orange-600" />
-                <span className="text-xs text-gray-500">
-                  {allBrokerKeys.length} total configured
-                </span>
+                <span className="text-xs text-gray-500">Across all users</span>
               </div>
             </CardContent>
           </Card>
@@ -536,11 +418,11 @@ export default function DashboardPage() {
                 <div className="flex items-center text-gray-600 mb-2">
                   <Award size={18} className="mr-2" />
                   <h3 className="text-xs font-medium uppercase tracking-wider">
-                    Average P&L
+                    Average P&L/Trade
                   </h3>
                 </div>
                 <p className="text-lg font-bold text-purple-600">
-                  {formatCurrency(avgPnlPerTrade)}
+                  {formatCurrency(data.avgPnlPerTrade)}
                 </p>
               </CardHeader>
             </Card>
@@ -548,13 +430,13 @@ export default function DashboardPage() {
             <Card className="hover:shadow-lg transition-all hover:-translate-y-1">
               <CardHeader>
                 <div className="flex items-center text-gray-600 mb-2">
-                  <Zap size={18} className="mr-2" />
+                  <TrendingUp size={18} className="mr-2" />
                   <h3 className="text-xs font-medium uppercase tracking-wider">
-                    Best Performing Broker
+                    Winning Trades
                   </h3>
                 </div>
-                <p className="text-lg font-bold text-yellow-600">
-                  {bestBroker?.name || "N/A"}
+                <p className="text-lg font-bold text-green-600">
+                  {formatNumber(data.totalWinningTrades)}
                 </p>
               </CardHeader>
             </Card>
@@ -562,13 +444,13 @@ export default function DashboardPage() {
             <Card className="hover:shadow-lg transition-all hover:-translate-y-1">
               <CardHeader>
                 <div className="flex items-center text-gray-600 mb-2">
-                  <Globe size={18} className="mr-2" />
+                  <TrendingDown size={18} className="mr-2" />
                   <h3 className="text-xs font-medium uppercase tracking-wider">
-                    Market Exposure
+                    Losing Trades
                   </h3>
                 </div>
-                <p className="text-lg font-bold text-cyan-600">
-                  {totalActiveBrokers} Markets
+                <p className="text-lg font-bold text-red-600">
+                  {formatNumber(data.totalTrades - data.totalWinningTrades)}
                 </p>
               </CardHeader>
             </Card>
@@ -627,7 +509,7 @@ export default function DashboardPage() {
             </CardHeader>
             <CardContent>
               <div className="space-y-3 max-h-[280px] overflow-y-auto">
-                {activities.map((activity, index) => {
+                {data.activities.map((activity, index) => {
                   const Icon = getActivityIcon(activity.type);
                   return (
                     <div
@@ -699,7 +581,7 @@ export default function DashboardPage() {
             </CardHeader>
             <CardContent>
               <ResponsiveContainer width="100%" height={250}>
-                <BarChart data={userPerformanceData}>
+                <BarChart data={data.userPerformanceData}>
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="name" />
                   <YAxis tickFormatter={(value) => formatCurrency(value)} />
@@ -712,196 +594,6 @@ export default function DashboardPage() {
             </CardContent>
           </Card>
         </div>
-
-        {/* Users & Broker Keys */}
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle>Users & Broker Keys</CardTitle>
-                <CardDescription>
-                  All users with their broker connections and performance
-                </CardDescription>
-              </div>
-              <Select value={selectedUser} onValueChange={setSelectedUser}>
-                <SelectTrigger className="w-[200px]">
-                  <SelectValue placeholder="Filter by user" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Users</SelectItem>
-                  {data.users.map((user) => (
-                    <SelectItem key={user.id} value={user.id.toString()}>
-                      {user.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-6">
-              {(selectedUser === "all"
-                ? data.users
-                : data.users.filter((u) => u.id.toString() === selectedUser)
-              ).map((user) => (
-                <div
-                  key={user.id}
-                  className="border rounded-lg p-4 hover:shadow-lg transition-shadow"
-                >
-                  {/* User Header */}
-                  <div className="flex items-center justify-between mb-4 pb-4 border-b">
-                    <div className="flex items-center gap-4">
-                      <div className="flex items-center justify-center w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-purple-600">
-                        <User className="h-6 w-6 text-white" />
-                      </div>
-                      <div>
-                        <div className="font-semibold text-lg text-gray-900">
-                          {user.name}
-                        </div>
-                        <div className="text-sm text-gray-500">
-                          {user.email}
-                        </div>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-6">
-                      <div className="text-right">
-                        <div
-                          className={`text-xl font-bold ${user.totalPnl >= 0 ? "text-green-600" : "text-red-600"}`}
-                        >
-                          {formatCurrency(user.totalPnl)}
-                        </div>
-                        <div className="text-xs text-gray-500">Total P&L</div>
-                      </div>
-                      <div className="text-right">
-                        <div className="text-xl font-bold text-gray-900">
-                          {user.totalTrades}
-                        </div>
-                        <div className="text-xs text-gray-500">Trades</div>
-                      </div>
-                      <div className="text-right">
-                        <div className="text-xl font-bold text-blue-600">
-                          {user.activeBrokers}
-                        </div>
-                        <div className="text-xs text-gray-500">
-                          Active Brokers
-                        </div>
-                      </div>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="hover:bg-gray-100"
-                      >
-                        <Eye className="h-4 w-4 mr-2" />
-                        View Details
-                      </Button>
-                    </div>
-                  </div>
-
-                  {/* User's Broker Keys */}
-                  <div className="space-y-3">
-                    {user.brokerKeys.map((broker) => (
-                      <div
-                        key={broker.id}
-                        className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
-                      >
-                        <div className="flex items-center gap-4 flex-1">
-                          <div
-                            className={`flex items-center justify-center w-10 h-10 rounded-full ${
-                              broker.status === "active"
-                                ? "bg-green-100"
-                                : "bg-gray-200"
-                            }`}
-                          >
-                            <Zap
-                              className={`h-5 w-5 ${
-                                broker.status === "active"
-                                  ? "text-green-600"
-                                  : "text-gray-400"
-                              }`}
-                            />
-                          </div>
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2">
-                              <div className="font-medium text-gray-900">
-                                {broker.name}
-                              </div>
-                              <Badge
-                                variant={
-                                  broker.status === "active"
-                                    ? "default"
-                                    : "secondary"
-                                }
-                                className="text-xs"
-                              >
-                                {broker.status}
-                              </Badge>
-                            </div>
-                            <div className="text-xs text-gray-500 mt-1">
-                              {broker.totalTrades} trades •{" "}
-                              {broker.winningTrades} wins •{" "}
-                              {(
-                                (broker.winningTrades /
-                                  Math.max(broker.totalTrades, 1)) *
-                                100
-                              ).toFixed(1)}
-                              % win rate
-                            </div>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-4">
-                          <div className="text-right">
-                            <div
-                              className={`text-lg font-bold ${broker.pnl >= 0 ? "text-green-600" : "text-red-600"}`}
-                            >
-                              {formatCurrency(broker.pnl, broker.currency)}
-                            </div>
-                            <div className="text-xs text-gray-500">
-                              {broker.pnl >= 0 ? "Profit" : "Loss"}
-                            </div>
-                          </div>
-                          <div className="flex gap-2">
-                            {broker.loginUrl && (
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() =>
-                                  window.open(broker.loginUrl, "_blank")
-                                }
-                                className="hover:bg-blue-50"
-                              >
-                                <LinkIcon className="h-4 w-4" />
-                              </Button>
-                            )}
-                            {broker.status === "active" && (
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                className="hover:bg-red-50"
-                                onClick={() => {
-                                  if (
-                                    confirm(
-                                      `Stop ${broker.name} for ${user.name}?`,
-                                    )
-                                  ) {
-                                    alert(
-                                      "This will be connected to API later",
-                                    );
-                                  }
-                                }}
-                              >
-                                <StopCircle className="h-4 w-4 text-red-600" />
-                              </Button>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
       </div>
     </div>
   );

@@ -1,34 +1,34 @@
 "use client";
 
 import {
-  Plane,
-  Calendar,
-  Users,
-  CreditCard,
-  MapPin,
   BarChart3,
-  Ticket,
-  FileText,
-  Tag,
-  MessageSquare,
-  Shield,
-  Globe,
-  Settings,
-  Mail,
-  TrendingUp,
-  Package,
-  RefreshCw,
-  FileEdit,
-  UserCog,
-  StoreIcon,
+  Users,
   Folder,
   CalendarDays,
   Cpu,
   Columns,
   Key,
+  StoreIcon,
+  UserCog,
+  LayoutDashboard,
 } from "lucide-react";
-import { ROLES } from "@/lib/rbac/permissions";
+import { tabsConfig } from "./tabs-config";
 
+// Map icons to tabs - MUST MATCH tab.id from tabs-config.ts
+const tabIcons: Record<string, React.ReactNode> = {
+  dashboard: <BarChart3 className="h-5 w-5" />,
+  "user-dashboard": <LayoutDashboard className="h-5 w-5" />,
+  assets: <Folder className="h-5 w-5" />,
+  dailyAsset: <CalendarDays className="h-5 w-5" />, // ✅ Match this
+  optionBuffer: <Cpu className="h-5 w-5" />, // ✅ Match this
+  "option-trades": <Columns className="h-5 w-5" />, // ✅ Match this
+  brokerKeys: <Key className="h-5 w-5" />, // ✅ Match this
+  brokers: <StoreIcon className="h-5 w-5" />,
+  users: <Users className="h-5 w-5" />,
+  profile: <UserCog className="h-5 w-5" />,
+};
+
+// Add icons to tabs for client-side use
 export const adminConfig = {
   header: {
     logo: {
@@ -42,71 +42,16 @@ export const adminConfig = {
   },
 
   sidebar: {
-    tabs: [
-      {
-        id: "dashboard",
-        label: "Dashboard",
-        icon: <BarChart3 className="h-5 w-5" />,
-        href: "/dashboard",
-        description: "KPIs, revenue, bookings overview",
-        roles: [ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.MANAGER, ROLES.AGENT],
-      },
-      {
-        id: "assets",
-        label: "Asset",
-        icon: <Folder className="h-5 w-5" />,
-        href: "/assets",
-        description: "Manage assets",
-        roles: [ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.MANAGER],
-      },
-      {
-        id: "dailyAsset",
-        label: "Daily Asset",
-        icon: <CalendarDays className="h-5 w-5" />,
-        href: "/daily-asset",
-        description: "Daily asset tracking",
-        roles: [ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.MANAGER],
-      },
-      {
-        id: "optionBuffer",
-        label: "Option Buffer",
-        icon: <Cpu className="h-5 w-5" />,
-        href: "/option-buffer",
-        description: "Options buffer overview",
-        roles: [ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.MANAGER],
-      },
-      {
-        id: "option-trades",
-        label: "Option Trades",
-        icon: <Columns className="h-5 w-5" />,
-        href: "/option-trades",
-        description: "Manage trade history",
-        roles: [ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.MANAGER],
-      },
-      {
-        id: "brokerKeys",
-        label: "Broker Keys",
-        icon: <Key className="h-5 w-5" />,
-        href: "/broker-keys",
-        description: "Manage API keys",
-        roles: [ROLES.SUPER_ADMIN, ROLES.ADMIN],
-      },
-      {
-        id: "brokers",
-        label: "Brokers",
-        icon: <StoreIcon className="h-5 w-5" />,
-        href: "/brokers",
-        description: "View and edit brokers",
-        roles: [ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.MANAGER, ROLES.AGENT],
-      },
-      {
-        id: "users",
-        label: "Users",
-        icon: <Users className="h-5 w-5" />,
-        href: "/users",
-        description: "User management",
-        roles: [ROLES.SUPER_ADMIN, ROLES.ADMIN],
-      },
-    ],
+    tabs: tabsConfig.map((tab) => {
+      const icon = tabIcons[tab.id];
+      console.log(`Tab ID: ${tab.id}, Has Icon: ${!!icon}`); // Debug line
+      return {
+        ...tab,
+        icon: icon || null,
+      };
+    }),
   },
 };
+
+// Re-export for convenience
+export { getAccessibleTabs } from "./tabs-config";
