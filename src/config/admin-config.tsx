@@ -13,6 +13,7 @@ import {
   LayoutDashboard,
 } from "lucide-react";
 import { tabsConfig } from "./tabs-config";
+import logo from "../../public/logo.webp";
 
 // Map icons to tabs - MUST MATCH tab.id from tabs-config.ts
 const tabIcons: Record<string, React.ReactNode> = {
@@ -32,7 +33,9 @@ const tabIcons: Record<string, React.ReactNode> = {
 export const adminConfig = {
   header: {
     logo: {
-      type: "text" as const,
+      type: "image" as const, // ✅ Changed from "text"
+      src: logo.src, // ✅ Path to your logo
+      alt: "The Algoman", // ✅ Alt text
       text: "The Algoman",
     },
     menuItems: [],

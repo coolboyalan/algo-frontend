@@ -100,8 +100,8 @@ export function Header({ config }: HeaderProps) {
             <Image
               src={logo.src}
               alt={logo.alt || "Logo"}
-              width={32}
-              height={32}
+              width={64}
+              height={64}
               className="h-8 w-8"
             />
           ) : (
