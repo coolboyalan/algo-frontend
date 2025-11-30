@@ -37,7 +37,7 @@ export const adminConfig = {
     },
     menuItems: [],
     user: null,
-    showSearch: true,
+    showSearch: false,
     showNotifications: true,
   },
 
