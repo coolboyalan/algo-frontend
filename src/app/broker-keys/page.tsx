@@ -127,6 +127,7 @@ export default async function BrokerKeyPage() {
         <BrokerKeyTable
           initialData={initialData}
           fetchData={fetchBrokerKeyData}
+          userRole={userRole}
         />
       </div>
     </div>

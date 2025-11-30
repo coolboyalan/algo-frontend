@@ -52,7 +52,7 @@ export function BrokerKeyTable({
 }: {
   initialData: TableResponse<BrokerKeyItem>;
   fetchData: (params: TableParams) => Promise<TableResponse<BrokerKeyItem>>;
-  userRole?: string;
+  userRole?: string | null;
 }) {
   const [selectedRows, setSelectedRows] = useState<BrokerKeyItem[]>([]);
 
@@ -263,9 +263,9 @@ export function BrokerKeyTable({
       label: "Profit Limit",
       type: "number",
       required: true,
-      prefix: "₹",
-      placeholder: "Enter profit limit amount",
-      description: "Set your profit limit in rupees",
+      suffix: "%",
+      placeholder: "Enter profit limit percentage",
+      description: "Set your profit limit in percentage",
       min: 0,
     },
     {
@@ -273,8 +273,8 @@ export function BrokerKeyTable({
       label: "Loss Limit",
       type: "number",
       required: true,
-      prefix: "₹",
-      placeholder: "Enter loss limit amount",
+      suffix: "%",
+      placeholder: "Enter loss limit percentage",
       min: 0,
       max: 100,
     },
@@ -283,21 +283,15 @@ export function BrokerKeyTable({
       label: "Usable Fund",
       type: "number",
       required: true,
-      prefix: "₹",
+      suffix: "%",
       showWhen: {
         field: "status",
         condition: (value: boolean) => {
           return value === true;
         },
       },
-      dynamicMin: {
-        field: "balance",
-        calculate: () => 0,
-      },
-      dynamicMax: {
-        field: "balance",
-        calculate: (balance) => balance || 0, // ✅ Receives balance value
-      },
+      min: 0,
+      max: 100,
     },
 
     {
@@ -305,6 +299,9 @@ export function BrokerKeyTable({
       label: "Time Frame",
       type: "number",
       required: true,
+      defaultValue: 5,
+      min: 5,
+      max: 5,
     },
   ];
 

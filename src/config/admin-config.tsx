@@ -47,7 +47,6 @@ export const adminConfig = {
   sidebar: {
     tabs: tabsConfig.map((tab) => {
       const icon = tabIcons[tab.id];
-      console.log(`Tab ID: ${tab.id}, Has Icon: ${!!icon}`); // Debug line
       return {
         ...tab,
         icon: icon || null,
