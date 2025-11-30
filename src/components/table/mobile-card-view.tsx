@@ -1,10 +1,10 @@
-'use client';
+"use client";
 
-import { flexRender } from '@tanstack/react-table';
-import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Eye, Pencil, Trash2, Loader2, Search } from 'lucide-react';
+import { flexRender } from "@tanstack/react-table";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Eye, Pencil, Trash2, Loader2, Search } from "lucide-react";
 
 interface MobileCardViewProps<T> {
   data: T[];
@@ -53,7 +53,7 @@ export function MobileCardView<T extends Record<string, any>>({
           <Card
             key={idx}
             className="overflow-hidden cursor-pointer hover:shadow-md transition-shadow py-2"
-            onClick={() => handleViewRow(row)}
+            // onClick={() => handleViewRow(row)}
           >
             <CardContent className="px-2.5">
               {/* Compact header with ID and actions */}
@@ -62,7 +62,9 @@ export function MobileCardView<T extends Record<string, any>>({
                   {selectable && (
                     <Checkbox
                       checked={selectedRows.has(String(row[rowIdField]))}
-                      onCheckedChange={() => toggleRowSelection(String(row[rowIdField]))}
+                      onCheckedChange={() =>
+                        toggleRowSelection(String(row[rowIdField]))
+                      }
                       onClick={(e) => e.stopPropagation()}
                     />
                   )}
@@ -118,10 +120,15 @@ export function MobileCardView<T extends Record<string, any>>({
 
                   {/* Custom actions from column - rendered directly inline */}
                   {(() => {
-                    const actionsCol = columns.find((col) => col.id === 'actions');
+                    const actionsCol = columns.find(
+                      (col) => col.id === "actions",
+                    );
                     if (actionsCol?.cell) {
                       return (
-                        <div className="flex items-center gap-0.5" onClick={(e) => e.stopPropagation()}>
+                        <div
+                          className="flex items-center gap-0.5"
+                          onClick={(e) => e.stopPropagation()}
+                        >
                           {actionsCol.cell({ row: { original: row } } as any)}
                         </div>
                       );
@@ -135,7 +142,12 @@ export function MobileCardView<T extends Record<string, any>>({
               <div className="space-y-1.5">
                 {table
                   .getAllColumns()
-                  .filter((col: any) => col.getIsVisible() && col.id !== 'select' && col.id !== 'actions')
+                  .filter(
+                    (col: any) =>
+                      col.getIsVisible() &&
+                      col.id !== "select" &&
+                      col.id !== "actions",
+                  )
                   .map((col: any) => {
                     const value = row[col.id as keyof T];
                     return (
@@ -153,7 +165,9 @@ export function MobileCardView<T extends Record<string, any>>({
                             </div>
                           ) : (
                             <span className="truncate block">
-                              {value !== null && value !== undefined ? String(value) : '-'}
+                              {value !== null && value !== undefined
+                                ? String(value)
+                                : "-"}
                             </span>
                           )}
                         </div>

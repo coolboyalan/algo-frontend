@@ -15,12 +15,12 @@ export interface SidebarTab {
   icon: React.ReactNode;
   href: string;
   badge?: string | number;
-  roles?: string[]; // Add this
+  roles?: string[];
 }
 
 interface SidebarProps {
   tabs: SidebarTab[];
-  loading?: boolean; // Add this
+  loading?: boolean;
 }
 
 export function Sidebar({ tabs, loading = false }: SidebarProps) {
@@ -73,7 +73,11 @@ export function Sidebar({ tabs, loading = false }: SidebarProps) {
               tabs.map((tab) => {
                 const isActive = pathname === tab.href;
                 return (
-                  <Link key={tab.id} href={tab.href}>
+                  <Link
+                    key={tab.id}
+                    href={tab.href}
+                    onClick={() => setSidebarOpen(false)} // ✅ Close sidebar on click
+                  >
                     <Button
                       variant={isActive ? "default" : "ghost"}
                       className={cn(
@@ -100,7 +104,10 @@ export function Sidebar({ tabs, loading = false }: SidebarProps) {
 
         {/* Settings Tab - Always at Bottom */}
         <div className="absolute bottom-0 left-0 right-0 p-4 border-t bg-sidebar-bg">
-          <Link href="/settings">
+          <Link
+            href="/settings"
+            onClick={() => setSidebarOpen(false)} // ✅ Close sidebar on settings click too
+          >
             <Button
               variant={pathname === "/settings" ? "default" : "ghost"}
               className={cn(

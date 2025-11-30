@@ -41,12 +41,48 @@ export interface FormFieldConfig {
   hidden?: boolean;
   description?: string;
 
+  // Min/Max for text and number fields
+  min?: number;
+  max?: number;
+  minLength?: number;
+  maxLength?: number;
+
   // For searchable-select
   searchEndpoint?: string;
   searchFields?: string[];
   searchResultLabelKey?: string;
   searchResultValueKey?: string;
   searchLimit?: number;
+
+  // Conditional Visibility
+  showWhen?:
+    | {
+        // Option 1: Watch specific field
+        field: string;
+        condition: (value: any) => boolean;
+      }
+    | {
+        condition: (formValues: Record<string, any>) => boolean;
+      };
+  // Dynamic min/max based on other field
+  dynamicMin?: {
+    field: string;
+    calculate: (value: any) => number;
+  };
+  dynamicMax?: {
+    field: string;
+    calculate: (value: any) => number;
+  };
+
+  // Transform display value vs submit value
+  transform?: {
+    toDisplay: (value: any, formValues: Record<string, any>) => any;
+    toSubmit: (displayValue: any, formValues: Record<string, any>) => any;
+  };
+
+  // Display prefix/suffix
+  prefix?: string;
+  suffix?: string;
 }
 
 interface AutoFormGeneratorProps {
@@ -78,15 +114,44 @@ export function AutoFormGenerator({
         switch (field.type) {
           case "email":
             fieldSchema = z.string().email("Invalid email address");
+
+            if (field.minLength !== undefined) {
+              fieldSchema = (fieldSchema as z.ZodString).min(
+                field.minLength,
+                `${field.label} must be at least ${field.minLength} characters`,
+              );
+            }
+            if (field.maxLength !== undefined) {
+              fieldSchema = (fieldSchema as z.ZodString).max(
+                field.maxLength,
+                `${field.label} must be at most ${field.maxLength} characters`,
+              );
+            }
             break;
+
           case "number":
             fieldSchema = z.coerce.number({
               invalid_type_error: "Must be a number",
             });
+
+            if (field.min !== undefined) {
+              fieldSchema = (fieldSchema as z.ZodNumber).min(
+                field.min,
+                `${field.label} must be at least ${field.min}`,
+              );
+            }
+            if (field.max !== undefined) {
+              fieldSchema = (fieldSchema as z.ZodNumber).max(
+                field.max,
+                `${field.label} must be at most ${field.max}`,
+              );
+            }
             break;
+
           case "checkbox":
             fieldSchema = z.boolean();
             break;
+
           case "select":
             if (field.options?.every((opt) => typeof opt.value === "boolean")) {
               fieldSchema = z.boolean();
@@ -98,15 +163,31 @@ export function AutoFormGenerator({
               fieldSchema = z.string();
             }
             break;
+
           case "date":
           case "datetime-local":
             fieldSchema = z.string();
             break;
+
           case "searchable-select":
             fieldSchema = z.union([z.string(), z.number()]);
             break;
+
           default:
             fieldSchema = z.string();
+
+            if (field.minLength !== undefined) {
+              fieldSchema = (fieldSchema as z.ZodString).min(
+                field.minLength,
+                `${field.label} must be at least ${field.minLength} characters`,
+              );
+            }
+            if (field.maxLength !== undefined) {
+              fieldSchema = (fieldSchema as z.ZodString).max(
+                field.maxLength,
+                `${field.label} must be at most ${field.maxLength} characters`,
+              );
+            }
         }
 
         if (field.required) {
@@ -128,13 +209,13 @@ export function AutoFormGenerator({
             field.type === "select" &&
             field.options?.every((opt) => typeof opt.value === "boolean")
           ) {
-            // Boolean select: z.boolean().refine unnecessary, already required by default
+            // Boolean select
           } else if (
             field.type === "select" &&
             field.options?.every((opt) => typeof opt.value === "number")
           ) {
-            // Number select: already required by z.coerce.number()
-          } else {
+            // Number select
+          } else if (field.type !== "number") {
             fieldSchema = (fieldSchema as z.ZodString).min(
               1,
               `${field.label} is required`,
@@ -176,15 +257,71 @@ export function AutoFormGenerator({
   });
 
   const onSubmitHandler = async (data: any) => {
-    await onSubmit(data);
+    // Transform values before submitting
+    const transformedData = { ...data };
+
+    fields.forEach((field) => {
+      if (field.transform && transformedData[field.name] !== undefined) {
+        transformedData[field.name] = field.transform.toSubmit(
+          transformedData[field.name],
+          transformedData,
+        );
+      }
+    });
+
+    await onSubmit(transformedData);
     reset();
   };
 
+  // Check if field should be visible based on condition
+  const isFieldVisible = (field: FormFieldConfig): boolean => {
+    if (field.hidden) return false;
+
+    if (field.showWhen) {
+      // ✅ Check if it's field-specific or general condition
+      if ("field" in field.showWhen) {
+        // Option 1: Watch specific field
+        const watchedValue = watch(field.showWhen.field);
+        return field.showWhen.condition(watchedValue);
+      } else {
+        // Option 2: Custom condition with all values
+        const allValues = watch();
+        return field.showWhen.condition(allValues);
+      }
+    }
+
+    return true;
+  };
+
+  // Calculate dynamic min/max
+  const getDynamicMin = (field: FormFieldConfig): number | undefined => {
+    if (!field.dynamicMin) return field.min;
+
+    const watchedValue = watch(field.dynamicMin.field);
+    return field.dynamicMin.calculate(watchedValue);
+  };
+
+  const getDynamicMax = (field: FormFieldConfig): number | undefined => {
+    if (!field.dynamicMax) return field.max;
+
+    const watchedValue = watch(field.dynamicMax.field);
+    return field.dynamicMax.calculate(watchedValue);
+  };
+
   const renderField = (field: FormFieldConfig) => {
-    if (field.hidden) return null;
+    if (!isFieldVisible(field)) return null;
 
     const error = errors[field.name];
-    const value = watch(field.name);
+    const rawValue = watch(field.name);
+
+    // Get display value (transform if needed)
+    const displayValue = field.transform
+      ? field.transform.toDisplay(rawValue, watch())
+      : rawValue;
+
+    // Get dynamic min/max
+    const minValue = getDynamicMin(field);
+    const maxValue = getDynamicMax(field);
 
     switch (field.type) {
       case "searchable-select":
@@ -209,8 +346,13 @@ export function AutoFormGenerator({
               </p>
             )}
             <SearchableSelect
-              value={value}
-              onValueChange={(val) => setValue(field.name, val)}
+              value={displayValue}
+              onValueChange={(val) => {
+                const rawValue = field.transform
+                  ? field.transform.toSubmit(val, watch())
+                  : val;
+                setValue(field.name, rawValue);
+              }}
               endpoint={field.searchEndpoint}
               searchFields={field.searchFields}
               labelKey={field.searchResultLabelKey || "name"}
@@ -245,10 +387,23 @@ export function AutoFormGenerator({
               id={field.name}
               placeholder={field.placeholder}
               disabled={field.disabled || isLoading}
-              {...register(field.name)}
+              value={displayValue || ""}
+              onChange={(e) => {
+                const inputValue = e.target.value;
+                const rawValue = field.transform
+                  ? field.transform.toSubmit(inputValue, watch())
+                  : inputValue;
+                setValue(field.name, rawValue);
+              }}
               className={error ? "border-destructive" : ""}
               rows={4}
+              maxLength={field.maxLength}
             />
+            {field.maxLength && (
+              <p className="text-xs text-muted-foreground text-right">
+                {String(displayValue || "").length}/{field.maxLength}
+              </p>
+            )}
             {error && (
               <p className="text-sm text-destructive">
                 {error.message as string}
@@ -272,14 +427,18 @@ export function AutoFormGenerator({
               </p>
             )}
             <Select
-              value={String(value ?? "")}
+              value={String(displayValue ?? "")}
               onValueChange={(val) => {
-                // Find the original option to get its actual type
                 const selectedOption = field.options?.find(
                   (opt) => String(opt.value) === val,
                 );
-                // Set the actual value (boolean, number, or string)
-                setValue(field.name, selectedOption?.value ?? val);
+                const rawValue = field.transform
+                  ? field.transform.toSubmit(
+                      selectedOption?.value ?? val,
+                      watch(),
+                    )
+                  : (selectedOption?.value ?? val);
+                setValue(field.name, rawValue);
               }}
               disabled={field.disabled || isLoading}
             >
@@ -313,8 +472,13 @@ export function AutoFormGenerator({
             <div className="flex items-center space-x-2">
               <Checkbox
                 id={field.name}
-                checked={!!value}
-                onCheckedChange={(checked) => setValue(field.name, checked)}
+                checked={!!displayValue}
+                onCheckedChange={(checked) => {
+                  const rawValue = field.transform
+                    ? field.transform.toSubmit(checked, watch())
+                    : checked;
+                  setValue(field.name, rawValue);
+                }}
                 disabled={field.disabled || isLoading}
               />
               <Label
@@ -345,6 +509,66 @@ export function AutoFormGenerator({
           <input key={field.name} type="hidden" {...register(field.name)} />
         );
 
+      case "number":
+        return (
+          <div key={field.name} className="space-y-2">
+            <Label htmlFor={field.name}>
+              {field.label}
+              {field.required && (
+                <span className="text-destructive ml-1">*</span>
+              )}
+            </Label>
+            {field.description && (
+              <p className="text-sm text-muted-foreground">
+                {field.description}
+              </p>
+            )}
+            <div className="relative">
+              {field.prefix && (
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
+                  {field.prefix}
+                </span>
+              )}
+              <Input
+                id={field.name}
+                type="number"
+                placeholder={field.placeholder}
+                disabled={field.disabled || isLoading}
+                value={displayValue ?? ""}
+                onChange={(e) => {
+                  const inputValue =
+                    e.target.value === "" ? "" : Number(e.target.value);
+
+                  const rawValue = field.transform
+                    ? field.transform.toSubmit(inputValue, watch())
+                    : inputValue;
+
+                  setValue(field.name, rawValue);
+                }}
+                className={`${error ? "border-destructive" : ""} ${field.prefix ? "pl-8" : ""} ${field.suffix ? "pr-12" : ""}`}
+                min={minValue}
+                max={maxValue}
+                step="any"
+              />
+              {field.suffix && (
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
+                  {field.suffix}
+                </span>
+              )}
+            </div>
+            {(minValue !== undefined || maxValue !== undefined) && (
+              <p className="text-xs text-muted-foreground">
+                Range: {minValue ?? 0} - {maxValue ?? "∞"}
+              </p>
+            )}
+            {error && (
+              <p className="text-sm text-destructive">
+                {error.message as string}
+              </p>
+            )}
+          </div>
+        );
+
       default:
         return (
           <div key={field.name} className="space-y-2">
@@ -359,14 +583,40 @@ export function AutoFormGenerator({
                 {field.description}
               </p>
             )}
-            <Input
-              id={field.name}
-              type={field.type}
-              placeholder={field.placeholder}
-              disabled={field.disabled || isLoading}
-              {...register(field.name)}
-              className={error ? "border-destructive" : ""}
-            />
+            <div className="relative">
+              {field.prefix && (
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
+                  {field.prefix}
+                </span>
+              )}
+              <Input
+                id={field.name}
+                type={field.type}
+                placeholder={field.placeholder}
+                disabled={field.disabled || isLoading}
+                value={displayValue || ""}
+                onChange={(e) => {
+                  const inputValue = e.target.value;
+                  const rawValue = field.transform
+                    ? field.transform.toSubmit(inputValue, watch())
+                    : inputValue;
+                  setValue(field.name, rawValue);
+                }}
+                className={`${error ? "border-destructive" : ""} ${field.prefix ? "pl-8" : ""} ${field.suffix ? "pr-12" : ""}`}
+                minLength={field.minLength}
+                maxLength={field.maxLength}
+              />
+              {field.suffix && (
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
+                  {field.suffix}
+                </span>
+              )}
+            </div>
+            {field.maxLength && (
+              <p className="text-xs text-muted-foreground text-right">
+                {String(displayValue || "").length}/{field.maxLength}
+              </p>
+            )}
             {error && (
               <p className="text-sm text-destructive">
                 {error.message as string}

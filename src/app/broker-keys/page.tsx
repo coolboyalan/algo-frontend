@@ -8,6 +8,7 @@ import {
   DollarSign,
   Users,
 } from "lucide-react";
+import { getUserRole } from "@/lib/actions/auth";
 
 export type BrokerKeyItem = {
   id: string;
@@ -44,6 +45,8 @@ export default async function BrokerKeyPage() {
     (sum, item) => sum + (item.amount || 0),
     0,
   );
+
+  const userRole = await getUserRole();
 
   return (
     <div className="px-6 pb-6">

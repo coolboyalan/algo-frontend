@@ -166,3 +166,37 @@ export async function logoutAction() {
   cookieStore.delete("user");
   redirect("/login");
 }
+
+export type ForgotPasswordState = {
+  error?: string;
+  success?: boolean;
+};
+
+export async function forgotPasswordAction(
+  prevState: ForgotPasswordState | undefined,
+  formData: FormData,
+): Promise<ForgotPasswordState> {
+  const email = formData.get("email") as string;
+
+  // Validation
+  if (!email) {
+    return { error: "Email is required" };
+  }
+
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    return { error: "Please enter a valid email address" };
+  }
+
+  try {
+    // Call your backend API
+    const response = await apiPost("/api/auth/forgot-password", {
+      email,
+    });
+
+    return { success: true };
+  } catch (error: any) {
+    return {
+      error: error.message || "Failed to send reset email. Please try again.",
+    };
+  }
+}

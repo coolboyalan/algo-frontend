@@ -223,10 +223,10 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="px-6 pb-6 pt-6 min-h-screen bg-background">
-      <div className="max-w-6xl mx-auto space-y-6">
+    <div className="px-6 pb-6 pt-4 min-h-screen bg-background">
+      <div className="max-w-7xl mx-auto space-y-4">
         {/* Back Button & Header */}
-        <div className="flex items-center gap-4">
+        <div className="flex items-center justify-between">
           <Button
             variant="ghost"
             size="sm"
@@ -239,37 +239,35 @@ export default function ProfilePage() {
         </div>
 
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">My Profile</h1>
-          <p className="text-gray-600 mt-1">
+          <h1 className="text-2xl font-bold text-gray-900">My Profile</h1>
+          <p className="text-sm text-gray-600 mt-1">
             Manage your account settings and security
           </p>
         </div>
 
         {/* Profile Overview Card */}
         <Card className="border-l-4 border-l-primary">
-          <CardContent className="pt-6">
-            <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6">
-              <Avatar className="h-24 w-24 ring-4 ring-primary/10">
+          <CardContent className="py-4">
+            <div className="flex items-center gap-4">
+              <Avatar className="h-16 w-16">
                 <AvatarImage src={user.avatar} alt={user.name} />
-                <AvatarFallback className="text-2xl font-bold bg-gradient-to-br from-primary to-primary/80 text-primary-foreground">
+                <AvatarFallback className="text-lg font-bold bg-primary text-primary-foreground">
                   {getInitials(user.name)}
                 </AvatarFallback>
               </Avatar>
-              <div className="flex-1 text-center sm:text-left">
-                <h2 className="text-2xl font-bold text-gray-900">
-                  {user.name}
-                </h2>
-                <p className="text-gray-600 flex items-center justify-center sm:justify-start gap-2 mt-1">
-                  <Mail className="h-4 w-4" />
+              <div className="flex-1">
+                <h2 className="text-xl font-bold text-gray-900">{user.name}</h2>
+                <p className="text-sm text-gray-600 flex items-center gap-2">
+                  <Mail className="h-3 w-3" />
                   {user.email}
                 </p>
-                <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 mt-3">
-                  <Badge className={getRoleBadgeColor(user.role)}>
+                <div className="flex items-center gap-2 mt-2">
+                  <Badge className={`text-xs ${getRoleBadgeColor(user.role)}`}>
                     <Shield className="h-3 w-3 mr-1" />
                     {formatRole(user.role)}
                   </Badge>
                   {user.createdAt && (
-                    <span className="text-sm text-gray-500 flex items-center gap-1">
+                    <span className="text-xs text-gray-500 flex items-center gap-1">
                       <Calendar className="h-3 w-3" />
                       Member since{" "}
                       {new Date(user.createdAt).toLocaleDateString("en-IN", {
@@ -284,22 +282,22 @@ export default function ProfilePage() {
           </CardContent>
         </Card>
 
-        <div className="grid gap-6 lg:grid-cols-2">
+        <div className="grid gap-4 lg:grid-cols-2">
           {/* Update Profile Form */}
-          <Card className="h-fit">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-lg">
-                <User className="h-5 w-5 text-primary" />
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center gap-2 text-base">
+                <User className="h-4 w-4 text-primary" />
                 Personal Information
               </CardTitle>
-              <CardDescription>
+              <CardDescription className="text-xs">
                 Update your name and email address
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <form onSubmit={handleUpdateProfile} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="name" className="text-sm font-medium">
+              <form onSubmit={handleUpdateProfile} className="space-y-3">
+                <div className="space-y-1.5">
+                  <Label htmlFor="name" className="text-xs font-medium">
                     Full Name
                   </Label>
                   <Input
@@ -308,13 +306,13 @@ export default function ProfilePage() {
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     placeholder="Enter your full name"
-                    className="h-10"
+                    className="h-9 text-sm"
                     required
                   />
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="email" className="text-sm font-medium">
+                <div className="space-y-1.5">
+                  <Label htmlFor="email" className="text-xs font-medium">
                     Email Address
                   </Label>
                   <Input
@@ -323,33 +321,33 @@ export default function ProfilePage() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="Enter your email"
-                    className="h-10"
+                    className="h-9 text-sm"
                     required
                   />
                 </div>
 
-                <div className="flex items-center gap-3 pt-2">
+                <div className="flex items-center gap-2 pt-1">
                   <Button
                     type="submit"
                     disabled={saving}
-                    className="flex-1 h-10"
+                    className="flex-1 h-9 text-sm"
                   >
                     {saving ? (
                       <>
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        <Loader2 className="h-3 w-3 mr-2 animate-spin" />
                         Saving...
                       </>
                     ) : (
                       <>
-                        <CheckCircle2 className="h-4 w-4 mr-2" />
-                        Save Changes
+                        <CheckCircle2 className="h-3 w-3 mr-2" />
+                        Save
                       </>
                     )}
                   </Button>
                   <Button
                     type="button"
                     variant="outline"
-                    className="h-10"
+                    className="h-9 text-sm"
                     onClick={() => {
                       setName(user.name);
                       setEmail(user.email);
@@ -363,22 +361,22 @@ export default function ProfilePage() {
           </Card>
 
           {/* Change Password Form */}
-          <Card className="h-fit">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-lg">
-                <Lock className="h-5 w-5 text-primary" />
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center gap-2 text-base">
+                <Lock className="h-4 w-4 text-primary" />
                 Change Password
               </CardTitle>
-              <CardDescription>
+              <CardDescription className="text-xs">
                 Update your password to keep your account secure
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <form onSubmit={handleUpdatePassword} className="space-y-4">
-                <div className="space-y-2">
+              <form onSubmit={handleUpdatePassword} className="space-y-3">
+                <div className="space-y-1.5">
                   <Label
                     htmlFor="currentPassword"
-                    className="text-sm font-medium"
+                    className="text-xs font-medium"
                   >
                     Current Password
                   </Label>
@@ -389,28 +387,28 @@ export default function ProfilePage() {
                       value={currentPassword}
                       onChange={(e) => setCurrentPassword(e.target.value)}
                       placeholder="Enter current password"
-                      className="h-10 pr-10"
+                      className="h-9 text-sm pr-9"
                     />
                     <button
                       type="button"
                       onClick={() =>
                         setShowCurrentPassword(!showCurrentPassword)
                       }
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
                     >
                       {showCurrentPassword ? (
-                        <EyeOff className="h-4 w-4" />
+                        <EyeOff className="h-3.5 w-3.5" />
                       ) : (
-                        <Eye className="h-4 w-4" />
+                        <Eye className="h-3.5 w-3.5" />
                       )}
                     </button>
                   </div>
                 </div>
 
-                <Separator />
+                <Separator className="my-2" />
 
-                <div className="space-y-2">
-                  <Label htmlFor="newPassword" className="text-sm font-medium">
+                <div className="space-y-1.5">
+                  <Label htmlFor="newPassword" className="text-xs font-medium">
                     New Password
                   </Label>
                   <div className="relative">
@@ -420,26 +418,26 @@ export default function ProfilePage() {
                       value={newPassword}
                       onChange={(e) => setNewPassword(e.target.value)}
                       placeholder="Min 8 characters"
-                      className="h-10 pr-10"
+                      className="h-9 text-sm pr-9"
                     />
                     <button
                       type="button"
                       onClick={() => setShowNewPassword(!showNewPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
                     >
                       {showNewPassword ? (
-                        <EyeOff className="h-4 w-4" />
+                        <EyeOff className="h-3.5 w-3.5" />
                       ) : (
-                        <Eye className="h-4 w-4" />
+                        <Eye className="h-3.5 w-3.5" />
                       )}
                     </button>
                   </div>
                 </div>
 
-                <div className="space-y-2">
+                <div className="space-y-1.5">
                   <Label
                     htmlFor="confirmPassword"
-                    className="text-sm font-medium"
+                    className="text-xs font-medium"
                   >
                     Confirm New Password
                   </Label>
@@ -450,46 +448,46 @@ export default function ProfilePage() {
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
                       placeholder="Confirm new password"
-                      className="h-10 pr-10"
+                      className="h-9 text-sm pr-9"
                     />
                     <button
                       type="button"
                       onClick={() =>
                         setShowConfirmPassword(!showConfirmPassword)
                       }
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
                     >
                       {showConfirmPassword ? (
-                        <EyeOff className="h-4 w-4" />
+                        <EyeOff className="h-3.5 w-3.5" />
                       ) : (
-                        <Eye className="h-4 w-4" />
+                        <Eye className="h-3.5 w-3.5" />
                       )}
                     </button>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-3 pt-2">
+                <div className="flex items-center gap-2 pt-1">
                   <Button
                     type="submit"
                     disabled={saving}
-                    className="flex-1 h-10"
+                    className="flex-1 h-9 text-sm"
                   >
                     {saving ? (
                       <>
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        <Loader2 className="h-3 w-3 mr-2 animate-spin" />
                         Updating...
                       </>
                     ) : (
                       <>
-                        <Shield className="h-4 w-4 mr-2" />
-                        Update Password
+                        <Shield className="h-3 w-3 mr-2" />
+                        Update
                       </>
                     )}
                   </Button>
                   <Button
                     type="button"
                     variant="outline"
-                    className="h-10"
+                    className="h-9 text-sm"
                     onClick={() => {
                       setCurrentPassword("");
                       setNewPassword("");
@@ -506,42 +504,40 @@ export default function ProfilePage() {
 
         {/* Account Information */}
         <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Account Details</CardTitle>
-            <CardDescription>
-              Your account information and statistics
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base">Account Details</CardTitle>
+            <CardDescription className="text-xs">
+              Your account information
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
               <div className="space-y-1">
-                <p className="text-sm text-gray-500">User ID</p>
-                <p className="font-mono text-sm font-medium bg-gray-100 px-2 py-1 rounded">
+                <p className="text-xs text-gray-500">User ID</p>
+                <p className="font-mono text-xs font-medium bg-gray-100 px-2 py-1 rounded">
                   {user.id}
                 </p>
               </div>
               <div className="space-y-1">
-                <p className="text-sm text-gray-500">Account Role</p>
-                <p className="font-medium text-sm">{formatRole(user.role)}</p>
+                <p className="text-xs text-gray-500">Role</p>
+                <p className="font-medium text-xs">{formatRole(user.role)}</p>
               </div>
               {user.createdAt && (
                 <div className="space-y-1">
-                  <p className="text-sm text-gray-500">Member Since</p>
-                  <p className="font-medium text-sm">
+                  <p className="text-xs text-gray-500">Member Since</p>
+                  <p className="font-medium text-xs">
                     {new Date(user.createdAt).toLocaleDateString("en-IN", {
                       year: "numeric",
-                      month: "long",
-                      day: "numeric",
+                      month: "short",
                     })}
                   </p>
                 </div>
               )}
               {user.updatedAt && (
                 <div className="space-y-1">
-                  <p className="text-sm text-gray-500">Last Updated</p>
-                  <p className="font-medium text-sm">
+                  <p className="text-xs text-gray-500">Last Updated</p>
+                  <p className="font-medium text-xs">
                     {new Date(user.updatedAt).toLocaleDateString("en-IN", {
-                      year: "numeric",
                       month: "short",
                       day: "numeric",
                     })}

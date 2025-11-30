@@ -2,6 +2,7 @@
 "use client";
 import { useActionState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { Eye, EyeOff } from "lucide-react";
 import { signupAction } from "@/lib/actions/auth";
 import { useState } from "react";
@@ -21,14 +22,32 @@ export default function SignUpPage() {
         {/* Logo Section */}
         <div className="flex justify-center mb-6">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 sm:w-12 sm:h-12 bg-primary rounded-lg flex items-center justify-center">
-              <span className="text-primary-foreground font-bold text-xl sm:text-2xl">
-                A
-              </span>
-            </div>
-            <h2 className="text-xl sm:text-2xl font-bold text-foreground">
-              {adminConfig.header.logo.text}
-            </h2>
+            {adminConfig.header.logo.type === "image" &&
+            adminConfig.header.logo.src ? (
+              <>
+                <Image
+                  src={adminConfig.header.logo.src}
+                  alt={adminConfig.header.logo.alt || "Logo"}
+                  width={48}
+                  height={48}
+                  className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg object-contain"
+                />
+                <h2 className="text-xl sm:text-2xl font-bold text-foreground">
+                  {adminConfig.header.logo.text}
+                </h2>
+              </>
+            ) : (
+              <>
+                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-primary rounded-lg flex items-center justify-center">
+                  <span className="text-primary-foreground font-bold text-xl sm:text-2xl">
+                    {getInitial(adminConfig.header.logo.text || "A")}
+                  </span>
+                </div>
+                <h2 className="text-xl sm:text-2xl font-bold text-foreground">
+                  {adminConfig.header.logo.text}
+                </h2>
+              </>
+            )}
           </div>
         </div>
 
