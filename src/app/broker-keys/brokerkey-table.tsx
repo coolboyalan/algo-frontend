@@ -266,14 +266,7 @@ export function BrokerKeyTable({
       prefix: "₹",
       placeholder: "Enter profit limit amount",
       description: "Set your profit limit in rupees",
-      dynamicMin: {
-        field: "balance",
-        calculate: (balance) => 0, // Min is 0
-      },
-      dynamicMax: {
-        field: "balance",
-        calculate: (balance) => balance || 0, // Max is balance
-      },
+      min: 0,
     },
     {
       name: "lossLimit",
@@ -282,15 +275,8 @@ export function BrokerKeyTable({
       required: true,
       prefix: "₹",
       placeholder: "Enter loss limit amount",
-
-      dynamicMin: {
-        field: "balance",
-        calculate: (balance) => 0,
-      },
-      dynamicMax: {
-        field: "balance",
-        calculate: (balance) => balance || 0,
-      },
+      min: 0,
+      max: 100,
     },
     {
       name: "usableFund",
@@ -298,7 +284,6 @@ export function BrokerKeyTable({
       type: "number",
       required: true,
       prefix: "₹",
-      min: 0,
       showWhen: {
         field: "status",
         condition: (value: boolean) => {
@@ -320,7 +305,6 @@ export function BrokerKeyTable({
       label: "Time Frame",
       type: "number",
       required: true,
-      // min: 0,
     },
   ];
 
