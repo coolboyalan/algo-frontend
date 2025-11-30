@@ -32,12 +32,17 @@ export async function loginAction(
     return { error: "Password must be at least 8 characters" };
   }
 
+  let userRole: string = "user";
+
   try {
     // Call your backend API
     const response = await apiPost("/api/user/login", {
       email,
       password,
     });
+
+    // Store the role before setting cookies
+    userRole = response.user.role;
 
     // Await cookies() first before setting
     const cookieStore = await cookies();
@@ -71,12 +76,13 @@ export async function loginAction(
     };
   }
 
-  // Redirect based on role (this happens AFTER the action completes)
-  const userRole = formData.get("userRole") || "user";
-  if (userRole === "admin" || userRole === "super_admin") {
-    redirect("/dashboard");
-  } else {
+  // Redirect based on role
+  // Only 'user' role goes to user-dashboard, everyone else goes to admin dashboard
+  if (userRole === "user") {
     redirect("/user-dashboard");
+  } else {
+    // admin, super_admin, manager, agent all go to admin dashboard
+    redirect("/dashboard");
   }
 }
 
@@ -102,12 +108,17 @@ export async function signupAction(
     return { error: "Password must be at least 8 characters" };
   }
 
+  let userRole: string = "user";
+
   try {
     const response = await apiPost("/api/user", {
       name,
       email,
       password,
     });
+
+    // Store the role before setting cookies
+    userRole = response.user.role;
 
     const cookieStore = await cookies();
 
@@ -140,7 +151,12 @@ export async function signupAction(
     };
   }
 
-  redirect("/dashboard");
+  // Redirect based on role after signup
+  if (userRole === "user") {
+    redirect("/user-dashboard");
+  } else {
+    redirect("/dashboard");
+  }
 }
 
 export async function logoutAction() {
