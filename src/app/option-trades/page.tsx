@@ -12,6 +12,8 @@ import {
   ArrowDownCircle,
 } from "lucide-react";
 
+export const dynamic = 'force-dynamic';
+
 export default async function OptionTradesPage() {
   const initialData = await fetchTableData<OptionTradesItem>(
     "/api/option-trade-log",
@@ -53,9 +55,9 @@ export default async function OptionTradesPage() {
   const avgStrikePrice =
     currentPageTrades.length > 0
       ? currentPageTrades.reduce(
-          (sum, trade) => sum + (trade.strikePrice || 0),
-          0,
-        ) / currentPageTrades.length
+        (sum, trade) => sum + (trade.strikePrice || 0),
+        0,
+      ) / currentPageTrades.length
       : 0;
 
   return (

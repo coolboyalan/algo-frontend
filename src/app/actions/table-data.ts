@@ -84,7 +84,7 @@ async function handleApiResponse<T>(response: Response): Promise<T> {
 /**
  * Read auth token from cookies and return Authorization header
  */
-async function getAuthHeaders() {
+async function getAuthHeaders(): Promise<Record<string, string>> {
   const cookieStore = await cookies();
   const token = cookieStore.get("token")?.value;
   if (!token) return {};

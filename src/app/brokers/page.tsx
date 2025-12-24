@@ -3,6 +3,8 @@ import { BrokersTable } from "./brokers-table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Building2, TrendingUp, Calendar } from "lucide-react";
 
+export const dynamic = 'force-dynamic';
+
 type Broker = {
   id: string;
   name: "Zerodha" | "Upstox" | "Angel One";

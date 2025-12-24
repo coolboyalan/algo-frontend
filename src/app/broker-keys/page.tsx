@@ -1,5 +1,5 @@
 import { fetchTableData, TableParams } from "@/app/actions/table-data";
-import { BrokerKeyTable } from "./brokerkey-table";
+import { BrokerKeyTable, BrokerKeyItem } from "./brokerkey-table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Database,
@@ -10,14 +10,7 @@ import {
 } from "lucide-react";
 import { getUserRole } from "@/lib/actions/auth";
 
-export type BrokerKeyItem = {
-  id: string;
-  name: string;
-  email: string;
-  status: "active" | "inactive" | "pending";
-  createdAt: string;
-  amount: number;
-};
+export const dynamic = 'force-dynamic';
 
 export default async function BrokerKeyPage() {
   const initialData = await fetchTableData<BrokerKeyItem>("/api/broker-key", {
@@ -33,16 +26,13 @@ export default async function BrokerKeyPage() {
 
   const totalItems = initialData.pagination.totalCount || 0;
   const activeItems = initialData.data.filter(
-    (item) => item.status === "active",
+    (item) => item.status === true,
   ).length;
   const inactiveItems = initialData.data.filter(
-    (item) => item.status === "inactive",
+    (item) => item.status === false,
   ).length;
-  const pendingItems = initialData.data.filter(
-    (item) => item.status === "pending",
-  ).length;
-  const totalAmount = initialData.data.reduce(
-    (sum, item) => sum + (item.amount || 0),
+  const totalBalance = initialData.data.reduce(
+    (sum, item) => sum + (parseFloat(item.balance || "0") || 0),
     0,
   );
 
@@ -114,7 +104,7 @@ export default async function BrokerKeyPage() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-green-600">
-                ₹{totalAmount.toLocaleString("en-IN")}
+                ₹{totalBalance.toLocaleString("en-IN")}
               </div>
               <p className="text-xs text-muted-foreground">
                 Sum of all amounts

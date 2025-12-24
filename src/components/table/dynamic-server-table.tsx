@@ -96,12 +96,12 @@ interface DynamicServerTableProps<T> {
     icon?: React.ReactNode;
     onClick: (selectedRows: T[]) => void;
     variant?:
-      | "default"
-      | "destructive"
-      | "outline"
-      | "secondary"
-      | "ghost"
-      | "link";
+    | "default"
+    | "destructive"
+    | "outline"
+    | "secondary"
+    | "ghost"
+    | "link";
   }[];
   rowIdField?: string;
   viewerTitle?: string;
@@ -372,7 +372,7 @@ export function DynamicServerTable<T extends Record<string, any>>({
   // Pagination handlers
   const handleNextPage = () => {
     if (pagination.hasNextPage && pagination.nextCursor) {
-      setCursorHistory((prev) => [...prev, pagination.nextCursor]);
+      setCursorHistory((prev) => [...prev, pagination.nextCursor ?? undefined]);
       performFetch(pagination.nextCursor, currentPage + 1);
     }
   };
@@ -582,32 +582,32 @@ export function DynamicServerTable<T extends Record<string, any>>({
   // Build table columns
   const tableColumns = selectable
     ? [
-        {
-          id: "select",
-          header: ({ table }: any) => (
-            <input
-              type="checkbox"
-              checked={table.getIsAllPageRowsSelected()}
-              onChange={() => toggleAllRows()}
-              aria-label="Select all"
-            />
-          ),
-          cell: ({ row }: any) => (
-            <input
-              type="checkbox"
-              checked={selectedRows.has(String(row.original[rowIdField]))}
-              onChange={() =>
-                toggleRowSelection(String(row.original[rowIdField]))
-              }
-              onClick={(e) => e.stopPropagation()}
-              aria-label="Select row"
-            />
-          ),
-          enableSorting: false,
-          enableHiding: false,
-        },
-        ...columns,
-      ]
+      {
+        id: "select",
+        header: ({ table }: any) => (
+          <input
+            type="checkbox"
+            checked={table.getIsAllPageRowsSelected()}
+            onChange={() => toggleAllRows()}
+            aria-label="Select all"
+          />
+        ),
+        cell: ({ row }: any) => (
+          <input
+            type="checkbox"
+            checked={selectedRows.has(String(row.original[rowIdField]))}
+            onChange={() =>
+              toggleRowSelection(String(row.original[rowIdField]))
+            }
+            onClick={(e) => e.stopPropagation()}
+            aria-label="Select row"
+          />
+        ),
+        enableSorting: false,
+        enableHiding: false,
+      },
+      ...columns,
+    ]
     : columns;
 
   const finalColumns: ColumnDef<T>[] = (() => {
@@ -619,54 +619,54 @@ export function DynamicServerTable<T extends Record<string, any>>({
       return tableColumns.map((col) => {
         return col.id === "actions"
           ? {
-              ...col,
-              cell: (ctx) => (
-                <div className="flex items-center gap-1">
+            ...col,
+            cell: (ctx) => (
+              <div className="flex items-center gap-1">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  title="View Details"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleViewRow(ctx.row.original);
+                  }}
+                >
+                  <Eye className="h-4 w-4" />
+                </Button>
+
+                {updateHandler && showEditButton && (
                   <Button
                     variant="ghost"
                     size="icon"
-                    title="View Details"
+                    title="Edit"
                     onClick={(e) => {
                       e.stopPropagation();
-                      handleViewRow(ctx.row.original);
+                      handleEditClick(ctx.row.original);
                     }}
                   >
-                    <Eye className="h-4 w-4" />
+                    <Pencil className="h-4 w-4" />
                   </Button>
+                )}
 
-                  {updateHandler && showEditButton && (
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      title="Edit"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleEditClick(ctx.row.original);
-                      }}
-                    >
-                      <Pencil className="h-4 w-4" />
-                    </Button>
-                  )}
+                {deleteHandler && showDeleteButton && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    title="Delete"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDeleteClick(ctx.row.original);
+                    }}
+                  >
+                    <Trash2 className="h-4 w-4 text-destructive" />
+                  </Button>
+                )}
 
-                  {deleteHandler && showDeleteButton && (
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      title="Delete"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleDeleteClick(ctx.row.original);
-                      }}
-                    >
-                      <Trash2 className="h-4 w-4 text-destructive" />
-                    </Button>
-                  )}
-
-                  {/* Render any custom actions from the original column */}
-                  {col.cell ? col.cell(ctx) : null}
-                </div>
-              ),
-            }
+                {/* Render any custom actions from the original column */}
+                {typeof col.cell === 'function' ? col.cell(ctx) : null}
+              </div>
+            ),
+          }
           : col;
       });
     }
@@ -894,7 +894,7 @@ export function DynamicServerTable<T extends Record<string, any>>({
         <div className="flex flex-col sm:flex-row items-center gap-4 order-2 sm:order-1 w-full sm:w-auto">
           <div className="text-sm text-muted-foreground text-center sm:text-left">
             {pagination.totalCount !== undefined &&
-            pagination.totalCount > 0 ? (
+              pagination.totalCount > 0 ? (
               <span>
                 Showing{" "}
                 <span className="font-medium text-foreground">

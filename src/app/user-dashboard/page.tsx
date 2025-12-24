@@ -54,7 +54,18 @@ export default function UserDashboardPage() {
   }, []);
 
   // Mock user data - Replace with actual API call
-  const data = {
+  const data: {
+    overallPnl: number;
+    activeBrokers: number;
+    totalBrokers: number;
+    totalTrades: number;
+    winRate: number;
+    avgPnl: number;
+    bestBroker: string;
+    marketExposure: number;
+    lastUpdated: string;
+    brokerKeys: BrokerKey[];
+  } = {
     overallPnl: 0.0,
     activeBrokers: 0,
     totalBrokers: 3,
@@ -68,21 +79,21 @@ export default function UserDashboardPage() {
       {
         id: "1",
         name: "Upstox",
-        status: "inactive" as const,
+        status: "inactive",
         pnl: 0.0,
         loginUrl: "https://login.upstox.com",
       },
       {
         id: "2",
         name: "Zerodha",
-        status: "inactive" as const,
+        status: "inactive",
         pnl: 0.0,
         loginUrl: "https://kite.zerodha.com",
       },
       {
         id: "3",
         name: "Angel One",
-        status: "inactive" as const,
+        status: "inactive",
         pnl: 0.0,
         loginUrl: "https://trade.angelone.in",
       },
@@ -423,9 +434,8 @@ export default function UserDashboardPage() {
                       P&L (INR)
                     </p>
                     <p
-                      className={`text-lg font-bold ${
-                        broker.pnl >= 0 ? "text-green-600" : "text-red-600"
-                      }`}
+                      className={`text-lg font-bold ${broker.pnl >= 0 ? "text-green-600" : "text-red-600"
+                        }`}
                     >
                       {formatCurrency(broker.pnl)}
                     </p>

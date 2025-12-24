@@ -3,6 +3,8 @@ import { AssetTable, AssetItem } from "./asset-table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Database } from "lucide-react";
 
+export const dynamic = 'force-dynamic';
+
 export default async function AssetPage() {
   const initialData = await fetchTableData<AssetItem>("/api/asset", {
     limit: 10,

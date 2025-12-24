@@ -8,6 +8,10 @@ import { signupAction } from "@/lib/actions/auth";
 import { useState } from "react";
 import { adminConfig } from "@/config/admin-config";
 
+function getInitial(text: string): string {
+  return text.charAt(0).toUpperCase();
+}
+
 export default function SignUpPage() {
   const [state, formAction, isPending] = useActionState(
     signupAction,
@@ -23,7 +27,7 @@ export default function SignUpPage() {
         <div className="flex justify-center mb-6">
           <div className="flex items-center gap-3">
             {adminConfig.header.logo.type === "image" &&
-            adminConfig.header.logo.src ? (
+              adminConfig.header.logo.src ? (
               <>
                 <Image
                   src={adminConfig.header.logo.src}

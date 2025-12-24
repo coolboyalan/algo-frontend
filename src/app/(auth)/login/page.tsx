@@ -8,6 +8,10 @@ import { useState } from "react";
 import Image from "next/image";
 import { adminConfig } from "@/config/admin-config";
 
+function getInitial(text: string): string {
+  return text.charAt(0).toUpperCase();
+}
+
 export default function LoginPage() {
   const [state, formAction, isPending] = useActionState(loginAction, undefined);
   const [showPassword, setShowPassword] = useState(false);
@@ -19,7 +23,7 @@ export default function LoginPage() {
         <div className="flex justify-center mb-6">
           <div className="flex items-center gap-3">
             {adminConfig.header.logo.type === "image" &&
-            adminConfig.header.logo.src ? (
+              adminConfig.header.logo.src ? (
               <>
                 <Image
                   src={adminConfig.header.logo.src}

@@ -6,10 +6,11 @@ export const ROLES = {
 } as const;
 
 export type Role = (typeof ROLES)[keyof typeof ROLES];
-export { TAB_PERMISSIONS } from "@/config/tabs-config";
+import { TAB_PERMISSIONS } from "@/config/tabs-config";
+export { TAB_PERMISSIONS };
 
 // Action-based permissions for fine-grained control
-export const ACTION_PERMISSIONS = {
+export const ACTION_PERMISSIONS: Record<string, Role[]> = {
   // User actions
   "user.view": [ROLES.SUPER_ADMIN, ROLES.ADMIN],
   "user.create": [ROLES.SUPER_ADMIN, ROLES.ADMIN],

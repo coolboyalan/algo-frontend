@@ -22,16 +22,16 @@ export interface FormFieldConfig {
   name: string;
   label: string;
   type:
-    | "text"
-    | "email"
-    | "number"
-    | "textarea"
-    | "select"
-    | "searchable-select"
-    | "checkbox"
-    | "date"
-    | "datetime-local"
-    | "hidden";
+  | "text"
+  | "email"
+  | "number"
+  | "textarea"
+  | "select"
+  | "searchable-select"
+  | "checkbox"
+  | "date"
+  | "datetime-local"
+  | "hidden";
   placeholder?: string;
   defaultValue?: any;
   options?: { label: string; value: string | number | boolean }[];
@@ -56,14 +56,14 @@ export interface FormFieldConfig {
 
   // Conditional Visibility
   showWhen?:
-    | {
-        // Option 1: Watch specific field
-        field: string;
-        condition: (value: any) => boolean;
-      }
-    | {
-        condition: (formValues: Record<string, any>) => boolean;
-      };
+  | {
+    // Option 1: Watch specific field
+    field: string;
+    condition: (value: any) => boolean;
+  }
+  | {
+    condition: (formValues: Record<string, any>) => boolean;
+  };
   // Dynamic min/max based on other field
   dynamicMin?: {
     field: string;
@@ -131,7 +131,7 @@ export function AutoFormGenerator({
 
           case "number":
             fieldSchema = z.coerce.number({
-              invalid_type_error: "Must be a number",
+              message: "Must be a number",
             });
 
             if (field.min !== undefined) {
@@ -434,9 +434,9 @@ export function AutoFormGenerator({
                 );
                 const rawValue = field.transform
                   ? field.transform.toSubmit(
-                      selectedOption?.value ?? val,
-                      watch(),
-                    )
+                    selectedOption?.value ?? val,
+                    watch(),
+                  )
                   : (selectedOption?.value ?? val);
                 setValue(field.name, rawValue);
               }}

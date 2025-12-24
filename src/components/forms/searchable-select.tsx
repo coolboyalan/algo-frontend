@@ -69,16 +69,16 @@ export function SearchableSelect({
       setIsLoading(true);
       try {
         // Direct lookup by id
-        const record = await fetchRecordById(endpoint, String(value));
+        const record = await fetchRecordById<Record<string, unknown>>(endpoint, String(value));
         if (!ignore && record) {
           setOptions((old) => [
             {
-              label: record[labelKey] ?? String(record[valueKey]),
-              value: record[valueKey],
+              label: String(record[labelKey] ?? record[valueKey]),
+              value: record[valueKey] as string | number,
             },
             ...old.filter((o) => o.value !== value),
           ]);
-          setSelectedLabel(record[labelKey] ?? String(record[valueKey]));
+          setSelectedLabel(String(record[labelKey] ?? record[valueKey]));
         }
       } catch {
         // ignore errors
@@ -107,7 +107,7 @@ export function SearchableSelect({
       try {
         const results = await searchRecords({
           endpoint,
-          query: query || undefined,
+          query: query || "",
           searchFields,
           labelKey,
           valueKey,

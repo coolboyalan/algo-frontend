@@ -39,7 +39,7 @@ export const adminConfig = {
       text: "The Algoman",
     },
     menuItems: [],
-    user: null,
+    user: undefined,
     showSearch: false,
     showNotifications: true,
   },

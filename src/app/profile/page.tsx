@@ -87,18 +87,11 @@ export default function ProfilePage() {
         return;
       }
 
-      const result = await updateRecord(
+      await updateRecord(
         "/api/user",
         user.id,
         { name, email },
-        "user.update",
       );
-
-      if (!result.success) {
-        toast.error(result.error);
-        setSaving(false);
-        return;
-      }
 
       const updatedUser = { ...user, name, email };
       document.cookie = `user=${encodeURIComponent(JSON.stringify(updatedUser))}; path=/; max-age=${60 * 60 * 24 * 7}`;
@@ -135,18 +128,11 @@ export default function ProfilePage() {
         return;
       }
 
-      const result = await updateRecord(
+      await updateRecord(
         "/api/user/password",
         user.id,
         { currentPassword, newPassword },
-        "user.update",
       );
-
-      if (!result.success) {
-        toast.error(result.error);
-        setSaving(false);
-        return;
-      }
 
       toast.success("Password updated successfully!");
       setCurrentPassword("");

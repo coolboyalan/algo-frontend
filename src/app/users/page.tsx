@@ -3,6 +3,8 @@ import { UserTable, UserItem } from "./users-table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Users, Shield, User, Calendar } from "lucide-react";
 
+export const dynamic = 'force-dynamic';
+
 export default async function UserPage() {
   const initialData = await fetchTableData<UserItem>("/api/user", {
     limit: 10,
