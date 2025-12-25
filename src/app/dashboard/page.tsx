@@ -43,14 +43,34 @@ import {
   BarChart,
   Bar,
 } from "recharts";
+import { apiGet } from "@/lib/api-client";
+import { toast } from "sonner";
+
+interface BrokerKey {
+  id: string;
+  name: string;
+}
+
+interface DashboardData {
+  overallPnl: number;
+  activeBrokersCount: number;
+  totalTrades: number;
+  brokers: BrokerKey[];
+  winLossData: { name: string; value: number; color: string }[];
+  pnlTrendData: { date: string; pnl: number }[];
+  lastUpdated: string;
+  // Admin specific or extra fields might be absent in basic response, so we handle gracefully
+}
 
 export default function DashboardPage() {
   const [adminName, setAdminName] = useState<string>("Admin");
   const [loading, setLoading] = useState(true);
+  const [data, setData] = useState<DashboardData | null>(null);
 
   // Get admin name from cookie
   useEffect(() => {
     const getCookie = (name: string) => {
+      if (typeof document === 'undefined') return null;
       const value = `; ${document.cookie}`;
       const parts = value.split(`; ${name}=`);
       if (parts.length === 2) return parts.pop()?.split(";").shift();
@@ -65,115 +85,24 @@ export default function DashboardPage() {
         console.error("Failed to parse user cookie");
       }
     }
-    setLoading(false);
   }, []);
 
-  // Static Dashboard Data - Trading Platform Overview
-  const data = {
-    totalUsers: 4,
-    totalPnl: 123000,
-    totalTrades: 450,
-    totalWinningTrades: 271,
-    activeBrokers: 7,
-    avgPnlPerTrade: 273,
-
-    pnlTrendData: [
-      { date: "2025-10-26", pnl: 5000 },
-      { date: "2025-10-27", pnl: 8000 },
-      { date: "2025-10-28", pnl: 6500 },
-      { date: "2025-10-29", pnl: 12000 },
-      { date: "2025-10-30", pnl: 9000 },
-      { date: "2025-10-31", pnl: 15000 },
-      { date: "2025-11-01", pnl: 13000 },
-      { date: "2025-11-02", pnl: 18000 },
-      { date: "2025-11-03", pnl: 16000 },
-      { date: "2025-11-04", pnl: 22000 },
-      { date: "2025-11-05", pnl: 19000 },
-      { date: "2025-11-06", pnl: 25000 },
-      { date: "2025-11-07", pnl: 28000 },
-      { date: "2025-11-08", pnl: 24000 },
-      { date: "2025-11-09", pnl: 30000 },
-      { date: "2025-11-10", pnl: 27000 },
-      { date: "2025-11-11", pnl: 35000 },
-      { date: "2025-11-12", pnl: 32000 },
-      { date: "2025-11-13", pnl: 38000 },
-      { date: "2025-11-14", pnl: 40000 },
-      { date: "2025-11-15", pnl: 37000 },
-      { date: "2025-11-16", pnl: 42000 },
-      { date: "2025-11-17", pnl: 45000 },
-      { date: "2025-11-18", pnl: 48000 },
-      { date: "2025-11-19", pnl: 52000 },
-      { date: "2025-11-20", pnl: 55000 },
-      { date: "2025-11-21", pnl: 58000 },
-      { date: "2025-11-22", pnl: 62000 },
-      { date: "2025-11-23", pnl: 68000 },
-      { date: "2025-11-24", pnl: 72000 },
-    ],
-
-    userPerformanceData: [
-      { name: "Rahul", pnl: 45000, trades: 120 },
-      { name: "Priya", pnl: -12000, trades: 85 },
-      { name: "Amit", pnl: 67000, trades: 150 },
-      { name: "Sneha", pnl: 23000, trades: 95 },
-    ],
-
-    brokerDistribution: [
-      { name: "Zerodha", value: 2, color: "#3B82F6" },
-      { name: "Upstox", value: 1, color: "#10B981" },
-      { name: "Angel One", value: 1, color: "#F59E0B" },
-      { name: "ICICI", value: 1, color: "#8B5CF6" },
-      { name: "Kotak", value: 1, color: "#EC4899" },
-      { name: "Groww", value: 1, color: "#06B6D4" },
-    ],
-
-    activities: [
-      {
-        type: "trade",
-        message: "Rahul opened position in RELIANCE",
-        time: "2 mins ago",
-        status: "success",
-      },
-      {
-        type: "alert",
-        message: "Priya's stop loss triggered for HDFC",
-        time: "5 mins ago",
-        status: "warning",
-      },
-      {
-        type: "profit",
-        message: "Amit hit profit target for TCS",
-        time: "12 mins ago",
-        status: "success",
-      },
-      {
-        type: "connection",
-        message: "New Zerodha connection by Sneha",
-        time: "25 mins ago",
-        status: "info",
-      },
-      {
-        type: "trade",
-        message: "System executed auto-trade for INFY",
-        time: "45 mins ago",
-        status: "success",
-      },
-    ],
-
-    lastUpdated: new Date().toISOString(),
+  const fetchDashboardData = async () => {
+    try {
+      setLoading(true);
+      const responseData = await apiGet<DashboardData>("/api/dashboard");
+      setData(responseData);
+    } catch (error) {
+      console.error("Error fetching dashboard data:", error);
+      toast.error("Failed to load dashboard data");
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const winLossData = [
-    {
-      name: "Winning Trades",
-      value: data.totalWinningTrades,
-      color: "#10B981",
-    },
-    {
-      name: "Losing Trades",
-      value: data.totalTrades - data.totalWinningTrades,
-      color: "#EF4444",
-    },
-  ];
+  useEffect(() => {
+    fetchDashboardData();
+  }, []);
 
   const formatCurrency = (amount: number, currency: string = "INR") => {
     return new Intl.NumberFormat("en-IN", {
@@ -189,8 +118,8 @@ export default function DashboardPage() {
   };
 
   const winRate =
-    data.totalTrades > 0
-      ? ((data.totalWinningTrades / data.totalTrades) * 100).toFixed(1)
+    data?.totalTrades && data.totalTrades > 0
+      ? (((data.winLossData.find(d => d.name === "Winning Trades")?.value || 0) / data.totalTrades) * 100).toFixed(1)
       : "0";
 
   const hour = new Date().getHours();
@@ -210,7 +139,21 @@ export default function DashboardPage() {
     "Fortune favors the prepared mind in trading.",
     "Discipline is the bridge between goals and accomplishment.",
   ];
-  const randomQuote = quotes[Math.floor(Math.random() * quotes.length)];
+  const [randomQuote, setRandomQuote] = useState("");
+  useEffect(() => {
+    setRandomQuote(quotes[Math.floor(Math.random() * quotes.length)]);
+  }, []);
+
+  // Mock static data for things API doesn't return yet for Admin view specific components
+  // userPerformanceData, brokerDistribution, activities are NOT in current API response.
+  // We will keep them as empty or mock to prevent crash, effectively hiding them or showing empty.
+  // Or we can leave the hardcoded "demo" data for those specific widgets if preferred, 
+  // but better to show nothing or "No Data" if we want to be "real".
+  // For now, I will use placeholders to not break the UI components that expect arrays.
+
+  const userPerformanceData: any[] = [];
+  const activities: any[] = [];
+  const brokerDistribution: any[] = []; // We could derive this from brokers list but it's just names, not distribution counts.
 
   const getActivityIcon = (type: string) => {
     switch (type) {
@@ -240,13 +183,19 @@ export default function DashboardPage() {
     }
   };
 
-  if (loading) {
+  if (loading && !data) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
       </div>
     );
   }
+
+  const totalWinningTrades = data?.winLossData.find(d => d.name === "Winning Trades")?.value || 0;
+  const totalLosingTrades = data?.winLossData.find(d => d.name === "Losing Trades")?.value || 0;
+  // Calculate average PnL per trade if totalTrades > 0
+  const avgPnlPerTrade = data?.totalTrades ? Math.round(data.overallPnl / data.totalTrades) : 0;
+
 
   return (
     <div className="px-6 pb-6 min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
@@ -286,10 +235,10 @@ export default function DashboardPage() {
                 <Clock className="h-4 w-4" />
                 <span className="text-sm">
                   Last updated:{" "}
-                  {new Date(data.lastUpdated).toLocaleTimeString("en-IN")}
+                  {data?.lastUpdated ? new Date(data.lastUpdated).toLocaleTimeString("en-IN") : "--"}
                 </span>
               </div>
-              <Button variant="outline" size="sm" className="hover:bg-gray-100">
+              <Button variant="outline" size="sm" className="hover:bg-gray-100" onClick={fetchDashboardData}>
                 <RefreshCw className="h-4 w-4 mr-2" />
                 Refresh
               </Button>
@@ -307,7 +256,8 @@ export default function DashboardPage() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-blue-600">
-                {data.totalUsers}
+                {/* Available only if we fetch users count specifically, mostly not in current response */}
+                --
               </div>
               <p className="text-xs text-gray-500 mt-2">
                 Active traders on platform
@@ -323,12 +273,12 @@ export default function DashboardPage() {
             </CardHeader>
             <CardContent>
               <div
-                className={`text-2xl font-bold ${data.totalPnl >= 0 ? "text-green-600" : "text-red-600"}`}
+                className={`text-2xl font-bold ${(data?.overallPnl || 0) >= 0 ? "text-green-600" : "text-red-600"}`}
               >
-                {formatCurrency(data.totalPnl)}
+                {formatCurrency(data?.overallPnl || 0)}
               </div>
               <div className="flex items-center gap-2 mt-1">
-                {data.totalPnl >= 0 ? (
+                {(data?.overallPnl || 0) >= 0 ? (
                   <ArrowUpRight className="h-4 w-4 text-green-600" />
                 ) : (
                   <ArrowDownRight className="h-4 w-4 text-red-600" />
@@ -350,7 +300,7 @@ export default function DashboardPage() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-purple-600">
-                {formatNumber(data.totalTrades)}
+                {formatNumber(data?.totalTrades || 0)}
               </div>
               <div className="flex items-center gap-2 mt-1">
                 <Target className="h-4 w-4 text-purple-600" />
@@ -371,7 +321,7 @@ export default function DashboardPage() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-orange-600">
-                {data.activeBrokers}
+                {data?.activeBrokersCount || 0}
               </div>
               <div className="flex items-center gap-2 mt-1">
                 <Activity className="h-4 w-4 text-orange-600" />
@@ -422,7 +372,7 @@ export default function DashboardPage() {
                   </h3>
                 </div>
                 <p className="text-lg font-bold text-purple-600">
-                  {formatCurrency(data.avgPnlPerTrade)}
+                  {formatCurrency(avgPnlPerTrade)}
                 </p>
               </CardHeader>
             </Card>
@@ -436,7 +386,7 @@ export default function DashboardPage() {
                   </h3>
                 </div>
                 <p className="text-lg font-bold text-green-600">
-                  {formatNumber(data.totalWinningTrades)}
+                  {formatNumber(totalWinningTrades)}
                 </p>
               </CardHeader>
             </Card>
@@ -450,7 +400,7 @@ export default function DashboardPage() {
                   </h3>
                 </div>
                 <p className="text-lg font-bold text-red-600">
-                  {formatNumber(data.totalTrades - data.totalWinningTrades)}
+                  {formatNumber(totalLosingTrades)}
                 </p>
               </CardHeader>
             </Card>
@@ -469,7 +419,7 @@ export default function DashboardPage() {
             </CardHeader>
             <CardContent>
               <ResponsiveContainer width="100%" height={300}>
-                <LineChart data={data.pnlTrendData}>
+                <LineChart data={data?.pnlTrendData || []}>
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis
                     dataKey="date"
@@ -509,27 +459,31 @@ export default function DashboardPage() {
             </CardHeader>
             <CardContent>
               <div className="space-y-3 max-h-[280px] overflow-y-auto">
-                {data.activities.map((activity, index) => {
-                  const Icon = getActivityIcon(activity.type);
-                  return (
-                    <div
-                      key={index}
-                      className="flex items-start space-x-3 p-3 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors"
-                    >
+                {activities.length > 0 ? (
+                  activities.map((activity, index) => {
+                    const Icon = getActivityIcon(activity.type);
+                    return (
                       <div
-                        className={`p-2 rounded-full ${getActivityColor(activity.status)}`}
+                        key={index}
+                        className="flex items-start space-x-3 p-3 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors"
                       >
-                        <Icon size={14} />
+                        <div
+                          className={`p-2 rounded-full ${getActivityColor(activity.status)}`}
+                        >
+                          <Icon size={14} />
+                        </div>
+                        <div className="flex-1">
+                          <p className="text-sm text-gray-900">
+                            {activity.message}
+                          </p>
+                          <p className="text-xs text-gray-500">{activity.time}</p>
+                        </div>
                       </div>
-                      <div className="flex-1">
-                        <p className="text-sm text-gray-900">
-                          {activity.message}
-                        </p>
-                        <p className="text-xs text-gray-500">{activity.time}</p>
-                      </div>
-                    </div>
-                  );
-                })}
+                    );
+                  })
+                ) : (
+                  <p className="text-gray-500 text-sm italic">No recent activity.</p>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -547,7 +501,7 @@ export default function DashboardPage() {
               <ResponsiveContainer width="100%" height={250}>
                 <PieChart>
                   <Pie
-                    data={winLossData}
+                    data={data?.winLossData || []}
                     cx="50%"
                     cy="50%"
                     labelLine={false}
@@ -556,7 +510,7 @@ export default function DashboardPage() {
                     fill="#8884d8"
                     dataKey="value"
                   >
-                    {winLossData.map((entry, index) => (
+                    {data?.winLossData.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={entry.color} />
                     ))}
                   </Pie>
@@ -580,17 +534,10 @@ export default function DashboardPage() {
               <CardDescription>P&L by user</CardDescription>
             </CardHeader>
             <CardContent>
-              <ResponsiveContainer width="100%" height={250}>
-                <BarChart data={data.userPerformanceData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="name" />
-                  <YAxis tickFormatter={(value) => formatCurrency(value)} />
-                  <Tooltip
-                    formatter={(value: number) => formatCurrency(value)}
-                  />
-                  <Bar dataKey="pnl" fill="#10B981" name="P&L" />
-                </BarChart>
-              </ResponsiveContainer>
+              {/* Not available in current API, keeping empty or showing unavailable */}
+              <div className="flex items-center justify-center h-[250px] text-gray-400">
+                User performance breakdown not available
+              </div>
             </CardContent>
           </Card>
         </div>

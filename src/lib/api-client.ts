@@ -100,6 +100,7 @@ export async function apiGet<T = any>(
   const response = await fetch(url.toString(), {
     method: "GET",
     headers,
+    credentials: "include",
     cache: "no-store",
     ...options,
   });
@@ -125,6 +126,7 @@ export async function apiPost<T = any>(
   const response = await fetch(fullUrl, {
     method: "POST",
     headers,
+    credentials: "include",
     body: body ? JSON.stringify(body) : undefined,
     ...options,
   });
@@ -150,6 +152,7 @@ export async function apiPut<T = any>(
   const response = await fetch(fullUrl, {
     method: "PUT",
     headers,
+    credentials: "include",
     body: body ? JSON.stringify(body) : undefined,
     ...options,
   });
@@ -175,6 +178,7 @@ export async function apiPatch<T = any>(
   const response = await fetch(fullUrl, {
     method: "PATCH",
     headers,
+    credentials: "include",
     body: body ? JSON.stringify(body) : undefined,
     ...options,
   });
@@ -199,6 +203,7 @@ export async function apiDelete<T = any>(
   const response = await fetch(fullUrl, {
     method: "DELETE",
     headers,
+    credentials: "include",
     ...options,
   });
 
